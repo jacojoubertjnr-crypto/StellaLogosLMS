@@ -71,15 +71,9 @@ export const LedgerUI: React.FC = () => {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <button
+            className="btn-9slice"
             onClick={() => navigate('/home')}
-            style={{
-              ...VT, fontSize: '1.1rem', letterSpacing: '2px',
-              background: 'transparent', border: '1px solid rgba(255,215,0,0.3)',
-              color: 'rgba(255,215,0,0.65)', cursor: 'pointer', padding: '0.2rem 0.9rem',
-              transition: 'border-color 0.12s, color 0.12s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.8)'; e.currentTarget.style.color = GOLD }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.3)'; e.currentTarget.style.color = 'rgba(255,215,0,0.65)' }}
+            style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
           >
             ◂ BACK
           </button>

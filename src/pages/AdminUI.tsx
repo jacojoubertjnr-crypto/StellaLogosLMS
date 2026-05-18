@@ -541,8 +541,9 @@ export const AdminUI: React.FC = () => {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
           <button
+            className="btn-9slice"
             onClick={() => navigate('/home')}
-            style={{ ...VT, fontSize: '0.95rem', letterSpacing: '2px', background: 'none', border: 'none', color: 'rgba(255,215,0,0.5)', cursor: 'pointer', padding: 0 }}
+            style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
           >
             ← HOME
           </button>

@@ -169,7 +169,7 @@ interface GreatPortalProps {
 
 const GreatPortal: React.FC<GreatPortalProps> = ({ questLabel, classLabel, currentStep, totalSteps, onEnter }) => {
   const { currentTheme } = useThemeStore()
-  const pal = PORTAL_PALETTE[currentTheme as keyof typeof PORTAL_PALETTE] ?? PORTAL_PALETTE.medieval
+  const pal = PORTAL_PALETTE[currentTheme as keyof typeof PORTAL_PALETTE] ?? PORTAL_PALETTE.default
   const progressPct = Math.round((currentStep / totalSteps) * 100)
 
   return (

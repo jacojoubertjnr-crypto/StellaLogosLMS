@@ -695,6 +695,17 @@ export const TeacherRegisterUI: React.FC = () => {
             </button>
           </div>
 
+          {/* Back */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+            <button
+              className="btn-9slice"
+              onClick={() => navigate('/home')}
+              style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
+            >
+              ◂ HOME
+            </button>
+          </div>
+
         </div>
       )}
     </div>

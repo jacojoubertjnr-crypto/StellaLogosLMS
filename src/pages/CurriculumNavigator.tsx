@@ -743,17 +743,9 @@ export const CurriculumNavigator: React.FC = () => {
               <NavArrow direction="down" enabled={canDown && !isAnimating} onClick={scrollDown} />
 
               <button
+                className="btn-9slice"
                 onClick={() => navigate('/home')}
-                style={{
-                  fontFamily: "'VT323', monospace",
-                  fontSize: '1.1rem', letterSpacing: '2px',
-                  padding: '0.5rem 2rem', background: 'transparent',
-                  border: '1px solid rgba(255,215,0,0.35)',
-                  color: 'rgba(255,215,0,0.6)', cursor: 'pointer',
-                  alignSelf: 'center', transition: 'border-color 0.15s, color 0.15s',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.8)'; e.currentTarget.style.color = 'rgba(255,215,0,1)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.35)'; e.currentTarget.style.color = 'rgba(255,215,0,0.6)' }}
+                style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
               >
                 ◂ {vocab.subjectsReturnLabel}
               </button>

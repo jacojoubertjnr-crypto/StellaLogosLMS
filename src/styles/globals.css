@@ -5,12 +5,12 @@
 
 /* ========================================
    BASE VARIABLES
-   Panes: semi-transparent so theme backgrounds show through on all themes.
-   Modals: fully opaque for readability.
-   Default theme overrides pane to a lighter transparency.
+   Panes: near-opaque so content is always legible regardless of theme background.
+   Default theme overrides to its own transparent glass style.
+   Modals: fully opaque.
    ======================================== */
 :root {
-  --color-pane-bg:   rgba(0, 0, 0, 0.45);
+  --color-pane-bg:   rgba(10, 18, 30, 0.92);
   --color-modal-bg:  rgba(8, 8, 8, 0.97);
 }
 

@@ -546,10 +546,9 @@ export const ShopUI: React.FC = () => {
         {/* Shop header */}
         <div style={{ ...VT, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: '52px', flexShrink: 0, background: 'var(--color-pane-bg, rgba(0,0,0,0.55))', border: '1px solid rgba(255,215,0,0.2)', borderBottom: 'none' }}>
           <button
+            className="btn-9slice"
             onClick={() => navigate('/home')}
-            style={{ ...VT, fontSize: '1.1rem', letterSpacing: '2px', background: 'transparent', border: '1px solid rgba(255,215,0,0.25)', color: 'rgba(255,215,0,0.65)', cursor: 'pointer', padding: '0.2rem 0.9rem', transition: 'border-color 0.12s, color 0.12s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.7)'; e.currentTarget.style.color = 'rgba(255,215,0,1)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.25)'; e.currentTarget.style.color = 'rgba(255,215,0,0.65)' }}
+            style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
           >
             ◂ BACK
           </button>

@@ -6,6 +6,7 @@ import { ThemedInput } from '@/components/ThemedInput'
 import { SpriteManager } from '@/components/SpriteManager'
 import { MusicToggle } from '@/components/MusicToggle'
 import { usePageBackground } from '@/hooks/usePageBackground'
+import { clearColorScheme } from '@/lib/skinInjection'
 
 const VT: React.CSSProperties = { fontFamily: "'VT323', monospace" }
 
@@ -17,18 +18,24 @@ export const MedievalLoginScreen: React.FC = () => {
 
   usePageBackground('login')
 
+  // Login page always resets to the default theme — the user's theme kicks in after login
   useEffect(() => {
-    // CSS-only themes have no banner asset — clear immediately so the default
-    // layout renders in the same frame as the CSS variable switch.
+    setTheme('default')
+    clearColorScheme()
+  }, [])
+
+  useEffect(() => {
     if (currentTheme === 'default') {
       setBannerSrc(null)
       return
     }
     const url = `/assets/themes/${currentTheme}/banner_top.png`
     const img = new Image()
-    img.onload  = () => setBannerSrc(url)
-    img.onerror = () => setBannerSrc(null)
+    let cancelled = false
+    img.onload  = () => { if (!cancelled) setBannerSrc(url) }
+    img.onerror = () => { if (!cancelled) setBannerSrc(null) }
     img.src = url
+    return () => { cancelled = true }
   }, [currentTheme])
 
   const handleSubmit = async (e: React.FormEvent) => {

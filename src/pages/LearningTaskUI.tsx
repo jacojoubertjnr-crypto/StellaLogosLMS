@@ -177,13 +177,13 @@ const PhaseBar: React.FC<{ current: Phase }> = ({ current }) => (
               background: done ? ACCENT : 'transparent',
               border: `2px solid ${done || active ? ACCENT : 'rgba(255,215,0,0.25)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: FONT, fontSize: '0.9rem',
+              fontFamily: FONT, fontSize: '1.15rem',
               color: done ? '#1a1000' : active ? ACCENT : 'rgba(255,215,0,0.3)',
               opacity: !done && !active ? 0.45 : 1,
             }}>
               {done ? '✓' : n}
             </div>
-            <span style={{ fontFamily: FONT, fontSize: '0.6rem', letterSpacing: '1px', color: done || active ? ACCENT : 'rgba(255,215,0,0.25)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontFamily: FONT, fontSize: '1.1rem', letterSpacing: '1px', color: done || active ? ACCENT : 'rgba(255,215,0,0.25)', whiteSpace: 'nowrap' }}>
               {label}
             </span>
           </div>
@@ -235,7 +235,7 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', alignItems: 'center' }}>
       <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1rem' }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE I · STRUCTURE THE PROBLEM</p>
+        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE I · STRUCTURE THE PROBLEM</p>
         <h2 style={{ fontFamily: FONT, fontSize: '1.8rem', letterSpacing: '2px', color: ACCENT, margin: 0 }}>THE CHALLENGE</h2>
 
         <video
@@ -250,7 +250,7 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
       </div>
 
       <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1.25rem' }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>ANSWER ALL FOUR QUESTIONS TO UNLOCK THE NEXT SECTION</p>
+        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>ANSWER ALL FOUR QUESTIONS TO UNLOCK THE NEXT SECTION</p>
         {questions.map(({ field, label, prompt, help }) => (
           <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {/* Label row with help toggle */}
@@ -264,7 +264,7 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
                   background: helpOpen === field ? 'rgba(255,215,0,0.25)' : 'transparent',
                   border: `1px solid ${helpOpen === field ? 'rgba(255,215,0,0.8)' : 'rgba(255,215,0,0.35)'}`,
                   color: helpOpen === field ? ACCENT : 'rgba(255,215,0,0.5)',
-                  fontFamily: FONT, fontSize: '0.85rem', cursor: 'pointer',
+                  fontFamily: FONT, fontSize: '1.1rem', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   lineHeight: 1, transition: 'all 0.15s',
                 }}
@@ -284,7 +284,7 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
                   style={{ overflow: 'hidden' }}
                 >
                   <div style={{
-                    fontFamily: FONT, fontSize: '0.95rem', lineHeight: 1.55,
+                    fontFamily: FONT, fontSize: '1.2rem', lineHeight: 1.55,
                     color: 'rgba(255,215,0,0.85)', padding: '0.6rem 0.75rem',
                     background: 'rgba(255,215,0,0.06)',
                     border: '1px solid rgba(255,215,0,0.18)',
@@ -295,7 +295,7 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
                 </motion.div>
               )}
             </AnimatePresence>
-            <p style={{ fontFamily: FONT, fontSize: '0.95rem', opacity: 0.75, color: TEXT, margin: 0, lineHeight: 1.4 }}>{prompt}</p>
+            <p style={{ fontFamily: FONT, fontSize: '1.2rem', opacity: 0.75, color: TEXT, margin: 0, lineHeight: 1.4 }}>{prompt}</p>
             <textarea
               value={answers[field]}
               onChange={set(field)}
@@ -320,7 +320,7 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
           UNLOCK CONTENT MASTERY →
         </button>
         {!allAnswered && (
-          <p style={{ fontFamily: FONT, fontSize: '0.85rem', opacity: 0.5, color: TEXT, textAlign: 'center', margin: 0 }}>
+          <p style={{ fontFamily: FONT, fontSize: '1.1rem', opacity: 0.5, color: TEXT, textAlign: 'center', margin: 0 }}>
             Answer all four questions (at least 10 characters each) to move on.
           </p>
         )}
@@ -351,7 +351,7 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
         {(['resources', 'quiz'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             fontFamily: FONT, fontSize: '1.1rem', letterSpacing: '2px', padding: '6px 20px',
-            background: tab === t ? 'rgba(255,215,0,0.15)' : 'transparent',
+            background: tab === t ? 'var(--color-pane-bg, rgba(10,18,30,0.92))' : 'rgba(10,18,30,0.65)',
             border: `1px solid ${tab === t ? 'rgba(255,215,0,0.8)' : 'rgba(255,215,0,0.3)'}`,
             color: tab === t ? ACCENT : 'rgba(255,215,0,0.5)', cursor: 'pointer',
           }}>
@@ -362,21 +362,21 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
 
       {tab === 'resources' && (
         <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1rem' }}>
-          <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE II · RESOURCE HUB · Study these before attempting the quiz</p>
+          <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE II · RESOURCE HUB · Study these before attempting the quiz</p>
           {RESOURCES.map((r, i) => (
             <div key={i} onClick={() => window.open(r.href, '_blank')} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: '1px solid rgba(255,215,0,0.2)', cursor: 'pointer' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,215,0,0.6)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,215,0,0.2)')}
             >
               <div style={{
-                fontFamily: FONT, fontSize: '0.8rem', letterSpacing: '1px', padding: '2px 8px', minWidth: '48px', textAlign: 'center',
+                fontFamily: FONT, fontSize: '1.05rem', letterSpacing: '1px', padding: '2px 8px', minWidth: '48px', textAlign: 'center',
                 background: r.type === 'PDF' ? 'rgba(220,60,60,0.25)' : 'rgba(60,120,220,0.25)',
                 border: `1px solid ${r.type === 'PDF' ? 'rgba(220,60,60,0.5)' : 'rgba(60,120,220,0.5)'}`,
                 color: r.type === 'PDF' ? '#ff8888' : '#88aaff',
               }}>{r.type}</div>
               <div>
                 <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: ACCENT }}>{r.title}</div>
-                <div style={{ fontFamily: FONT, fontSize: '0.85rem', opacity: 0.6, color: TEXT }}>{r.desc}</div>
+                <div style={{ fontFamily: FONT, fontSize: '1.1rem', opacity: 0.6, color: TEXT }}>{r.desc}</div>
               </div>
             </div>
           ))}
@@ -404,7 +404,7 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
         return (
           <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1.25rem' }}>
             {/* header */}
-            <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>
+            <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>
               PHASE II · BLIND QUIZ · {answered} / {QUIZ_QUESTIONS.length} answered · No marks shown on submission
             </p>
 
@@ -443,7 +443,7 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
                   return (
                     <button key={origIdx} onClick={() => selectAnswer(origIdx)} style={{
                       display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.55rem 0.75rem', textAlign: 'left',
-                      fontFamily: FONT, fontSize: '0.95rem', lineHeight: 1.4,
+                      fontFamily: FONT, fontSize: '1.2rem', lineHeight: 1.4,
                       background: isSelected ? 'rgba(255,215,0,0.15)' : 'transparent',
                       border: `1px solid ${isSelected ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.18)'}`,
                       color: isSelected ? ACCENT : 'rgba(255,255,255,0.75)', cursor: 'pointer',
@@ -470,7 +470,7 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
                 }}
               >← BACK</button>
 
-              <span style={{ fontFamily: FONT, fontSize: '0.85rem', opacity: 0.5, color: TEXT }}>
+              <span style={{ fontFamily: FONT, fontSize: '1.1rem', opacity: 0.5, color: TEXT }}>
                 {currentQ + 1} / {QUIZ_QUESTIONS.length}
               </span>
 
@@ -497,7 +497,7 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
             </div>
 
             {isLast && !allAnswered && (
-              <p style={{ fontFamily: FONT, fontSize: '0.8rem', opacity: 0.5, color: TEXT, textAlign: 'center', margin: 0 }}>
+              <p style={{ fontFamily: FONT, fontSize: '1.05rem', opacity: 0.5, color: TEXT, textAlign: 'center', margin: 0 }}>
                 Use the dots above to return to unanswered questions.
               </p>
             )}
@@ -523,7 +523,7 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
 
 const RoleSelection: React.FC<{ onSelect: (r: Role) => void }> = ({ onSelect }) => (
   <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1rem' }}>
-    <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE III · SELECT YOUR ROLE FOR THIS SESSION</p>
+    <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE III · SELECT YOUR ROLE FOR THIS SESSION</p>
     <h2 style={{ fontFamily: FONT, fontSize: '1.6rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>THE COOPERATIVE DISCUSSION</h2>
     <p style={{ fontFamily: FONT, fontSize: '1rem', opacity: 0.75, color: TEXT, margin: 0, lineHeight: 1.5 }}>
       A group only functions when individuals have distinct, accountable responsibilities.
@@ -540,7 +540,7 @@ const RoleSelection: React.FC<{ onSelect: (r: Role) => void }> = ({ onSelect }) 
         <span style={{ fontSize: '2rem', color: ACCENT, minWidth: '2.5rem', textAlign: 'center' }}>{icon}</span>
         <div>
           <div style={{ fontSize: '1.2rem', color: ACCENT, letterSpacing: '2px' }}>{label}</div>
-          <div style={{ fontSize: '0.9rem', color: TEXT, opacity: 0.75, marginTop: '2px' }}>{desc}</div>
+          <div style={{ fontSize: '1.15rem', color: TEXT, opacity: 0.75, marginTop: '2px' }}>{desc}</div>
         </div>
       </button>
     ))}
@@ -564,17 +564,17 @@ const ChatPanel: React.FC<{
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '0.5rem' }}>
-      <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.5, color: TEXT, margin: 0 }}>GROUP CHAT</p>
+      <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.5, color: TEXT, margin: 0 }}>GROUP CHAT</p>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', minHeight: '180px', maxHeight: '300px' }}>
         {messages.map(msg => (
           <div key={msg.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <span style={{ fontFamily: FONT, fontSize: '0.85rem', fontWeight: 700, color: msg.isTeacher ? '#88aaff' : ACCENT }}>{msg.author}</span>
-              <span style={{ fontFamily: FONT, fontSize: '0.8rem', opacity: 0.4, color: TEXT, marginLeft: '6px' }}>{msg.time}</span>
-              <div style={{ fontFamily: FONT, fontSize: '0.95rem', color: TEXT, lineHeight: 1.4 }}>{msg.body}</div>
+              <span style={{ fontFamily: FONT, fontSize: '1.1rem', fontWeight: 700, color: msg.isTeacher ? '#88aaff' : ACCENT }}>{msg.author}</span>
+              <span style={{ fontFamily: FONT, fontSize: '1.05rem', opacity: 0.4, color: TEXT, marginLeft: '6px' }}>{msg.time}</span>
+              <div style={{ fontFamily: FONT, fontSize: '1.2rem', color: TEXT, lineHeight: 1.4 }}>{msg.body}</div>
             </div>
             {showCapture && onCapture && (
-              <button onClick={() => onCapture(msg)} title="Capture to Notebook" style={{ background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: ACCENT, cursor: 'pointer', fontFamily: FONT, fontSize: '0.8rem', padding: '2px 6px', flexShrink: 0 }}>✎</button>
+              <button onClick={() => onCapture(msg)} title="Capture to Notebook" style={{ background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: ACCENT, cursor: 'pointer', fontFamily: FONT, fontSize: '1.05rem', padding: '2px 6px', flexShrink: 0 }}>✎</button>
             )}
           </div>
         ))}
@@ -601,11 +601,11 @@ const DistChart: React.FC<{ distribution: Record<string, number>; total: number;
       const isMe = myAnswer === opt
       return (
         <div key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontFamily: FONT, fontSize: '0.9rem', minWidth: '18px', color: isMe ? ACCENT : 'rgba(255,255,255,0.5)' }}>{opt}</span>
+          <span style={{ fontFamily: FONT, fontSize: '1.15rem', minWidth: '18px', color: isMe ? ACCENT : 'rgba(255,255,255,0.5)' }}>{opt}</span>
           <div style={{ flex: 1, background: 'rgba(255,255,255,0.1)', height: '14px', position: 'relative' }}>
             <div style={{ width: `${pct}%`, height: '100%', background: isMe ? ACCENT : 'rgba(255,215,0,0.4)', transition: 'width 0.5s ease' }} />
           </div>
-          <span style={{ fontFamily: FONT, fontSize: '0.8rem', color: TEXT, minWidth: '32px', textAlign: 'right' }}>{count}/{total}</span>
+          <span style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, minWidth: '32px', textAlign: 'right' }}>{count}/{total}</span>
         </div>
       )
     })}
@@ -630,7 +630,7 @@ const PulseButton: React.FC<{ intervalSeconds: number; label: string; onPulse: (
       <button className="btn-9slice" onClick={handleClick} style={{ fontSize: '1rem', letterSpacing: '2px', minWidth: '200px', borderColor: expired ? 'rgba(220,60,60,0.8)' : undefined, color: expired ? '#ff8888' : undefined }}>
         {label} [{seconds}s]
       </button>
-      {expired && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontFamily: FONT, fontSize: '0.85rem', color: '#ff6666', margin: 0, textAlign: 'center' }}>⚠ {warning}</motion.p>}
+      {expired && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontFamily: FONT, fontSize: '1.1rem', color: '#ff6666', margin: 0, textAlign: 'center' }}>⚠ {warning}</motion.p>}
     </div>
   )
 }
@@ -646,13 +646,13 @@ const LeaderPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; 
   return (
     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
       <div className="frame-parchment" style={{ flex: '1 1 300px', padding: '1rem', gap: '1rem', minWidth: '280px' }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>♚ LEADER · LOGIC ENGINE</p>
+        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>♚ LEADER · LOGIC ENGINE</p>
         <div style={{ fontFamily: FONT, fontSize: '1.1rem', color: TEXT }}>
           Question: <span style={{ color: ACCENT }}>{currentQuestion === 0 ? 'Not started' : `${currentQuestion} / 20`}</span>
         </div>
         {q && (
           <>
-            <p style={{ fontFamily: FONT, fontSize: '0.95rem', color: TEXT, lineHeight: 1.4, margin: 0 }}>{q.text}</p>
+            <p style={{ fontFamily: FONT, fontSize: '1.2rem', color: TEXT, lineHeight: 1.4, margin: 0 }}>{q.text}</p>
             <DistChart distribution={distribution} total={MOCK_TEAM.length} />
           </>
         )}
@@ -661,11 +661,11 @@ const LeaderPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; 
         </button>
         <PulseButton intervalSeconds={20} label="PARTICIPATION PULSE" onPulse={() => onSend('[System] Leader pulse confirmed — Active.')} warning="Click PULSE to maintain Active status!" />
         <div>
-          <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '2px', opacity: 0.6, color: TEXT, margin: '0 0 0.4rem' }}>PROMPT A MEMBER</p>
+          <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', opacity: 0.6, color: TEXT, margin: '0 0 0.4rem' }}>PROMPT A MEMBER</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
             {MOCK_TEAM.map(name => (
               <button key={name} onClick={() => onSend(`${name}, what do you think about this discrepancy?`)} style={{
-                fontFamily: FONT, fontSize: '0.85rem', padding: '3px 10px', background: 'rgba(255,215,0,0.06)',
+                fontFamily: FONT, fontSize: '1.1rem', padding: '3px 10px', background: 'rgba(255,215,0,0.06)',
                 border: '1px solid rgba(255,215,0,0.3)', color: ACCENT, cursor: 'pointer',
               }}>{name.split(' ')[0]}</button>
             ))}
@@ -706,7 +706,7 @@ const TimerPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void }>
   return (
     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
       <div className="frame-parchment" style={{ flex: '1 1 280px', padding: '1rem', gap: '1rem', minWidth: '260px' }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>◷ TIMER · PRIVATE HEARTBEAT</p>
+        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>◷ TIMER · PRIVATE HEARTBEAT</p>
         {timePerQ !== null && (
           <div style={{ fontFamily: FONT, fontSize: '4rem', color: secondsLeft < 30 ? '#ff6666' : ACCENT, textAlign: 'center', letterSpacing: '4px', lineHeight: 1 }}>
             {fmt(secondsLeft)}
@@ -715,14 +715,14 @@ const TimerPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void }>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <input value={totalMins} onChange={e => setTotalMins(e.target.value)} placeholder="Total mins (e.g. 40)"
             style={{ flex: 1, fontFamily: FONT, fontSize: '1rem', padding: '0.4rem 0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.25)', color: 'rgba(255,255,255,0.9)', outline: 'none' }} />
-          <button className="btn-9slice" onClick={divide} style={{ fontSize: '0.9rem', letterSpacing: '1px' }}>DIVIDE</button>
+          <button className="btn-9slice" onClick={divide} style={{ fontSize: '1.15rem', letterSpacing: '1px' }}>DIVIDE</button>
         </div>
         {timePerQ !== null && (
           <>
-            <p style={{ fontFamily: FONT, fontSize: '0.85rem', color: TEXT, opacity: 0.7, margin: 0 }}>~{fmt(timePerQ)} per question (20 Qs + final phase)</p>
+            <p style={{ fontFamily: FONT, fontSize: '1.1rem', color: TEXT, opacity: 0.7, margin: 0 }}>~{fmt(timePerQ)} per question (20 Qs + final phase)</p>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn-9slice" onClick={() => setRunning(true)} style={{ flex: 1, fontSize: '0.95rem' }}>{running ? 'RUNNING...' : 'START'}</button>
-              <button className="btn-9slice" onClick={() => { setSecondsLeft(timePerQ!); setRunning(false) }} style={{ flex: 1, fontSize: '0.95rem' }}>RESET Q</button>
+              <button className="btn-9slice" onClick={() => setRunning(true)} style={{ flex: 1, fontSize: '1.2rem' }}>{running ? 'RUNNING...' : 'START'}</button>
+              <button className="btn-9slice" onClick={() => { setSecondsLeft(timePerQ!); setRunning(false) }} style={{ flex: 1, fontSize: '1.2rem' }}>RESET Q</button>
             </div>
           </>
         )}
@@ -757,27 +757,27 @@ const ScribePanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; 
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <div className="frame-parchment" style={{ flex: '1 1 280px', padding: '1rem', minWidth: '260px' }}>
-          <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: '0 0 0.5rem' }}>✎ SCRIBE · CAPTURE FROM CHAT</p>
+          <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: '0 0 0.5rem' }}>✎ SCRIBE · CAPTURE FROM CHAT</p>
           <ChatPanel messages={chat} onSend={onSend} showCapture onCapture={capture} />
         </div>
         <div className="frame-parchment" style={{ flex: '1 1 280px', padding: '1rem', gap: '0.6rem', minWidth: '260px' }}>
-          <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>NOTEBOOK · {notebook.length} captured</p>
-          {notebook.length === 0 && <p style={{ fontFamily: FONT, fontSize: '0.9rem', opacity: 0.4, color: TEXT, margin: 0 }}>Click ✎ next to a message to capture it here.</p>}
+          <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>NOTEBOOK · {notebook.length} captured</p>
+          {notebook.length === 0 && <p style={{ fontFamily: FONT, fontSize: '1.15rem', opacity: 0.4, color: TEXT, margin: 0 }}>Click ✎ next to a message to capture it here.</p>}
           {notebook.map((note, i) => (
             <div key={i} style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1, fontFamily: FONT, fontSize: '0.9rem', color: TEXT, lineHeight: 1.4, padding: '0.4rem', background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)' }}>{note}</div>
+              <div style={{ flex: 1, fontFamily: FONT, fontSize: '1.15rem', color: TEXT, lineHeight: 1.4, padding: '0.4rem', background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)' }}>{note}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {[['▲', () => moveUp(i)], ['▼', () => moveDown(i)]].map(([lbl, fn]) => (
-                  <button key={lbl as string} onClick={fn as () => void} style={{ fontFamily: FONT, fontSize: '0.75rem', padding: '1px 6px', background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: ACCENT, cursor: 'pointer' }}>{lbl as string}</button>
+                  <button key={lbl as string} onClick={fn as () => void} style={{ fontFamily: FONT, fontSize: '1rem', padding: '1px 6px', background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: ACCENT, cursor: 'pointer' }}>{lbl as string}</button>
                 ))}
-                <button onClick={() => remove(i)} style={{ fontFamily: FONT, fontSize: '0.75rem', padding: '1px 6px', background: 'transparent', border: '1px solid rgba(220,60,60,0.4)', color: '#ff8888', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => remove(i)} style={{ fontFamily: FONT, fontSize: '1rem', padding: '1px 6px', background: 'transparent', border: '1px solid rgba(220,60,60,0.4)', color: '#ff8888', cursor: 'pointer' }}>✕</button>
               </div>
             </div>
           ))}
         </div>
       </div>
       <div className="frame-parchment" style={{ padding: '1rem', gap: '0.75rem' }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>DRAFT · FINAL TEAM SOLUTION</p>
+        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>DRAFT · FINAL TEAM SOLUTION</p>
         <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="Draft the team's final solution here, synthesising the captured notebook points..." rows={6}
           style={{ width: '100%', resize: 'vertical', fontFamily: FONT, fontSize: '1rem', padding: '0.75rem', lineHeight: 1.5, boxSizing: 'border-box', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.25)', color: 'rgba(255,255,255,0.9)', outline: 'none' }} />
         <button className="btn-9slice" onClick={() => onTriggerFinalPhase(draft)} disabled={draft.trim().length < 20}
@@ -805,8 +805,8 @@ const AngleCheckerPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => 
   return (
     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
       <div className="frame-parchment" style={{ flex: '1 1 280px', padding: '1rem', gap: '1rem', minWidth: '260px' }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>◈ ANGLE CHECKER · ANTI-GROUPTHINK TRIAD</p>
-        <p style={{ fontFamily: FONT, fontSize: '0.9rem', opacity: 0.75, color: TEXT, margin: 0 }}>
+        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>◈ ANGLE CHECKER · ANTI-GROUPTHINK TRIAD</p>
+        <p style={{ fontFamily: FONT, fontSize: '1.15rem', opacity: 0.75, color: TEXT, margin: 0 }}>
           You MUST use all three buttons at least once. ({used.size}/3 used)
         </p>
         {BUTTONS.map(({ key, label, msg }) => (
@@ -857,7 +857,7 @@ const QuizReview: React.FC<{
       {/* ── Collapsible header ── */}
       <button onClick={() => setOpen(p => !p)} style={{
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '2px', padding: '0.6rem 1rem',
+        fontFamily: FONT, fontSize: '1.1rem', letterSpacing: '2px', padding: '0.6rem 1rem',
         background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.25)',
         color: allDecided ? 'rgba(100,220,100,0.85)' : ACCENT, cursor: 'pointer',
       }}>
@@ -872,11 +872,11 @@ const QuizReview: React.FC<{
             <div className="frame-parchment" style={{ padding: '1rem', gap: '0.9rem', borderTop: 'none', maxWidth: 'none' }}>
 
               {noAnswers ? (
-                <p style={{ fontFamily: FONT, fontSize: '0.95rem', opacity: 0.5, color: TEXT, margin: 0 }}>
+                <p style={{ fontFamily: FONT, fontSize: '1.2rem', opacity: 0.5, color: TEXT, margin: 0 }}>
                   No quiz answers found. Go through Phase II normally to review your answers here.
                 </p>
               ) : notStarted ? (
-                <p style={{ fontFamily: FONT, fontSize: '0.95rem', opacity: 0.5, color: TEXT, margin: 0, textAlign: 'center' }}>
+                <p style={{ fontFamily: FONT, fontSize: '1.2rem', opacity: 0.5, color: TEXT, margin: 0, textAlign: 'center' }}>
                   Waiting for the Leader to start the discussion...
                 </p>
               ) : (
@@ -905,7 +905,7 @@ const QuizReview: React.FC<{
 
                     {/* Left — question text + options */}
                     <div style={{ flex: '3 1 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '2px', color: ACCENT, opacity: 0.6, margin: 0 }}>
+                      <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: ACCENT, opacity: 0.6, margin: 0 }}>
                         QUESTION {currentQuestion} OF {QUIZ_QUESTIONS.length}
                       </p>
                       <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, lineHeight: 1.5, margin: 0 }}>{q.text}</p>
@@ -927,20 +927,20 @@ const QuizReview: React.FC<{
                               onMouseEnter={e => { if (isChanging) e.currentTarget.style.borderColor = 'rgba(255,215,0,0.6)' }}
                               onMouseLeave={e => { if (isChanging) e.currentTarget.style.borderColor = highlight ? ACCENT : isOriginal ? 'rgba(255,215,0,0.3)' : 'rgba(255,215,0,0.12)' }}
                             >
-                              <span style={{ fontFamily: FONT, fontSize: '0.85rem', color: highlight ? ACCENT : 'rgba(255,215,0,0.45)', flexShrink: 0, minWidth: '16px' }}>
+                              <span style={{ fontFamily: FONT, fontSize: '1.1rem', color: highlight ? ACCENT : 'rgba(255,215,0,0.45)', flexShrink: 0, minWidth: '16px' }}>
                                 {OPT_LABELS[optIdx]}
                               </span>
-                              <span style={{ fontFamily: FONT, fontSize: '0.9rem', color: highlight ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.55)', flex: 1, lineHeight: 1.4 }}>
+                              <span style={{ fontFamily: FONT, fontSize: '1.15rem', color: highlight ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.55)', flex: 1, lineHeight: 1.4 }}>
                                 {opt}
                               </span>
                               {isOriginal && !isChanging && (
-                                <span style={{ fontFamily: FONT, fontSize: '0.6rem', letterSpacing: '1px', color: ACCENT, flexShrink: 0, alignSelf: 'center' }}>YOUR ANSWER</span>
+                                <span style={{ fontFamily: FONT, fontSize: '1.1rem', letterSpacing: '1px', color: ACCENT, flexShrink: 0, alignSelf: 'center' }}>YOUR ANSWER</span>
                               )}
                               {isOriginal && isChanging && (
-                                <span style={{ fontFamily: FONT, fontSize: '0.6rem', letterSpacing: '1px', color: 'rgba(255,215,0,0.35)', flexShrink: 0, alignSelf: 'center' }}>ORIGINAL</span>
+                                <span style={{ fontFamily: FONT, fontSize: '1.1rem', letterSpacing: '1px', color: 'rgba(255,215,0,0.35)', flexShrink: 0, alignSelf: 'center' }}>ORIGINAL</span>
                               )}
                               {isNewPick && (
-                                <span style={{ fontFamily: FONT, fontSize: '0.6rem', letterSpacing: '1px', color: ACCENT, flexShrink: 0, alignSelf: 'center' }}>NEW ANSWER</span>
+                                <span style={{ fontFamily: FONT, fontSize: '1.1rem', letterSpacing: '1px', color: ACCENT, flexShrink: 0, alignSelf: 'center' }}>NEW ANSWER</span>
                               )}
                             </div>
                           )
@@ -990,9 +990,9 @@ const QuizReview: React.FC<{
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
                           border: '2px solid rgba(100,220,100,0.6)', background: 'rgba(100,220,100,0.08)', padding: '1rem' }}>
                           <span style={{ fontFamily: FONT, fontSize: '2rem', color: 'rgba(100,220,100,0.9)', lineHeight: 1 }}>✓</span>
-                          <span style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '1px', color: 'rgba(100,220,100,0.85)', textAlign: 'center' }}>ANSWER KEPT</span>
+                          <span style={{ fontFamily: FONT, fontSize: '1.15rem', letterSpacing: '1px', color: 'rgba(100,220,100,0.85)', textAlign: 'center' }}>ANSWER KEPT</span>
                           <button onClick={() => onIntent(q.id, 'change')} style={{
-                            fontFamily: FONT, fontSize: '0.75rem', padding: '3px 10px', cursor: 'pointer', marginTop: '0.25rem',
+                            fontFamily: FONT, fontSize: '1rem', padding: '3px 10px', cursor: 'pointer', marginTop: '0.25rem',
                             background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.5)',
                           }}>CHANGE INSTEAD</button>
                         </div>
@@ -1001,9 +1001,9 @@ const QuizReview: React.FC<{
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
                           border: '2px solid rgba(255,180,0,0.5)', background: 'rgba(255,180,0,0.06)', padding: '1rem' }}>
                           <span style={{ fontFamily: FONT, fontSize: '2rem', color: 'rgba(255,180,0,0.8)', lineHeight: 1 }}>↻</span>
-                          <span style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '1px', color: 'rgba(255,180,0,0.8)', textAlign: 'center', lineHeight: 1.4 }}>SELECT A NEW ANSWER FROM THE LIST</span>
+                          <span style={{ fontFamily: FONT, fontSize: '1.1rem', letterSpacing: '1px', color: 'rgba(255,180,0,0.8)', textAlign: 'center', lineHeight: 1.4 }}>SELECT A NEW ANSWER FROM THE LIST</span>
                           <button onClick={() => { onIntent(q.id, 'keep'); onChangeAnswer(q.id, -1) }} style={{
-                            fontFamily: FONT, fontSize: '0.75rem', padding: '3px 10px', cursor: 'pointer', marginTop: '0.25rem',
+                            fontFamily: FONT, fontSize: '1rem', padding: '3px 10px', cursor: 'pointer', marginTop: '0.25rem',
                             background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.5)',
                           }}>REVERT</button>
                         </div>
@@ -1012,9 +1012,9 @@ const QuizReview: React.FC<{
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
                           border: `2px solid ${ACCENT}`, background: 'rgba(255,215,0,0.08)', padding: '1rem' }}>
                           <span style={{ fontFamily: FONT, fontSize: '2rem', color: ACCENT, lineHeight: 1 }}>↻</span>
-                          <span style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '1px', color: ACCENT, textAlign: 'center' }}>ANSWER CHANGED</span>
+                          <span style={{ fontFamily: FONT, fontSize: '1.15rem', letterSpacing: '1px', color: ACCENT, textAlign: 'center' }}>ANSWER CHANGED</span>
                           <button onClick={() => { onIntent(q.id, 'keep'); onChangeAnswer(q.id, -1) }} style={{
-                            fontFamily: FONT, fontSize: '0.75rem', padding: '3px 10px', cursor: 'pointer', marginTop: '0.25rem',
+                            fontFamily: FONT, fontSize: '1rem', padding: '3px 10px', cursor: 'pointer', marginTop: '0.25rem',
                             background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.5)',
                           }}>REVERT TO ORIGINAL</button>
                         </div>
@@ -1036,7 +1036,7 @@ const QuizReview: React.FC<{
 const FinalPhaseView: React.FC<{ scribeDraft: string; chat: ChatMessage[]; onSend: (t: string) => void; onProceed: () => void }> = ({ scribeDraft, chat, onSend, onProceed }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="frame-parchment" style={{ padding: '1.5rem', gap: '1rem' }}>
-      <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', color: ACCENT, margin: 0, opacity: 0.9 }}>
+      <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', color: ACCENT, margin: 0, opacity: 0.9 }}>
         ▶ FINAL SOLUTION PHASE — ALL MEMBERS NOW REVIEWING THE SCRIBE'S DRAFT
       </p>
       <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
@@ -1072,7 +1072,7 @@ const Phase4: React.FC<{
 
   return (
     <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1.5rem' }}>
-      <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>
+      <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>
         PHASE IV · RECALIBRATION — Questions and options reshuffled. Phase III intents pre-loaded.
       </p>
       {!submitted ? (
@@ -1087,7 +1087,7 @@ const Phase4: React.FC<{
               <div key={qId} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, margin: 0, lineHeight: 1.5 }}>
                   <span style={{ color: ACCENT }}>Q{displayIdx + 1}. </span>{q.text}
-                  {intent && <span style={{ fontSize: '0.8rem', opacity: 0.55, marginLeft: '0.5rem' }}>[{intent === 'keep' ? 'INTENT: KEEP' : 'INTENT: CHANGE'}]</span>}
+                  {intent && <span style={{ fontSize: '1.05rem', opacity: 0.55, marginLeft: '0.5rem' }}>[{intent === 'keep' ? 'INTENT: KEEP' : 'INTENT: CHANGE'}]</span>}
                 </p>
                 {opts.map((origIdx, displayOptIdx) => {
                   const isSelected = answers[qId] === origIdx
@@ -1095,14 +1095,14 @@ const Phase4: React.FC<{
                   return (
                     <button key={origIdx} onClick={() => setAnswers(p => ({ ...p, [qId]: origIdx }))} style={{
                       display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.55rem 0.75rem', textAlign: 'left',
-                      fontFamily: FONT, fontSize: '0.95rem', lineHeight: 1.4,
+                      fontFamily: FONT, fontSize: '1.2rem', lineHeight: 1.4,
                       background: isSelected ? 'rgba(255,215,0,0.15)' : isPreloaded ? 'rgba(255,215,0,0.05)' : 'transparent',
                       border: `1px solid ${isSelected ? 'rgba(255,215,0,0.7)' : isPreloaded ? 'rgba(255,215,0,0.3)' : 'rgba(255,215,0,0.15)'}`,
                       color: isSelected ? ACCENT : 'rgba(255,255,255,0.75)', cursor: 'pointer',
                     }}>
                       <span style={{ minWidth: '20px', color: ACCENT, fontWeight: 700 }}>{OPT_LABELS[displayOptIdx]}.</span>
                       {q.options[origIdx]}
-                      {isPreloaded && <span style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.5, color: ACCENT }}>← prev</span>}
+                      {isPreloaded && <span style={{ marginLeft: 'auto', fontSize: '1rem', opacity: 0.5, color: ACCENT }}>← prev</span>}
                     </button>
                   )
                 })}
@@ -1113,7 +1113,7 @@ const Phase4: React.FC<{
             style={{ alignSelf: 'center', fontSize: '1.3rem', letterSpacing: '2px', minWidth: '260px', opacity: allAnswered ? 1 : 0.4, cursor: allAnswered ? 'pointer' : 'not-allowed' }}>
             SUBMIT RECALIBRATION →
           </button>
-          {!allAnswered && <p style={{ fontFamily: FONT, fontSize: '0.85rem', opacity: 0.5, color: TEXT, textAlign: 'center', margin: 0 }}>Answer all {QUIZ_QUESTIONS.length} questions to proceed.</p>}
+          {!allAnswered && <p style={{ fontFamily: FONT, fontSize: '1.1rem', opacity: 0.5, color: TEXT, textAlign: 'center', margin: 0 }}>Answer all {QUIZ_QUESTIONS.length} questions to proceed.</p>}
         </>
       ) : (
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
@@ -1141,7 +1141,7 @@ const Phase5: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
   return (
     <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1.5rem' }}>
-      <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE V · FINAL ARTIFACT SUBMISSION</p>
+      <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>PHASE V · FINAL ARTIFACT SUBMISSION</p>
       <h2 style={{ fontFamily: FONT, fontSize: '1.8rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>INDIVIDUAL RESPONSE</h2>
       <p style={{ fontFamily: FONT, fontSize: '1rem', opacity: 0.8, color: TEXT, margin: 0, lineHeight: 1.5 }}>
         Submit your individual artifact addressing the original challenge using the strategy refined during the cooperative discussion.
@@ -1150,7 +1150,7 @@ const Phase5: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       {!submitted ? (
         <>
           <div>
-            <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '2px', opacity: 0.6, color: TEXT, margin: '0 0 0.5rem' }}>SUBMISSION TYPE</p>
+            <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', opacity: 0.6, color: TEXT, margin: '0 0 0.5rem' }}>SUBMISSION TYPE</p>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               {TYPES.map(t => (
                 <button key={t.key} onClick={() => setArtifactType(t.key)} style={{
@@ -1162,7 +1162,7 @@ const Phase5: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
                 }}>
                   <span style={{ fontSize: '1.5rem' }}>{t.icon}</span>
                   <span>{t.label}</span>
-                  <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>.{t.ext}</span>
+                  <span style={{ fontSize: '1rem', opacity: 0.6 }}>.{t.ext}</span>
                 </button>
               ))}
             </div>
@@ -1357,7 +1357,7 @@ export const LearningTaskUI: React.FC = () => {
                     <span style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: ACCENT, opacity: 0.85 }}>
                       {ROLE_DEFS.find(r => r.role === role)?.icon} {ROLE_DEFS.find(r => r.role === role)?.label}
                     </span>
-                    <button onClick={() => setRole(null)} style={{ fontFamily: FONT, fontSize: '0.85rem', padding: '2px 10px', background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.6)', cursor: 'pointer' }}>
+                    <button onClick={() => setRole(null)} style={{ fontFamily: FONT, fontSize: '1.1rem', padding: '2px 10px', background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.6)', cursor: 'pointer' }}>
                       CHANGE ROLE
                     </button>
                   </div>
@@ -1371,7 +1371,7 @@ export const LearningTaskUI: React.FC = () => {
                       const def = ROLE_DEFS.find(r => r.role === m.role)
                       return (
                         <div key={m.learnerId || i} style={{
-                          fontFamily: FONT, fontSize: '0.8rem', letterSpacing: '1px',
+                          fontFamily: FONT, fontSize: '1.05rem', letterSpacing: '1px',
                           padding: '3px 10px', display: 'flex', alignItems: 'center', gap: '5px',
                           border: `1px solid ${isSelf ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.2)'}`,
                           background: isSelf ? 'rgba(255,215,0,0.1)' : 'transparent',
@@ -1432,7 +1432,7 @@ export const LearningTaskUI: React.FC = () => {
             borderTop: '1px dashed rgba(255,100,0,0.35)',
             marginTop: '0.5rem',
           }}>
-            <span style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '2px', color: 'rgba(255,100,0,0.5)' }}>
+            <span style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: 'rgba(255,100,0,0.5)' }}>
               DEV
             </span>
             <button

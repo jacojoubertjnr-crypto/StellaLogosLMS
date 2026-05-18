@@ -68,8 +68,22 @@ function App() {
       [data-theme='${t.name}'] .btn-9slice {
         background-image: url('${base}/btn_primary.png') !important;
       }
+      [data-theme='${t.name}'] .btn-portal {
+        background-image: none !important;
+        background-color: rgba(30, 58, 95, 0.75) !important;
+        border: 1px solid rgba(74, 158, 255, 0.3) !important;
+        box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.08) !important;
+      }
+      [data-theme='${t.name}'] .btn-portal:hover {
+        filter: none !important;
+        background-color: rgba(30, 58, 95, 0.95) !important;
+        border-color: rgba(74, 158, 255, 0.65) !important;
+        box-shadow: 0 0 16px rgba(74, 158, 255, 0.2) !important;
+      }
       [data-theme='${t.name}'] .tile-item {
         background-image: url('${base}/btn_primary.png') !important;
+        background-color: transparent !important;
+        border: none !important;
       }
       `
     }).join('\n')

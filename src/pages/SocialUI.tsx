@@ -501,10 +501,9 @@ export const SocialUI: React.FC = () => {
           {/* Return button */}
           <div style={{ flexShrink: 0, padding: '0.75rem', borderTop: '1px solid rgba(255,215,0,0.1)' }}>
             <button
+              className="btn-9slice"
               onClick={() => navigate('/home')}
-              style={{ width: '100%', ...VT, fontSize: '1rem', letterSpacing: '2px', padding: '0.4rem 0', background: 'transparent', border: '1px solid rgba(255,215,0,0.22)', color: 'rgba(255,215,0,0.45)', cursor: 'pointer', transition: 'border-color 0.12s, color 0.12s' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.65)'; e.currentTarget.style.color = 'rgba(255,215,0,0.9)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.22)'; e.currentTarget.style.color = 'rgba(255,215,0,0.45)' }}
+              style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
             >
               ◂ {vocab.messagesReturnLabel}
             </button>
