@@ -1,0 +1,27 @@
+{
+  "sprites": [
+    {
+      "id": "torch_flicker",
+      "frames": [
+        "frame_1.png",
+        "frame_2.png",
+        "frame_3.png"
+      ],
+      "frameDuration": 200,
+      "width": 80,
+      "height": 160
+    },
+    {
+      "id": "dove",
+      "frames": [
+        "frame_1.png",
+        "frame_2.png",
+        "frame_3.png"
+      ],
+      "frameDuration": 150,
+      "width": 80,
+      "height": 80,
+      "clickFrame": "clicked.png"
+    }
+  ]
+}

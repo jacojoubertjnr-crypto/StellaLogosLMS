@@ -1,0 +1,26 @@
+ASSET: login.wav
+SCREEN: LoginPortal [The Mystic Gate]
+FOLDER: /assets/themes/medieval/music/
+
+DESCRIPTION
+  Ambient background music for the login screen. Should evoke mystery and
+  anticipation — the feeling of standing before a great gate, about to
+  enter an adventure.
+
+  Suggestions:
+    - Soft lute or harp melody, 60–80 BPM
+    - Light orchestral underscore with a celtic or fantasy flavour
+    - Wind ambience layered under a gentle melodic motif
+    - Avoid percussion-heavy tracks; keep it calm and atmospheric
+
+TECHNICAL
+  Format  : WAV (or MP3 — browser-compatible)
+  Loop    : Yes — the file loops seamlessly. Ensure the tail matches the head
+            so there is no audible gap at the loop point.
+  Volume  : Mix for listening at ~35% system volume (hook sets audio.volume=0.35)
+  Duration: 60–120 seconds recommended before the loop point
+  Channels: Stereo
+
+NOTES
+  Drop the file here as login.wav (or login.mp3 — update useThemeMusic src
+  extension if using MP3). The hook silently does nothing if the file is absent.

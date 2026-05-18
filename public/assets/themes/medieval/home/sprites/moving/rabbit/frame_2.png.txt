@@ -1,0 +1,9 @@
+PLACEHOLDER: frame_2.png
+Theme: Medieval — Animated Rabbit (frame 2 of 3)
+
+Purpose: Second animation frame — mid-motion.
+Recommended Size: 64x64px
+Format: PNG-32 with transparency
+
+Style: Mid-hop or ear-twitching pose. Slight shift from frame 1 to create
+       the illusion of movement in the 150ms loop cycle.

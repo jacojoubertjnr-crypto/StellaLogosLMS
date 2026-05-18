@@ -1,0 +1,6 @@
+# Theme Asset Placeholder - Replace with Pixel Art
+
+This is a placeholder for the medieval theme background.
+Replace with a 16-bit pixel art PNG file (1920x1080 or higher).
+
+Recommended: A medieval daylight castle landscape scene.

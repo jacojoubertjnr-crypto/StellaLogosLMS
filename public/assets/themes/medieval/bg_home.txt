@@ -1,0 +1,30 @@
+ASSET: bg_home.png
+SCREEN: HomeCrossroads [The Town Square]
+CSS VAR: --theme-bg-home
+
+DESCRIPTION
+  A medieval countryside scene centred on a large wooden crossroads signpost
+  standing in the foreground on a dirt path. The signpost has four directional
+  arrow planks pointing in different directions, each carved/painted with a
+  destination name:
+    ← ROYAL LIBRARY
+    → MERCHANT'S STALL
+    ↑ QUESTS
+    ↓ TOWN
+
+  The dirt path forks at the base of the signpost — visual metaphor for the
+  "decision hub" this screen represents.
+
+  Background: rolling green hills, a medieval village visible in the distance
+  (thatched rooftops, a church spire), blue sky with scattered clouds.
+  Warm, inviting, mid-afternoon light. A few NPCs or travellers optionally
+  visible in the distance to add life.
+
+STYLE
+  16-bit pixel art, same palette and scale as bg.png (the login background).
+  Sky blues, earthy greens and browns, warm golden-hour light on the sign.
+
+DIMENSIONS: 1920 × 1080 px (widescreen landscape)
+RENDERING: background-size: cover; image-rendering: pixelated
+NOTES: The centre of the image should be clear (no busy detail) so the
+  HomeCrossroads UI panels sit cleanly on top.

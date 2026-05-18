@@ -1,0 +1,15 @@
+PLACEHOLDER: frame_main.png
+Theme: Medieval
+
+Purpose: Parchment scroll/container frame for login form.
+Recommended Size: 512x640px (portrait rectangle)
+Format: PNG-32 with transparency
+
+Style: Aged parchment scroll with ornate top and bottom end-caps.
+Note: background-size: 100% 100% stretches the image to fill the element.
+      Design border decorations within ~48px of top/bottom and ~32px of left/right.
+      Center area will be stretched — use a solid parchment fill or subtle texture.
+
+Margins:
+  - Top/Bottom: 48px (for scroll end-caps)
+  - Left/Right: 32px

@@ -1,0 +1,19 @@
+PLACEHOLDER: btn_checkin.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern] — "CHECK IN" action button
+
+Purpose: Texture for the primary check-in button displayed on the right side of the
+         register panel. Only visible when the learner has not yet checked in today.
+Recommended Size: 200x52px
+Format: PNG-32 with transparency
+
+Style: A wax-sealed scroll button, a stamped ledger tab, or a medieval-style action
+       plaque — something that evokes "signing your name" or "marking your presence".
+       Wood or stone base with a slightly raised engraved appearance. Gold-toned to match
+       the label text (▶ CHECK IN) in rgba(255,215,0,0.9).
+
+Notes:
+  - background-size: 100% 100% stretches it to fill the button
+  - The button has a hover state that adds brightness — design for a neutral base
+  - Pressed state shifts the element down 2px via CSS — no separate asset needed
+  - Only one state needed (the checked-in state hides the button entirely)

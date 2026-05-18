@@ -1,0 +1,75 @@
+# ============================================================
+# Stella Logos — Medieval Theme Name Map
+# ============================================================
+# HOW TO USE
+#   Left side  = Standard component name (used in code, DB, GraphQL, Zustand).
+#                Never change these — they are theme-agnostic.
+#   Right side = The [Medieval Aesthetic] display name shown to the learner.
+#                Change these freely; swapping them re-skins the UI with no
+#                code changes required.
+#
+# Each theme folder (scifi/, modern/) has its own copy of this file with
+# different right-hand values and matching pixel-art assets.
+# ============================================================
+
+
+# ── SCREENS (UI Levels) ──────────────────────────────────────────────────────
+
+LoginPortal              = The Mystic Gate
+HomeCrossroads           = The Town Square
+LearningTaskEngine       = The Quest Path
+CurriculumNavigator      = The Royal Library
+MarketplaceEntry         = The Merchant's Stall
+SocialHub                = The Messenger Bird
+TeacherDashboard         = The War Room
+
+
+# ── HEADER & IDENTITY ────────────────────────────────────────────────────────
+
+UserIdentity             = The Knight's Crest
+CurrencyCounter          = The Gold Pouch
+
+
+# ── PRIMARY ACTION ───────────────────────────────────────────────────────────
+
+PrimaryAction            = The Great Portal
+
+
+# ── UTILITY TILES (HomeCrossroads grid) ──────────────────────────────────────
+# Note: AttendanceModule uses "The Town Gathering" (not "The Town Square")
+# to avoid confusion with the HomeCrossroads screen name itself.
+
+AttendanceModule         = The Town Gathering
+CurriculumNavigator      = The Royal Library
+SocialHub                = The Messenger Bird
+MarketplaceEntry         = The Merchant's Stall
+
+
+# ── LEARNINGTASKENGINE INTERNALS ─────────────────────────────────────────────
+
+LinearProgressRibbon     = Path of Stones
+StepMarker               = Waypoint Crystal
+ContentViewport          = The Magic Tome
+NavControl_Prev          = The Step Back
+NavControl_Next          = The Advance
+
+
+# ── ECONOMY ──────────────────────────────────────────────────────────────────
+
+PointsBalance            = Gold Pouch
+RewardAnimation          = Cha-Ching
+InventoryPanel           = The Adventurer's Pack
+SkinPreview              = The Mirror of Fate
+
+
+# ── ASSETS (image file → CSS variable) ───────────────────────────────────────
+# Pixel-art files that map to CSS variables in globals.css.
+
+bg.png                   → --theme-bg          (login / default background)
+bg_home.png              → --theme-bg-home     (HomeCrossroads background)
+banner_top.png           → --theme-banner      (login screen top banner)
+banner_home.png          → --theme-banner-home (HomeCrossroads header bar)
+frame_main.png           → --theme-frame       (parchment scroll frame)
+btn_primary.png          → --theme-btn-primary (stone action button)
+ambient_sprite.png       → --theme-ambient     (side scenery sprites)
+input_box.png            → --theme-input-box   (login form input background)

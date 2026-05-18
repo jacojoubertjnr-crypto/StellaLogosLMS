@@ -1,0 +1,20 @@
+PLACEHOLDER: banner_top.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern]
+
+Purpose: Top banner shown in the AppHeader when the learner is on the Attendance page.
+         Replaces the generic home banner for this specific page.
+Recommended Size: 1920x52px (wide, short — matches header height)
+Format: PNG-32 with transparency
+
+Style: Tavern/inn signage aesthetic. Think a long wooden beam or carved stone lintel
+       stretched across the top of the screen. Could include carved lettering, hanging
+       lanterns at the edges, or iron bracket details. Should feel like the entrance
+       sign above a medieval tavern door.
+
+Notes:
+  - background-size: 100% 100% stretches it to fill the header bar
+  - Left ~280px contains UserIdentity — keep that zone visually quiet (no text)
+  - Right ~260px contains Gold counter + Music toggle + Logout — keep quiet
+  - Center is free for decorative branding / carved title
+  - Must remain readable at 52px tall — avoid fine vertical detail that compresses badly

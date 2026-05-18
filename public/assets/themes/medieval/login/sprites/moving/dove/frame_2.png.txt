@@ -1,0 +1,8 @@
+PLACEHOLDER: frame_2.png
+Theme: Medieval — Animated Creature (frame 2 of 3)
+
+Purpose: Second animation frame of the clickable mini-game creature.
+Recommended Size: 64x64px
+Format: PNG-32 with transparency
+
+Style: Same creature as frame_1.png, mid-motion (e.g. wings mid-flap).

@@ -1,0 +1,1 @@
+torch_flicker/frame_3.png — Third frame of torch flicker. Size: 80×160 px.

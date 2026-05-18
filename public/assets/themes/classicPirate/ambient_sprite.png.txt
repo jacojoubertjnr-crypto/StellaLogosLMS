@@ -1,0 +1,1 @@
+ambient_sprite.png — Tall decorative sprite (e.g. banner, statue) placed on page edges. Size: 320×640 px. Transparent background.

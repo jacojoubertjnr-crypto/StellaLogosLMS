@@ -1,0 +1,73 @@
+THEME VOCABULARY KEYS
+======================
+One JSON file per theme lives in this folder (e.g. medieval.json, default.json).
+The file name must match the theme identifier exactly.
+All keys are required. If a theme file is missing or a key is absent, the
+system falls back to default.json.
+
+KEY                     DESCRIPTION
+---                     -----------
+currencyLabel           Label shown next to the currency amount in the header.
+                        Examples: "PTS", "GOLD", "CREDITS"
+
+actionVerbStart         Verb shown on the primary action button when a task has
+                        not been started yet.
+                        Examples: "START", "BEGIN QUEST", "START MISSION"
+
+actionVerbContinue      Verb shown on the primary action button when a task is
+                        already in progress.
+                        Examples: "CONTINUE", "CONTINUE QUEST", "RESUME MISSION"
+
+taskNumberTemplate      Template for the step counter label. Use the placeholders
+                        {current} and {total}.
+                        Examples: "LEARNING TASK {current} OF {total}"
+                                  "STEP {current} OF {total}"
+
+taskCompleteTitle       Heading shown when the learner has completed all tasks.
+                        Examples: "ALL TASKS COMPLETE!", "QUEST COMPLETE!"
+
+taskCompleteBody        Body text shown below the complete heading. Use \n for a
+                        line break.
+                        Example: "You have completed all learning tasks.\nCheck back soon."
+
+taskDescSuffix          Completes the sentence "Complete this task to ___."
+                        Examples: "advance your progress"
+                                  "advance your quest marker"
+
+stepFallbackTemplate    Title shown for a step when no task_info.json file exists
+                        for that step number. Use {n} as the step number placeholder.
+                        Examples: "LEARNING TASK {n}", "STEP {n}", "MISSION {n}"
+
+stepTitles              Optional object mapping specific step numbers to custom
+                        titles. Keys are step numbers as strings. Steps not listed
+                        here fall back to stepFallbackTemplate.
+                        Example: { "1": "THE FIRST SCROLL", "7": "THE FINAL CHAPTER" }
+
+tileAttendance          Tooltip shown on the Attendance tile on the home page.
+tileSubjects            Tooltip shown on the My Subjects tile on the home page.
+tileMessages            Tooltip shown on the Messages tile on the home page.
+tileShop                Tooltip shown on the Shop tile on the home page.
+
+attendancePageTitle     Large heading shown at the top of the Attendance page.
+                        Examples: "ATTENDANCE", "THE TAVERN", "CREW CHECK-IN"
+attendanceCheckInLabel  Label on the check-in action when not yet checked in.
+                        Examples: "SIGN IN", "SIGN THE REGISTER", "LOG ATTENDANCE"
+attendanceCheckedInLabel Label shown after the learner has checked in.
+                        Examples: "SIGNED IN", "REGISTER SIGNED", "ATTENDANCE LOGGED"
+attendanceReturnLabel   Label on the back button at the bottom of the Attendance page.
+                        Examples: "RETURN TO HOME", "RETURN TO TOWN SQUARE"
+
+subjectsPageTitle       Large heading shown at the top of the Subjects page.
+                        Examples: "MY SUBJECTS", "THE ROYAL LIBRARY", "DATABASE"
+subjectsCountLabel      Label shown next to the subject count on the Subjects page.
+                        Examples: "SUBJECTS", "QUESTS", "MODULES"
+subjectsReturnLabel     Label on the back button at the bottom of the Subjects page.
+                        Examples: "RETURN TO HOME", "RETURN TO TOWN SQUARE", "RETURN TO BRIDGE"
+
+messagesPageTitle       Large heading shown at the top of the Messages page.
+                        Examples: "MESSAGES", "THE MESSENGER BIRD", "COMMS"
+messagesReturnLabel     Label on the back button at the bottom of the Messages page.
+                        Examples: "RETURN TO HOME", "RETURN TO TOWN SQUARE", "RETURN TO BRIDGE"
+
+shopPageTitle           Large heading shown at the top of the Shop page.
+                        Examples: "SHOP", "THE MERCHANT'S STALL", "EQUIPMENT"

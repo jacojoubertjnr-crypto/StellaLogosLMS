@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pg_isready -U postgres)",
+      "Read(//c/Program Files/PostgreSQL/**)"
+    ]
+  }
+}

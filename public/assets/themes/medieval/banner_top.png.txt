@@ -1,0 +1,6 @@
+# Theme Asset Placeholder - Replace with Pixel Art
+
+This is a placeholder for the medieval banner/header element.
+Replace with a 16-bit pixel art PNG file.
+
+Recommended size: 1920x200px

@@ -1,0 +1,1 @@
+dove/frame_3.png — Third frame of dove idle. Size: 80×80 px.

@@ -1,0 +1,12 @@
+PLACEHOLDER: frame_1.png
+Theme: Medieval — Animated Creature (frame 1 of 3)
+
+Purpose: First animation frame of the clickable mini-game creature.
+Recommended Size: 64x64px
+Format: PNG-32 with transparency
+
+Style: Pixel art creature (bird, bat, dragon, butterfly, etc.)
+       Design all 3 frames at the same size with slight movement differences
+       to create a smooth looping animation at 150ms per frame.
+
+This sprite flies around the screen randomly and can be clicked for +1 score.

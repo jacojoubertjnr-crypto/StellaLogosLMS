@@ -1,0 +1,1 @@
+fireplace/frame_1.png — First frame of the attendance page ambient animation (e.g. fire, reactor, fountain). Size: 128×160 px. Transparent background.

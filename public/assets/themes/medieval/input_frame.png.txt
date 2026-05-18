@@ -1,0 +1,13 @@
+PLACEHOLDER: input_frame.png
+Theme: Medieval
+
+Purpose: Background image for form inputs. Decorative border with transparent center.
+Recommended Size: 128x48px (or any aspect ratio close to a typical input)
+Format: PNG-32 with transparency
+
+Style: Aged parchment or leather-bound border strip, 8-16px thick at edges.
+Center: FULLY TRANSPARENT (alpha=0) — white input background shows through.
+Edges/corners: Decorative medieval ornament (rope, carved wood, etc.)
+
+Used by: ThemedInput via background-image: var(--theme-input-frame), background-size: 100% 100%.
+The image stretches to fill the input, so keep corner details within ~16px of each edge.

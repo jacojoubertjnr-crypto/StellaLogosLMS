@@ -1,0 +1,15 @@
+PLACEHOLDER: input_box.png
+Theme: Modern
+
+Purpose: Background image for form inputs.
+Recommended Size: 600x120px (landscape — matches the shape of an input box)
+Format: PNG-32
+
+Style: Clean minimal end-caps or subtle rounded corners on left and right edges.
+       Center area: solid white or transparent (text is typed here).
+       Keep end-cap decorations within ~50px of the left and right edges.
+
+Rendering: image-rendering: pixelated — design at exact pixel size, no anti-aliasing.
+Padding:   CSS applies 2.5rem horizontal padding to keep text clear of end-caps.
+
+Used by: ThemedInput component via background-image: var(--theme-input-box).

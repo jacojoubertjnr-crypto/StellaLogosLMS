@@ -1,0 +1,9 @@
+PLACEHOLDER: banner_top.png
+Theme: Modern
+
+Purpose: Full-width decorative header banner.
+Recommended Size: 1920x150px or 1920x200px
+Format: PNG-32
+
+Style: Clean flat header bar. Solid blue/green gradient with subtle geometric pattern.
+Keep file size under 100KB.

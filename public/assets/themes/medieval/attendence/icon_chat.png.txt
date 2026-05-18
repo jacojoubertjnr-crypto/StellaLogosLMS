@@ -1,0 +1,13 @@
+PLACEHOLDER: icon_chat.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern] — Class Chat section icon
+
+Purpose: Small icon displayed left of the "CLASS CHAT" label on the section bar
+         and in the overlay header.
+Recommended Size: 24x24px
+Format: PNG-32 with transparency
+
+Style: A speech scroll, a messenger bird (dove/raven), or two crossed quills — 16-bit
+       pixel art. Gold/amber tones. Must read clearly at 24x24px.
+       (The Messenger Bird motif is already used for SocialHub on the home screen —
+       if reusing, ensure the icon reads as "local class chat" rather than "private messages".)

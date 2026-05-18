@@ -1,0 +1,9 @@
+PLACEHOLDER: banner_top.png
+Theme: Sci-Fi
+
+Purpose: Full-width decorative header banner.
+Recommended Size: 1920x150px or 1920x200px
+Format: PNG-32
+
+Style: Holographic/neon horizontal bar with glowing cyan edges. Dark centre panel.
+Keep file size under 100KB.

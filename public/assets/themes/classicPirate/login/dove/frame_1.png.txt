@@ -1,0 +1,1 @@
+dove/frame_1.png — First frame of the dove idle animation on the login screen. Size: 80×80 px. Transparent background.

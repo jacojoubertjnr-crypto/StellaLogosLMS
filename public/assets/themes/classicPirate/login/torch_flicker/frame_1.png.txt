@@ -1,0 +1,1 @@
+torch_flicker/frame_1.png — First frame of the torch flicker animation (left/right torches on login screen). Size: 80×160 px. Transparent background.

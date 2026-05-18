@@ -1,0 +1,9 @@
+PLACEHOLDER: btn_primary.png
+Theme: Sci-Fi
+
+Purpose: Primary action button background (LOGIN).
+Recommended Size: 256x96px
+Format: PNG-32 with transparency
+
+Style: Glowing neon button. Cyan border with dark fill and hot pink hover accent.
+9-Slice margins: 24px left/right, 16px top/bottom.

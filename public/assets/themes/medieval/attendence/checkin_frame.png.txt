@@ -1,0 +1,24 @@
+PLACEHOLDER: checkin_frame.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern] — Check-in / Daily Register section
+
+Purpose: Background texture for the "SIGN THE REGISTER" card. This is the most prominent
+         interactive element on the page — the daily check-in action.
+Recommended Size: 860x100px (wide, short panel)
+Format: PNG-32 with transparency
+
+Style: An open ledger book or tavern sign mounted on a wooden plank. The feel should
+       be "sign your name here" — quill-and-ink era. Subtle aged parchment or dark-stained
+       wood grain fill. Decorative rivets or rope detail on the left/right edges optional.
+       Avoid heavy ornamentation in the center-left (text lives there) and center-right
+       (the CHECK IN button lives there).
+
+Margins (reserved for UI content, keep clear of heavy ornament):
+  - Left: 20px (streak text starts here)
+  - Right: 20px (CHECK IN button sits here)
+  - Top/Bottom: 14px
+
+States:
+  - Default (not checked in): warm wood tones, gold-tinted border
+  - Checked-in: same frame but the code adds a green border overlay — the frame itself
+    does not need to change, the border tint is applied via CSS

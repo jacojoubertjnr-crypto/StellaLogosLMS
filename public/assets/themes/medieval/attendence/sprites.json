@@ -1,0 +1,15 @@
+{
+  "sprites": [
+    {
+      "id": "fireplace",
+      "file": "stationary/fireplace",
+      "anchor": "background",
+      "position": { "x": "31%", "y": "48.5%" },
+      "size": { "width": "14%", "height": "23%" },
+      "movement": {
+        "type": "frame_loop",
+        "frameRate": 110
+      }
+    }
+  ]
+}

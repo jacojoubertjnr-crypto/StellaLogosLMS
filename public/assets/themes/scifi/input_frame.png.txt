@@ -1,0 +1,10 @@
+PLACEHOLDER: input_frame.png
+Theme: Sci-Fi
+
+Purpose: Border-image frame applied to all form inputs via .ui-frame-standard CSS class.
+Recommended Size: 64x64px minimum (9-slice ready)
+Format: PNG-32 with transparency
+
+Style: Thin glowing cyan border strip. Sharp corners, no rounding.
+9-Slice margins: 16px on all sides.
+Center: Transparent (shows white input background through).

@@ -1,0 +1,23 @@
+PLACEHOLDER: section_bar.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern] — SmartContainer collapsed bars
+
+Purpose: Background for the three 52px-tall collapsed section bars:
+         "TODAY'S TIMETABLE", "CLASS ROSTER", and "CLASS CHAT".
+         Each bar is clickable and expands to a full-frame overlay.
+         All three bars share this single texture asset.
+Recommended Size: 860x52px
+Format: PNG-32 with transparency
+
+Style: A thick stone slab or iron-banded wooden bar — like a tavern counter edge or
+       castle door lintel. Slightly raised or embossed feel. The ▶ chevron sits on the
+       right side; the section title and preview text sit on the left. Dark enough for
+       gold text to read clearly. Small decorative studs or iron rivets at the ends optional.
+
+Notes:
+  - background-size: 100% 100% stretches it to fill the bar at any width
+  - Left zone ~400px: title + preview text
+  - Right ~32px: ▶ expand indicator
+  - The bar brightens its gold border on hover — the texture itself does not change
+  - All three section bars use the same asset, so it must read well for
+    "TIMETABLE", "ROSTER", and "CHAT" labels equally

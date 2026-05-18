@@ -1,0 +1,10 @@
+PLACEHOLDER: clicked.png
+Theme: Medieval — Animated Rabbit (clicked/hit state)
+
+Purpose: Image shown for ~1 second when the player clicks the rabbit.
+Recommended Size: 64x64px
+Format: PNG-32 with transparency
+
+Style: Rabbit in a "startled" or "caught" state — e.g., spinning, ears flat,
+       stars or dust puffs around it. Should look clearly different from the
+       hop frames so the player gets instant visual feedback on their click.

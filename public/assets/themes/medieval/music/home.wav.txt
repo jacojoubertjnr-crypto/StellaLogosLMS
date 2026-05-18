@@ -1,0 +1,25 @@
+ASSET: home.wav
+SCREEN: HomeCrossroads [The Town Square]
+FOLDER: /assets/themes/medieval/music/
+
+DESCRIPTION
+  Background music for the home hub screen. Should feel lively but not
+  distracting — a bustling medieval town square, busy with life.
+
+  Suggestions:
+    - Upbeat tavern-style folk melody: lute, flute, light drum
+    - 90–110 BPM, energetic but not intense
+    - A memorable main theme that rewards repeated listening (learners spend
+      time here between sessions)
+    - Slightly more upbeat than login.wav to signal "you're in the world now"
+
+TECHNICAL
+  Format  : WAV (or MP3 — browser-compatible)
+  Loop    : Yes — seamless loop. Ensure tail matches head.
+  Volume  : Mix for listening at ~35% system volume (hook sets audio.volume=0.35)
+  Duration: 60–120 seconds recommended before the loop point
+  Channels: Stereo
+
+NOTES
+  Drop the file here as home.wav. The hook silently does nothing if absent.
+  The ♪ / ♩ toggle button appears in the header bar once the audio is ready.

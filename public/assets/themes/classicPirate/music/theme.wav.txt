@@ -1,0 +1,1 @@
+theme.wav — Background music for this theme. Looping WAV file. Recommended: 1–3 minutes, seamless loop point.

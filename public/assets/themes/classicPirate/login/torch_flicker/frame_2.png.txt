@@ -1,0 +1,1 @@
+torch_flicker/frame_2.png — Second frame of torch flicker. Size: 80×160 px.

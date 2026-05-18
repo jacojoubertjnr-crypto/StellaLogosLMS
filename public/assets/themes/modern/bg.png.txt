@@ -1,0 +1,9 @@
+PLACEHOLDER: bg.png
+Theme: Modern
+
+Purpose: Full-viewport background scene.
+Recommended Size: 1920x1080px minimum
+Format: PNG-32
+
+Style: Clean, minimal office or abstract gradient. Flat design colors (blue #3B82F6, green #10B981).
+Keep file size under 500KB.

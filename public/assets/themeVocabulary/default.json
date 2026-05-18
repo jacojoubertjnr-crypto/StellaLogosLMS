@@ -1,0 +1,26 @@
+﻿{
+  "currencyLabel": "PTS",
+  "actionVerbStart": "START",
+  "actionVerbContinue": "CONTINUE",
+  "taskNumberTemplate": "LEARNING TASK {current} OF {total}",
+  "taskCompleteTitle": "ALL TASKS COMPLETE!",
+  "taskCompleteBody": "You have completed all learning tasks.\nCheck back for new tasks.",
+  "taskDescSuffix": "advance your progress",
+  "stepFallbackTemplate": "LEARNING TASK {n}",
+  "stepTitles": {},
+  "tileAttendance": "Attendance",
+  "tileSubjects": "My Subjects",
+  "tileMessages": "Messages",
+  "tileShop": "Shop",
+  "attendancePageTitle": "ATTENDANCE",
+  "attendanceCheckInLabel": "SIGN IN",
+  "attendanceCheckedInLabel": "SIGNED IN",
+  "attendanceReturnLabel": "RETURN TO HOME",
+  "subjectsPageTitle": "MY SUBJECTS",
+  "subjectsCountLabel": "SUBJECTS",
+  "subjectsReturnLabel": "RETURN TO HOME",
+  "messagesPageTitle": "MESSAGES",
+  "messagesReturnLabel": "RETURN TO HOME",
+  "shopPageTitle": "SHOP"
+}
+

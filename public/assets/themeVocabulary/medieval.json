@@ -1,0 +1,35 @@
+﻿{
+  "currencyLabel": "GOLD",
+  "actionVerbStart": "BEGIN QUEST",
+  "actionVerbContinue": "CONTINUE QUEST",
+  "taskNumberTemplate": "STEP {current} OF {total}",
+  "taskCompleteTitle": "QUEST COMPLETE!",
+  "taskCompleteBody": "You have completed all steps of this quest.\nA new adventure awaits!",
+  "taskDescSuffix": "advance your quest marker",
+  "stepFallbackTemplate": "STEP {n}",
+  "stepTitles": {
+    "1": "THE FIRST SCROLL",
+    "2": "THE SECOND TRIAL",
+    "3": "THE THIRD CHALLENGE",
+    "4": "THE FOURTH PATH",
+    "5": "THE FIFTH GATE",
+    "6": "THE SIXTH TRIAL",
+    "7": "THE FINAL CHAPTER"
+  },
+  "tileAttendance": "[The Tavern]",
+  "tileSubjects": "[The Royal Library]",
+  "tileMessages": "[The Messenger Bird]",
+  "tileShop": "[The Merchant's Stall]",
+  "attendancePageTitle": "THE TAVERN",
+  "attendanceCheckInLabel": "SIGN THE REGISTER",
+  "attendanceCheckedInLabel": "REGISTER SIGNED",
+  "attendanceReturnLabel": "RETURN TO TOWN SQUARE",
+  "subjectsPageTitle": "THE ROYAL LIBRARY",
+  "subjectsCountLabel": "QUESTS",
+  "subjectsReturnLabel": "RETURN TO TOWN SQUARE",
+  "messagesPageTitle": "THE MESSENGER BIRD",
+  "messagesReturnLabel": "RETURN TO TOWN SQUARE",
+  "shopPageTitle": "THE MERCHANT'S STALL"
+}
+
+

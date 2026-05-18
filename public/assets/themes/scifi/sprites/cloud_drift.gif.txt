@@ -1,0 +1,10 @@
+PLACEHOLDER: cloud_drift.gif (or equivalent)
+Theme: Sci-Fi
+
+Purpose: Drifting background element. Could be a nebula wisp, asteroid, or energy particle stream.
+Recommended Size: 160x80px
+Format: Animated GIF or static PNG
+
+Style: Glowing particle trail or space debris drifting left to right.
+Anchor: background — linear-drift animation. Add entry to sprites.json.
+Performance: High tier only.

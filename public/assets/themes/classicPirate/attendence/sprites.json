@@ -1,0 +1,16 @@
+{
+  "sprites": [
+    {
+      "id": "fireplace",
+      "frames": [
+        "frame_1.png",
+        "frame_2.png",
+        "frame_3.png",
+        "frame_4.png"
+      ],
+      "frameDuration": 150,
+      "width": 128,
+      "height": 160
+    }
+  ]
+}

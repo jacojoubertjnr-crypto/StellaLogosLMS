@@ -1,0 +1,9 @@
+PLACEHOLDER: bg.png
+Theme: Sci-Fi
+
+Purpose: Full-viewport background scene.
+Recommended Size: 1920x1080px minimum
+Format: PNG-32
+
+Style: Dark space or futuristic cityscape. Neon/electric color palette (cyan #00D9FF, hot pink #FF006E).
+Keep file size under 500KB.

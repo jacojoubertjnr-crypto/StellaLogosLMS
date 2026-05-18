@@ -1,0 +1,11 @@
+PLACEHOLDER: cloud_drift.gif
+Theme: Medieval
+
+Purpose: Slowly drifting cloud sprite that moves across the background sky.
+Recommended Size: 160x80px (cloud_1), 120x60px (cloud_2)
+Format: Animated GIF or static PNG
+
+Style: Soft white/grey pixel art cloud.
+Anchor: background — drifts left to right via linear-drift CSS animation.
+Performance: High tier only.
+Speed: 40s (cloud_1), 60s (cloud_2) — defined in sprites.json.

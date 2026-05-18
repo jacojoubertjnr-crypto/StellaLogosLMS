@@ -1,0 +1,27 @@
+﻿{
+  "currencyLabel": "PTS",
+  "actionVerbStart": "START MISSION",
+  "actionVerbContinue": "RESUME MISSION",
+  "taskNumberTemplate": "MISSION {current} OF {total}",
+  "taskCompleteTitle": "MISSION COMPLETE!",
+  "taskCompleteBody": "All objectives cleared.\nStand by for new orders.",
+  "taskDescSuffix": "advance your mission progress",
+  "stepFallbackTemplate": "MISSION {n}",
+  "stepTitles": {},
+  "tileAttendance": "[Crew Check-In]",
+  "tileSubjects": "[Database]",
+  "tileMessages": "[Comms]",
+  "tileShop": "[Equipment]",
+  "attendancePageTitle": "CREW CHECK-IN",
+  "attendanceCheckInLabel": "LOG ATTENDANCE",
+  "attendanceCheckedInLabel": "ATTENDANCE LOGGED",
+  "attendanceReturnLabel": "RETURN TO BRIDGE",
+  "subjectsPageTitle": "DATABASE",
+  "subjectsCountLabel": "MODULES",
+  "subjectsReturnLabel": "RETURN TO BRIDGE",
+  "messagesPageTitle": "COMMS",
+  "messagesReturnLabel": "RETURN TO BRIDGE",
+  "shopPageTitle": "EQUIPMENT"
+}
+
+

@@ -1,0 +1,389 @@
+================================================================================
+  STELLA LOGOS — UNIVERSAL AI BRIEFING FILE
+  Load this file before working on the project so the AI has full context.
+  Last updated: 2026-05-01
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. WHAT IS STELLA LOGOS?
+────────────────────────────────────────────────────────────────────────────────
+
+Stella Logos ("Star of Knowledge") is a professional-grade Educational
+Management and Gamification Platform for secondary schools. It converts
+traditional curriculum content into a visual, quest-based progression system.
+
+The core idea: instead of "lessons," learners engage with "Learning Tasks" —
+multi-step sequences tracked by a live database coordinate (CurrentStep). A
+teacher can see exactly where every student is "stuck" in real time.
+
+Three product pillars:
+
+  A. QUEST-BASED PEDAGOGY
+     - Learning Tasks are broken into steps. A learner advances one step at a
+       time. A "Wait-State" guard prevents skipping ahead.
+     - Each step advancement awards points and logs an xAPI statement.
+
+  B. TEACHER THEATRE MODE (Phase 5 — not yet built)
+     - Grid Monitor: live pulsing progress bars for every student.
+     - Active messaging: tiled chat windows filtered by student step.
+
+  C. PIXEL-ART ECONOMY (Phase 6 — not yet built)
+     - Completing steps awards points. Points are spent in the Asset Shop on
+       cosmetic skins (badges, avatars, profile themes).
+     - Skins dynamically inject CSS variables, changing the learner's UI.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. TECH STACK
+────────────────────────────────────────────────────────────────────────────────
+
+  Frontend:    Vite + React + TypeScript
+  Styling:     Tailwind CSS + globals.css (CSS variable theming)
+  State:       Zustand (lightweight, no Redux boilerplate)
+  Animation:   Framer Motion
+  Routing:     React Router v6
+  Fonts:       VT323 (pixel/monospace) via Google Fonts
+
+  Middleware:  Node.js + Apollo Server (GraphQL) — already built
+  Real-time:   Socket.io (planned for Phase 5)
+  Auth:        JWT (sessionStorage) + OIDC / LTI 1.3 (Phase 7)
+
+  Database:    PostgreSQL (Users, Classes, Enrollments, Steps, Transactions)
+  Caching:     Redis (planned)
+  Logging:     xAPI statements via PL/pgSQL trigger on step advancement
+  Standards:   LTI 1.3 compliant schema
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. THE THEME SYSTEM (critical concept — read carefully)
+────────────────────────────────────────────────────────────────────────────────
+
+The entire visual identity of the app is controlled by a folder-based theme
+system. Switching themes swaps assets and CSS variables — zero logic changes.
+
+FOLDER STRUCTURE:
+  /public/assets/themes/[theme-name]/
+    ├── [page-name]/
+    │   ├── background.png        ← full-screen page background
+    │   ├── sprites.json          ← sprite manifest for this page
+    │   └── sprites/
+    │       ├── stationary/       ← fixed frame-animated sprites (torches, fire)
+    │       └── moving/           ← travelling sprites (creatures, clouds)
+    ├── banner_top.png            ← top header bar (shared across pages)
+    ├── frame_main.png            ← 9-slice parchment/panel frame
+    ├── btn_primary.png           ← primary action button texture
+    ├── ambient_sprite.png        ← decorative side elements
+    ├── input_box.png             ← input field background texture
+    ├── music/theme.wav           ← looping ambient music track
+    └── theme_map.txt             ← standard → aesthetic name registry
+
+THREE THEMES REGISTERED: medieval, scifi, modern
+  - medieval: fully built (pixel-art castle/dungeon aesthetic)
+  - scifi: folder scaffolded, assets not yet created
+  - modern: folder scaffolded, assets not yet created
+
+HOW BACKGROUNDS LOAD:
+  Each page calls usePageBackground('page-name'). This hook probes
+  /assets/themes/{theme}/{page}/background.png and sets it as the body
+  background. On unmount it clears, falling back to the CSS variable default.
+
+HOW SPRITES WORK:
+  SpriteManager reads sprites.json for the current page and theme. It renders:
+    - frame_loop: LoopingSprite — fixed position, cycles through frame_1/2/3.png
+    - random_flight: AnimatedSprite — creature that flies random waypoints
+    - linear_drift: CSS keyframe animation (clouds)
+  Sprites can be anchored to: background, top_header, or safe_zone.
+  Missing assets fail silently (probe → display:none).
+
+PERFORMANCE TIERS (via Network Information API):
+  - High (4G, no saveData): all animations, sprites, preloading enabled
+  - Low (3G/saveData): animations reduced, sprites filtered, hover-only preload
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. NAMING CONVENTION (must follow this)
+────────────────────────────────────────────────────────────────────────────────
+
+Every component uses a two-layer naming pattern:
+
+  FunctionalName [AestheticName]
+
+  - Bold/code names = the functional layer (stable, theme-neutral)
+  - [Bracket] names = the medieval theme skin (can be swapped)
+
+Examples:
+  HomeCrossroads        [The Town Square]
+  AttendenceUI          [The Tavern]
+  QuestScreen           [The Quest Path]
+  CurriculumNavigator   [The Royal Library]
+  ShopUI                [The Merchant's Stall]
+  SocialUI              [The Messenger Bird]
+  GreatPortal           [The Great Portal]       — primary CTA button
+  SmartContainer        [The Scroll Rack]        — accordion overlay panel
+
+RULE: Code is always written against the functional name. The [Aesthetic]
+name only appears in UI copy, asset paths, and theme_map.txt. Never write
+medievalScrollFrame in a store, resolver, or prop name.
+
+Database columns, GraphQL fields, Zustand keys, and React props must all be
+theme-neutral (e.g. currentStep, pointsBalance, advanceStep).
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. PROJECT FILE STRUCTURE (src/)
+────────────────────────────────────────────────────────────────────────────────
+
+  src/
+  ├── App.tsx                    — BrowserRouter, all routes
+  ├── main.tsx
+  ├── mockState.ts               — ALL mock data (no DB calls in UI yet)
+  │
+  ├── pages/
+  │   ├── HomePage.tsx           — role router: Learner → HomeCrossroads
+  │   ├── HomeCrossroads.tsx     — Level 1 hub [The Town Square]
+  │   ├── AttendenceUI.tsx       — Level 2 attendance [The Tavern]
+  │   ├── QuestScreen.tsx        — Level 3 lesson engine [The Quest Path]
+  │   ├── CurriculumNavigator.tsx — Level 2 subjects [The Royal Library]
+  │   ├── ShopUI.tsx             — Level 2 shop placeholder
+  │   ├── SocialUI.tsx           — Level 2 social placeholder
+  │   └── AssignmentSubmitUI.tsx — Submission portal (/submit/:taskId)
+  │
+  ├── components/
+  │   ├── AppHeader.tsx          — persistent top bar (logo + banner image)
+  │   ├── ProtectedLayout.tsx    — wraps protected routes, triggers preloading
+  │   ├── SpriteManager.tsx      — reads sprites.json, renders sprites
+  │   ├── AnimatedSprite.tsx     — random-flight creature component
+  │   ├── MedievalLoginScreen.tsx
+  │   ├── ThemedInput.tsx
+  │   ├── ThemeMusicController.tsx — audio singleton, fades in/out per route
+  │   └── MusicToggle.tsx
+  │
+  ├── stores/
+  │   ├── themeStore.ts          — currentTheme, performanceTier
+  │   ├── authStore.ts           — user, login(), logout(), JWT handling
+  │   ├── questStore.ts          — learner progress, advanceStep mutation
+  │   ├── musicStore.ts          — audio state (muted, needsGesture, etc.)
+  │   └── entryStore.ts          — AttendenceUI accordion (timetable/chat)
+  │
+  ├── hooks/
+  │   ├── usePageBackground.ts   — probes and sets page background image
+  │   └── useBackgroundPreloader.ts — dual-strategy bg preloader
+  │
+  └── styles/
+      └── globals.css            — CSS vars, theatrical layout, scrollbars,
+                                   9-slice classes, animations, scrollbar theme
+
+
+────────────────────────────────────────────────────────────────────────────────
+6. ROUTE MAP
+────────────────────────────────────────────────────────────────────────────────
+
+  /                → MedievalLoginScreen (public)
+  /home            → HomePage → HomeCrossroads (learner) | TeacherPlaceholder
+  /quest           → QuestScreen (lesson engine)
+  /library         → CurriculumNavigator
+  /attendence      → AttendenceUI [note: intentional spelling kept consistent]
+  /shop            → ShopUI (placeholder)
+  /social          → SocialUI (placeholder)
+  /submit/:taskId  → AssignmentSubmitUI
+
+
+────────────────────────────────────────────────────────────────────────────────
+7. CURRENT STATE OF EACH SCREEN
+────────────────────────────────────────────────────────────────────────────────
+
+  LOGIN (/)
+    Complete. Medieval pixel-art login form with JWT auth connected to GraphQL
+    middleware. Theme switcher (medieval/scifi). Music system. Dove sprite.
+
+  HOME (/home) — HomeCrossroads [The Town Square]
+    Complete. Shows:
+    - GreatPortal: "CONTINUE QUEST: {subject}" → /quest (timetable-aware CTA)
+    - UtilityGrid: 4 tiles → Attendance, My Subjects, Messages, Shop
+    - Streak indicator, running rabbit sprite, drifting clouds
+    - Hover-based background preloading on Low performance tier
+
+  ATTENDANCE (/attendence) — AttendenceUI [The Tavern]
+    Complete (UI shell). Shows:
+    - Daily check-in button with streak counter
+    - Notice Board row: scrolling ticker of general school announcements
+      (sports practice times, photo day, events — NOT subject-specific)
+    - Timetable [opens by default]: multi-day navigation (today + 9 school days
+      ahead). Shows academic day number (10-day cycle). Assessment Due column
+      highlights rows where an assessment is due — amber if pending, green if
+      submitted. Clicking an assessment row opens a TaskDetailModal with full
+      task details and a "HAND IN ASSIGNMENT" button → /submit/:taskId.
+    - Class Chat [SmartContainer]: roster strip at top (presence dots, 4-col
+      grid), then scrollable message history, then pinned input. Chat content
+      = teacher reminders about notice board items + learner Q&A.
+    - GO TO NEXT LESSON row: navigates to /quest
+    - Fireplace sprite rendered via sprites.json + SpriteManager
+
+  QUEST (/quest) — QuestScreen [The Quest Path]
+    Complete with GraphQL. Shows:
+    - Visual step path (QuestPath) with pulsing active step
+    - StepPanel with "COMPLETE STEP" button (calls advanceStep mutation)
+    - QuestCompletePanel on completion
+    - PointsPopup floating animation on step advance
+    - ClassTabs if enrolled in multiple classes
+    - Connected to real GraphQL backend (not mock)
+
+  LIBRARY (/library) — CurriculumNavigator [The Royal Library]
+    UI shell complete. Tape-scroll through 3 subject cards (mock data).
+    Smooth 560ms expo-out animation. Clicking a card opens a detail overlay
+    with subject info, task name, and progress bar. Not yet connected to DB.
+
+  SHOP (/shop) — ShopUI [The Merchant's Stall]
+    Placeholder. Page entrance animation only. Phase 6.
+
+  SOCIAL (/social) — SocialUI [The Messenger Bird]
+    Placeholder. Page entrance animation only. Phase 5.
+
+  SUBMISSION (/submit/:taskId) — AssignmentSubmitUI [Submission Portal]
+    Placeholder. Shows task identity card. File upload zone, comments box,
+    and disabled submit button. Not yet functional. Reuses Tavern background.
+
+
+────────────────────────────────────────────────────────────────────────────────
+8. MOCK DATA (mockState.ts)
+────────────────────────────────────────────────────────────────────────────────
+
+All learner-facing screens except QuestScreen use mock data. The mock covers:
+
+  mockLearnerState        — primaryAction (quest label, class, step progress),
+                            attendance (streakDays, checkedInToday)
+
+  mockAttendance          — streakDays, checkedInToday, notices (9 general
+                            school announcements), timetable (7 periods, today
+                            period 1 = IT is 'current'), roster (12 learners
+                            with present/absent), chat (18 messages: teacher
+                            reminders from notice board + learner Q&A)
+
+  mockFutureTimetables    — 9 future school-day timetables (skips weekends),
+                            each with 7 periods across 7 subjects
+
+  mockAssessmentSchedule  — keyed "academicDay-period", e.g. '5-1' → IT
+                            Practical. Each entry: { label, taskId }.
+                            Assessment always falls on the period where that
+                            subject is taught on that academic day.
+
+  mockLearningTaskDetails — 7 task entries (IT, Geography, Maths, LO, CAT,
+                            English, Afrikaans) with description, instructions,
+                            submissionType, totalMarks, completed flag.
+
+  mockSubjects            — 3 subjects for CurriculumNavigator
+
+  mockFutureTimetables academic day mapping (today = Day 5, May 1 2026):
+    Day 5  = today (IT period 1 is current)
+    Day 6  = Mon May 4
+    Day 7  = Tue May 5
+    Day 8  = Wed May 6
+    Day 9  = Thu May 7
+    Day 10 = Fri May 8
+    (cycle repeats from Day 1 = Mon May 11)
+
+
+────────────────────────────────────────────────────────────────────────────────
+9. KEY ARCHITECTURAL PATTERNS
+────────────────────────────────────────────────────────────────────────────────
+
+  THEATRICAL LAYOUT
+    Every page: <div className="theatrical-container"> wraps the full viewport.
+    Inside: <motion.div className="safe-zone"> holds all interactive content
+    (max-width constrained, centred). Background fills the theatrical-container
+    via CSS body backgroundImage. Sprites are position:absolute inside the
+    theatrical-container (zIndex 1 for background anchor).
+
+  PAGE ENTRANCE ANIMATION
+    Every page's safe-zone uses:
+      initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+
+  SMART CONTAINER (AttendenceUI)
+    A reusable accordion component. Collapsed state = 52px bar with title +
+    preview text + ▶ arrow. Expanded state = full-screen fixed overlay
+    (AnimatePresence scale-in modal, zIndex 60). Only one open at a time
+    (controlled by entryStore accordion).
+
+  BACKGROUND PRELOADING
+    useBackgroundPreloader hook:
+    - High tier: preloads all 6 page backgrounds on ProtectedLayout mount
+    - Low tier: exposes preloadPage(page) called on tile hover in HomeCrossroads
+    Module-level Set deduplicates — no double-fetching.
+
+  ACADEMIC DAY CALCULATION
+    CYCLE_REF = Monday 27 April 2026 = Day 1
+    getAcademicDay(date): counts school days (skip Sat/Sun) from reference,
+    applies modulo 10, returns 1-10.
+    getSchoolDay(index): projects forward index school days from today,
+    skipping weekends.
+
+  SPRITE MANIFEST (sprites.json)
+    Each page/theme folder has sprites.json:
+    { "sprites": [{ "id", "file", "anchor", "position": {x%, y%},
+      "size": {width%, height%}, "movement": { "type", "frameRate" } }] }
+    Positions and sizes are percentage strings tunable without code changes.
+
+  APPHEADER BANNER
+    Probes banner image per route. Dynamic routes handled by extracting the
+    first path segment: pathname.split('/')[1]. /submit maps to attendence.
+
+  MUSIC SYSTEM
+    ThemeMusicController mounts once in BrowserRouter. Audio element is a
+    module-level singleton (survives route changes). Fades in on / and /home,
+    fades out on all other routes. MusicToggle available in header and login.
+
+
+────────────────────────────────────────────────────────────────────────────────
+10. ROADMAP STATUS
+────────────────────────────────────────────────────────────────────────────────
+
+  Phase 1: Login Screen              ✅ COMPLETE
+  Phase 2: Sci-Fi & Modern Themes    🔲 TODO (folders exist, no assets yet)
+  Phase 3: Authentication            ✅ COMPLETE (GraphQL + JWT + PostgreSQL)
+  Phase 4: Learner Screens           ✅ COMPLETE (UI shell, mock data)
+  Phase 5: Teacher Dashboard         🔲 TODO
+  Phase 6: Virtual Economy & Shop    🔲 TODO
+  Phase 7: Backend Data Layer        🔲 TODO (schema exists, hooks pending)
+  Phase 8: Polish & Launch           🔲 TODO
+
+  WHAT STILL NEEDS DOING (priority order):
+    1. Connect learner screens to real DB (replace mockState with GraphQL)
+    2. Build Teacher Dashboard (Phase 5)
+    3. Build Shop / Economy (Phase 6)
+    4. Create scifi and modern theme pixel art assets (Phase 2)
+    5. Make AssignmentSubmitUI functional (file upload, actual submission)
+    6. LTI 1.3 SSO integration (Phase 7)
+    7. Full WCAG accessibility audit, Lighthouse, cross-browser testing (Phase 8)
+
+
+────────────────────────────────────────────────────────────────────────────────
+11. IMPORTANT CONVENTIONS FOR AI AGENTS
+────────────────────────────────────────────────────────────────────────────────
+
+  - DO use the Functional [Aesthetic] naming pattern (see Section 4).
+  - DO write all new pages with the theatrical-container + motion.div
+    safe-zone pattern and the standard entrance animation.
+  - DO add new sprite types to sprites.json — never hardcode sprite positions
+    in TSX. Position and size must be tunable via the JSON.
+  - DO keep mock data in mockState.ts until the DB connection phase.
+  - DO follow the per-page asset folder convention for any new page:
+      public/assets/themes/medieval/[pagename]/background.png
+      public/assets/themes/medieval/[pagename]/sprites.json
+      public/assets/themes/medieval/[pagename]/sprites/stationary/
+      public/assets/themes/medieval/[pagename]/sprites/moving/
+  - DO add new routes to AppHeader.tsx routeToPage map.
+  - DO add new pages to useBackgroundPreloader ALL_PAGES array.
+  - DON'T add theme-specific strings to stores, resolvers, or prop names.
+  - DON'T create new Zustand stores for things that are only needed locally
+    — use component useState instead.
+  - DON'T connect to the database for screens that are still on mock data.
+    Keep the boundary clean.
+  - The spelling "attendence" (with an e) is intentional and used consistently
+    throughout the codebase (routes, folder names, component names). Do not
+    correct it.
+
+================================================================================
+  END OF BRIEF
+================================================================================

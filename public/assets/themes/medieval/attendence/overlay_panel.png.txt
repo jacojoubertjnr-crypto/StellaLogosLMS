@@ -1,0 +1,24 @@
+PLACEHOLDER: overlay_panel.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern] — Expanded overlay panel (all sections)
+
+Purpose: Background frame used by all four expanded overlay panels:
+         Notice Board, Timetable, Class Roster, and Class Chat.
+         The panel appears centered over a dark dimmed backdrop.
+Recommended Size: 860x640px (portrait-ish; it scales via background-size: 100% 100%)
+Format: PNG-32 with transparency
+
+Style: Interior tavern wall or large parchment pinned to a stone wall. Think a menu
+       board or announcement frame inside a tavern — heavy timber border with iron corner
+       brackets, rough stone or aged wood interior fill. The surface must be dark enough
+       for gold VT323 text to read clearly throughout.
+
+Zones (keep clear of heavy ornament — UI content lives here):
+  - Top 56px: header row (title left, CLOSE button right)
+  - Bottom 64px: input row (Chat section input field + SEND button)
+  - Remaining center: scrollable content area (notices/timetable rows/roster grid/messages)
+
+Notes:
+  - border is a 1px gold line applied in CSS — the image provides the fill/background only
+  - The overlay appears with a scale-in animation — keep corners clean so scaling looks crisp
+  - All four section overlays share this asset

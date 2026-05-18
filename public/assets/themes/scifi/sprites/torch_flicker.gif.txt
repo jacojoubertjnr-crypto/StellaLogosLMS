@@ -1,0 +1,10 @@
+PLACEHOLDER: torch_flicker.gif (or equivalent)
+Theme: Sci-Fi
+
+Purpose: Animated header accent. Could be a blinking light, hologram flicker, or energy emitter.
+Recommended Size: 32x64px
+Format: Animated GIF
+
+Style: Cyan neon pulse or blinking indicator light animation.
+Anchor: top_header — add entries to sprites.json to position on banner.
+Performance: High tier only.

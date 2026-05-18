@@ -1,0 +1,21 @@
+PLACEHOLDER: noticeboard_bar.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern] — Notice Board ticker bar (collapsed state)
+
+Purpose: Background for the 40px-tall scrolling ticker strip. In collapsed state this
+         bar runs full-width and displays a marquee of teacher notices. Clicking it
+         opens the full Notice Board overlay.
+Recommended Size: 860x40px
+Format: PNG-32 with transparency
+
+Style: A wooden bulletin board or corkboard strip — horizontal plank of rough timber
+       with small nail/tack details at the left and right ends. The surface should be
+       dark enough that the gold VT323 text (rgba(255,215,0,0.75)) reads clearly on top.
+       A subtle paper/notice texture in the background center area is acceptable.
+
+Notes:
+  - background-size: 100% 100% stretches it to fill the bar
+  - Left ~160px: "◆ NOTICE BOARD" label — keep that zone clear but dark
+  - Right ~100px: "[N NOTICES]" count — keep clear
+  - Center: the animated ticker text scrolls across — needs clean dark background
+  - The bar has a hover state (border brightens) — the texture itself does not change

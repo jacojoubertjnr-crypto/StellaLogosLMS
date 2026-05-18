@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Recurse -Path \"c:\\\\Users\\\\jaco.j.CURROPRIVATE\\\\OneDrive - Curro Holdings\\\\Desktop\\\\StellaLogosLMS\\\\public\\\\assets\\\\themes\\\\medieval\" | ForEach-Object { $_.FullName })",
+      "PowerShell($env:PGPASSWORD = '1234'; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -d stella_logos -c \"\\\\d users\")"
+    ]
+  }
+}

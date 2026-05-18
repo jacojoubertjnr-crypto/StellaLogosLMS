@@ -1,0 +1,895 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+/* ========================================
+   BASE VARIABLES
+   Panes: semi-transparent so theme backgrounds show through on all themes.
+   Modals: fully opaque for readability.
+   Default theme overrides pane to a lighter transparency.
+   ======================================== */
+:root {
+  --color-pane-bg:   rgba(0, 0, 0, 0.45);
+  --color-modal-bg:  rgba(8, 8, 8, 0.97);
+}
+
+/* ========================================
+   THEME VARIABLES - INJECTED FROM THEME FOLDER
+   ======================================== */
+:root[data-theme='medieval'] {
+  --theme-bg: url('/assets/themes/medieval/login/background.png');
+  --theme-banner: url('/assets/themes/medieval/banner_top.png');
+  --theme-banner-home: url('/assets/themes/medieval/banner_home.png');
+  --theme-frame: url('/assets/themes/medieval/frame_main.png');
+  --theme-btn-primary: url('/assets/themes/medieval/btn_primary.png');
+  --theme-ambient: url('/assets/themes/medieval/ambient_sprite.png');
+  --theme-input-frame: url('/assets/themes/medieval/input_frame.png');
+  --theme-input-box: url('/assets/themes/medieval/input_box.png');
+
+  /* Color palette */
+  --color-primary: #8B4513;
+  --color-secondary: #D2691E;
+  --color-accent: #FFD700;
+  --color-text: #2C1810;
+  --color-bg-overlay: rgba(139, 69, 19, 0.15);
+}
+
+:root[data-theme='scifi'] {
+  --theme-bg: url('/assets/themes/scifi/login/background.png');
+  --theme-banner: url('/assets/themes/scifi/banner_top.png');
+  --theme-banner-home: url('/assets/themes/scifi/banner_home.png');
+  --theme-frame: url('/assets/themes/scifi/frame_main.png');
+  --theme-btn-primary: url('/assets/themes/scifi/btn_primary.png');
+  --theme-ambient: url('/assets/themes/scifi/ambient_sprite.png');
+  --theme-input-frame: url('/assets/themes/scifi/input_frame.png');
+  --theme-input-box: url('/assets/themes/scifi/input_box.png');
+
+  --color-primary: #00D9FF;
+  --color-secondary: #FF006E;
+  --color-accent: #00FF00;
+  --color-text: #E0E0E0;
+  --color-bg-overlay: rgba(0, 217, 255, 0.15);
+}
+
+/* ─── Default — CSS-only, no image assets ─────────────────────────────────── */
+/* Palette: #0c1a2e (midnight navy), #1e3a5f (oxford blue), #4a9eff (academic blue) */
+
+:root[data-theme='default'] {
+  /* No image assets — gradients replace all themed surfaces */
+  --theme-bg:           none;
+  --theme-banner:       linear-gradient(180deg, #1e3a5f 0%, #162f4e 100%);
+  --theme-banner-home:  linear-gradient(180deg, #1e3a5f 0%, #162f4e 100%);
+  --theme-frame:        none;
+  --theme-btn-primary:  none;
+  --theme-ambient:      none;
+  --theme-input-frame:  none;
+  --theme-input-box:    none;
+
+  /* Colour palette */
+  --color-primary:    #0c1a2e;
+  --color-secondary:  #1e3a5f;
+  --color-accent:     #4a9eff;
+  --color-text:       #e8f0fe;
+  --color-bg-overlay: rgba(74, 158, 255, 0.1);
+  --color-pane-bg:    rgba(0, 0, 0, 0.45);   /* transparent glass — default theme only */
+  --color-modal-bg:   rgba(12, 26, 46, 0.97); /* opaque navy panel — default theme only */
+
+  /* Convenience aliases used by default-specific rules below */
+  --m-bg:      #0c1a2e;
+  --m-surface: #1e3a5f;
+  --m-accent:  #4a9eff;
+  --m-border:  rgba(74, 158, 255, 0.28);
+  --m-text:    #e8f0fe;
+}
+
+/* Body — deep navy base + radial bloom.
+   Separate sub-properties only — shorthand would silently reset background-color. */
+[data-theme='default'] body {
+  background-color: #0c1a2e !important;
+  background-image: radial-gradient(ellipse at 22% 30%, rgba(30,58,95,0.85) 0%, transparent 65%) !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+}
+
+/* Ambient sprite divs — hide when no image asset exists for this theme */
+[data-theme='default'] .ambient-sprite {
+  display: none;
+}
+
+/* Theatrical container — thin inner vignette for depth */
+[data-theme='default'] .theatrical-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(12, 26, 46, 0.55) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Login frame — solid panel with accent border instead of parchment image */
+[data-theme='default'] .frame-parchment {
+  background-image: none;
+  background-color: rgba(30, 58, 95, 0.88);
+  border: 1px solid var(--m-border);
+  box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.08), 0 8px 32px rgba(12, 26, 46, 0.7);
+}
+
+/* Input fields — match panel style */
+[data-theme='default'] input {
+  background-image: none !important;
+  background-color: rgba(12, 26, 46, 0.7) !important;
+  border: 1px solid var(--m-border) !important;
+  color: var(--m-text) !important;
+}
+
+/* Primary button — filled academic blue */
+[data-theme='default'] .btn-9slice {
+  background-image: none;
+  background-color: var(--m-surface);
+  border: 1px solid var(--m-border);
+  color: var(--m-text);
+}
+
+[data-theme='default'] .btn-9slice:hover {
+  background-color: rgba(74, 158, 255, 0.18);
+  border-color: var(--m-accent);
+}
+
+/* Performance tier visibility toggles */
+:root[data-performance='High'] {
+  --animations-enabled: 1;
+  --blur-enabled: 1;
+}
+
+:root[data-performance='Low'] {
+  --animations-enabled: 0;
+  --blur-enabled: 0;
+}
+
+/* ========================================
+   PIXEL-PERFECT RENDERING
+   ======================================== */
+html {
+  /* Integer scaling for crisp pixels on 4K */
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+  
+  /* Prevent font smoothing artifacts */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body, button, input, select, textarea {
+  image-rendering: pixelated;
+}
+
+/* ========================================
+   THEATRICAL BACKGROUND & SAFE ZONE
+   ======================================== */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background-image: var(--theme-bg);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: var(--color-text);
+  font-family: 'VT323', Inter, Roboto, system-ui, sans-serif;
+}
+
+/* Container for seamless background with side assets */
+.theatrical-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+/* Pushes safe-zone below the banner — responsive per screen size */
+.safe-zone--below-banner {
+  padding-top: 5.5rem;
+}
+
+/* Safe Zone - All interactive content goes here */
+.safe-zone {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+
+  /* Responsive safe zone sizing */
+  width: 90%;
+  max-width: 640px;
+  aspect-ratio: auto;
+
+  transition: padding-top 0.2s ease;
+}
+
+/* ========================================
+   9-SLICE SCALING FOR PIXEL ART FRAMES
+   ======================================== */
+
+/* Generic 9-slice frame class */
+.frame-9slice {
+  image-rendering: pixelated;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  
+  /* Prevent interpolation */
+  -ms-interpolation-mode: nearest-neighbor;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Parchment Scroll Frame (for login form) */
+.frame-parchment {
+  background-image: var(--theme-frame);
+  background-color: var(--color-pane-bg);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  /* Standard padding — works for any theme without border art */
+  padding: 3rem 2.5rem 2.5rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  min-width: 280px;
+  max-width: 560px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Medieval scroll has thick border art that needs extra horizontal clearance */
+[data-theme='medieval'] .frame-parchment {
+  padding-left: 5rem;
+  padding-right: 5rem;
+}
+
+
+/* Button with 9-slice */
+.btn-9slice {
+  background-image: var(--theme-btn-primary);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  /* Pixel-perfect rendering */
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+  
+  /* Full width — themes that want a narrower centred button override this */
+  width: 100%;
+  padding: 0.75rem 2rem;
+  align-self: stretch;
+  font-family: 'VT323', inherit;
+  font-size: 1.2rem;
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.btn-9slice:hover {
+  transform: scale(1.05);
+}
+
+.btn-9slice:active {
+  transform: translateY(2px);
+}
+
+/* ========================================
+   PERFORMANCE-AWARE ANIMATIONS
+   ======================================== */
+
+/* Only enable animations on High performance tier */
+@supports (animation: none) {
+  :root[data-performance='High'] .sway-animation {
+    animation: sway 3s ease-in-out infinite;
+  }
+  
+  @keyframes sway {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(8px); }
+  }
+  
+  :root[data-performance='High'] .flutter-animation {
+    animation: flutter 2s ease-in-out infinite;
+  }
+  
+  @keyframes flutter {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+}
+
+/* Glass-morphism effect - only on High performance tier */
+:root[data-performance='High'] .glass-effect {
+  backdrop-filter: blur(10px);
+  background: var(--color-bg-overlay);
+}
+
+:root[data-performance='Low'] .glass-effect {
+  background: var(--color-bg-overlay);
+}
+
+/* ========================================
+   THEMED INPUT FRAME (input_frame.png)
+   ======================================== */
+
+/* Wrapper gives the ::after pseudo-element a positioning anchor. */
+.input-frame-wrap {
+  position: relative;
+  display: block;
+}
+/* Inputs always fill the wrapper width regardless of theme. */
+.input-frame-wrap .form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+/* input_box.png on the WRAPPER — Chrome autofill never touches non-input elements. */
+[data-theme='medieval'] .input-frame-wrap {
+  background-image: url('/assets/themes/medieval/input_box.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-color: rgba(35, 18, 6, 0.82);
+  image-rendering: pixelated;
+}
+.input-frame-wrap::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -14px;
+  right: -14px;
+  bottom: -10px;
+  background-image: var(--theme-input-frame);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  image-rendering: pixelated;
+  z-index: 1;
+}
+/* Hide frame overlay — not used on any theme currently */
+[data-theme='medieval'] .input-frame-wrap::after,
+[data-theme='default'] .input-frame-wrap::after,
+[data-theme='scifi'] .input-frame-wrap::after {
+  display: none;
+}
+/* Input is transparent so the wrapper's input_box.png shows through.
+   appearance:none removes native rendering; background:transparent lets the wrapper show. */
+[data-theme='medieval'] .input-frame-wrap .form-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent !important;
+  border: none;
+  box-shadow: none !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ========================================
+   THEMED INPUT BOX (input_box.png)
+   ======================================== */
+
+/* input_box.png is a 600x120px sprite with decorative end-caps on left/right.
+   background-size: 100% 100% stretches it to fill the input.
+   Horizontal padding keeps text clear of the end-caps. */
+.form-input.ui-input-box {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: var(--theme-input-box);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-color: rgba(35, 18, 6, 0.82);
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+  border: none;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  color: #FFFFFF;
+  min-height: 56px;
+  font-family: 'VT323', inherit;
+  font-size: 18px;
+}
+
+.form-input.ui-input-box::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-input.ui-input-box:focus {
+  outline: none;
+  filter: brightness(1.12) drop-shadow(0 0 8px rgba(230, 204, 128, 0.55));
+}
+
+/* Keep themed background-image visible during browser autofill.
+   The transition-delay trick holds background-color at our CSS value for 9999s,
+   preventing Chrome from painting its autofill colour over the background-image. */
+.form-input.ui-input-box:-webkit-autofill,
+.form-input.ui-input-box:-webkit-autofill:hover,
+.form-input.ui-input-box:-webkit-autofill:focus {
+  transition: background-color 9999s ease-in-out 0s;
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+}
+
+/* Scroll/form heading */
+.themed-heading {
+  font-family: 'VT323', serif;
+  font-size: 32px;
+  text-shadow: 1px 1px 0px #000;
+  line-height: 1.1;
+}
+
+/* ========================================
+   SPRITE ANIMATIONS
+   ======================================== */
+
+@keyframes linear-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(120vw); }
+}
+
+@keyframes score-pop {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-32px); }
+}
+
+@keyframes rabbit-run-across {
+  from { transform: translateX(-80px); }
+  to   { transform: translateX(calc(100vw + 80px)); }
+}
+
+/* ========================================
+   FORM STYLING WITH VECTOR CLARITY
+   ======================================== */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text);
+  padding: 0 0.25rem;
+}
+
+.form-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-primary);
+  border-radius: 4px;
+  font-size: 18px;
+  font-family: 'VT323', inherit;
+  color: var(--color-text);
+  background-color: rgba(255, 255, 255, 0.95);
+  min-height: 56px;
+
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  background-color: rgba(255, 252, 240, 1);
+  box-shadow:
+    0 0 0 2px rgba(230, 204, 128, 0.65),
+    0 0 12px rgba(230, 204, 128, 0.3),
+    inset 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.form-input::placeholder {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   AMBIENT SPRITES & BACKGROUND ELEMENTS
+   ======================================== */
+
+.ambient-sprite {
+  position: absolute;
+  background-image: var(--theme-ambient);
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.ambient-left {
+  bottom: 0;
+  left: 0;
+  width: 25%;
+  height: 80%;
+  opacity: 0.8;
+}
+
+.ambient-right {
+  bottom: 0;
+  right: 0;
+  width: 25%;
+  height: 80%;
+  opacity: 0.8;
+  transform: scaleX(-1);
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+@media (max-width: 640px) {
+  .safe-zone {
+    width: 95%;
+    gap: 1.5rem;
+  }
+
+  .safe-zone--below-banner {
+    padding-top: 8rem;
+  }
+
+  .frame-parchment {
+    padding: 3rem 2.5rem 2rem;
+    gap: 1rem;
+  }
+
+  .form-input {
+    font-size: 16px; /* Prevent mobile zoom */
+  }
+}
+
+@media (max-width: 480px) {
+  .safe-zone {
+    width: 100%;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .safe-zone--below-banner {
+    padding-top: 5rem;
+  }
+
+  .frame-parchment {
+    padding: 2.5rem 1.5rem 1.5rem;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+}
+
+/* ========================================
+   THEME SWITCHER
+   ======================================== */
+
+.theme-switcher-btn {
+  font-family: 'VT323', serif;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+  border: none;
+
+  background-color: #5C3A1E;
+  color: #D4B483;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.5);
+
+  clip-path: polygon(4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px), 0% 4px);
+
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.theme-switcher-btn:hover {
+  background-color: #7A4E2D;
+  color: #F0D090;
+}
+
+.theme-switcher-btn.active {
+  background-color: #8B4513;
+  color: #FFD700;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* ========================================
+   HOMECROSSROADS — PORTAL & TILE SYSTEM
+   ======================================== */
+
+/* New theme-level variables */
+:root[data-theme='medieval'] {
+  --primary-glow-effect: portal-pulse 5s ease-in-out infinite;
+  --ui-frame-texture: var(--theme-frame);
+  --button-plank: var(--theme-btn-primary);
+}
+
+:root[data-theme='scifi'] {
+  --primary-glow-effect: portal-pulse 5s ease-in-out infinite;
+  --ui-frame-texture: var(--theme-frame);
+  --button-plank: var(--theme-btn-primary);
+}
+
+:root[data-theme='default'] {
+  --primary-glow-effect: portal-pulse 5s ease-in-out infinite;
+  --ui-frame-texture: none;
+  --button-plank: none;
+}
+
+/* Blue portal breath — gentle fade, performance-gated */
+@keyframes portal-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 10px rgba(40, 120, 255, 0.28),
+      0 0 22px rgba(40, 120, 255, 0.10);
+  }
+  50% {
+    box-shadow:
+      0 0 22px rgba(40, 120, 255, 0.55),
+      0 0 44px rgba(40, 120, 255, 0.22),
+      0 0 70px rgba(40, 120, 255, 0.08);
+  }
+}
+
+:root[data-performance='High'] .portal-glow {
+  animation: var(--primary-glow-effect, portal-pulse 5s ease-in-out infinite);
+}
+
+:root[data-performance='Low'] .portal-glow {
+  box-shadow: 0 0 18px rgba(40, 120, 255, 0.35);
+}
+
+/* PrimaryAction [The Great Portal] */
+.btn-portal {
+  background-image: var(--ui-frame-texture);
+  background-color: var(--color-pane-bg);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+  border: none;
+  width: 100%;
+  padding: 1.75rem 2.5rem;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transition: filter 0.15s ease, transform 0.1s ease;
+  box-sizing: border-box;
+}
+
+.btn-portal:hover {
+  filter: brightness(1.1);
+}
+
+.btn-portal:active {
+  transform: translateY(2px);
+}
+
+/* UtilityGrid layout */
+.utility-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+
+@media (max-width: 480px) {
+  .utility-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Individual utility tile — uses the same stone button asset as the login page */
+.tile-item {
+  position: relative;
+  background-image: var(--button-plank);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+  border: none;
+  padding: 1.5rem 0.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+  min-height: 110px;
+}
+
+.tile-item:hover {
+  filter: brightness(1.18);
+}
+
+.tile-item:active {
+  transform: translateY(2px);
+}
+
+.tile-item.tile-active {
+  filter: brightness(1.25) saturate(1.3);
+}
+
+/* Themed name tooltip — appears above tile on hover */
+.tile-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(8, 4, 0, 0.94);
+  color: rgba(255, 215, 0, 0.92);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  padding: 3px 10px;
+  font-family: 'VT323', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 100;
+}
+
+.tile-item:hover .tile-tooltip {
+  opacity: 1;
+}
+
+/* ========================================
+   THEMED SCROLLBARS
+   ======================================== */
+
+/* WebKit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.4);
+  border-radius: 1px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.75);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 215, 0, 0.4) rgba(0, 0, 0, 0.45);
+}
+
+/* ========================================
+   UTILITIES FOR COGNITIVE LOAD MANAGEMENT
+   ======================================== */
+
+/* Hide elements for steps not currently active */
+.step-hidden {
+  display: none;
+}
+
+/* Loading state */
+.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Success/Error states */
+.state-success {
+  color: var(--color-accent);
+}
+
+.state-error {
+  color: #E74C3C;
+}
+
+/* ========================================
+   MODERN ACADEMY — COMPONENT OVERRIDES
+   Image-free. All surfaces are CSS only.
+   Palette: #0c1a2e / #1e3a5f / #4a9eff
+   ======================================== */
+
+/* Portal button — solid surface + blue glow instead of stone image */
+[data-theme='default'] .btn-portal {
+  background-image: none;
+  background-color: rgba(30, 58, 95, 0.75);
+  border: 1px solid rgba(74, 158, 255, 0.3);
+  box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.08);
+}
+
+[data-theme='default'] .btn-portal:hover {
+  filter: none;
+  background-color: rgba(30, 58, 95, 0.95);
+  border-color: rgba(74, 158, 255, 0.65);
+  box-shadow: 0 0 16px rgba(74, 158, 255, 0.2);
+}
+
+/* Utility tiles — solid panels instead of plank image */
+[data-theme='default'] .tile-item {
+  background-image: none;
+  background-color: rgba(30, 58, 95, 0.6);
+  border: 1px solid rgba(74, 158, 255, 0.2);
+}
+
+[data-theme='default'] .tile-item:hover {
+  filter: none;
+  background-color: rgba(30, 58, 95, 0.9);
+  border-color: rgba(74, 158, 255, 0.55);
+}
+
+[data-theme='default'] .tile-item.tile-active {
+  filter: none;
+  background-color: rgba(74, 158, 255, 0.18);
+  border-color: rgba(74, 158, 255, 0.7);
+}
+
+/* Tooltip — blue tint instead of gold */
+[data-theme='default'] .tile-tooltip {
+  background: rgba(12, 26, 46, 0.97);
+  color: rgba(74, 158, 255, 0.95);
+  border-color: rgba(74, 158, 255, 0.35);
+}
+
+/* Scrollbars — academic blue accent */
+[data-theme='default'] ::-webkit-scrollbar-thumb {
+  background: rgba(74, 158, 255, 0.35);
+}
+
+[data-theme='default'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 158, 255, 0.7);
+}
+
+/* Form inputs on login screen */
+[data-theme='default'] .form-input {
+  background-color: rgba(12, 26, 46, 0.85);
+  border-color: rgba(74, 158, 255, 0.3);
+  color: #e8f0fe;
+}
+
+[data-theme='default'] .form-input:focus {
+  background-color: rgba(12, 26, 46, 0.98);
+  box-shadow:
+    0 0 0 2px rgba(74, 158, 255, 0.4),
+    0 0 12px rgba(74, 158, 255, 0.15),
+    inset 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='default'] .form-input::placeholder {
+  color: rgba(232, 240, 254, 0.35);
+}

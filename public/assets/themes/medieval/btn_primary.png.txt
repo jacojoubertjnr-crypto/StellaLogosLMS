@@ -1,0 +1,13 @@
+# Theme Asset Placeholder - Replace with Pixel Art
+
+This is a placeholder for the primary button element.
+Replace with a 16-bit pixel art PNG file designed for 9-slice scaling.
+
+Recommended: Create a decorative button with:
+- Border/frame artwork
+- Repeating center pattern
+- Size: 256x96px minimum
+
+9-Slice configuration:
+- Left/Right margins: 24px
+- Top/Bottom margins: 16px

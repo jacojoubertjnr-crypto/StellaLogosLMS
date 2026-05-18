@@ -1,0 +1,1 @@
+rabbit/frame_1.png — First frame of the home page mascot idle animation. Size: 96×96 px. Transparent background.

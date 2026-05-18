@@ -1,0 +1,1 @@
+rabbit/clicked.png — Mascot reaction frame shown on click. Size: 96×96 px.

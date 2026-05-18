@@ -1,0 +1,9 @@
+PLACEHOLDER: btn_primary.png
+Theme: Modern
+
+Purpose: Primary action button background (LOGIN).
+Recommended Size: 256x96px
+Format: PNG-32 with transparency
+
+Style: Flat rounded rectangle button. Blue fill, white text area.
+9-Slice margins: 24px left/right, 16px top/bottom.

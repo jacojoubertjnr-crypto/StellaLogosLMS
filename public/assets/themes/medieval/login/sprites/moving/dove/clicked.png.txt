@@ -1,0 +1,10 @@
+PLACEHOLDER: clicked.png
+Theme: Medieval — Animated Creature (clicked/hit state)
+
+Purpose: Image shown for ~1 second when the player clicks the creature.
+Recommended Size: 64x64px
+Format: PNG-32 with transparency
+
+Style: Same creature in a "hit" or "caught" state — e.g. stars around it,
+       spinning, puffing out, or a splat effect. Should look distinctly
+       different from the flying frames so the player gets clear feedback.

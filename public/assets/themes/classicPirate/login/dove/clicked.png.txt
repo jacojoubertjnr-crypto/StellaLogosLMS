@@ -1,0 +1,1 @@
+dove/clicked.png — Dove reaction frame shown when the user clicks it. Size: 80×80 px.

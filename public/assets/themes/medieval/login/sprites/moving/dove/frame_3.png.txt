@@ -1,0 +1,9 @@
+PLACEHOLDER: frame_3.png
+Theme: Medieval — Animated Creature (frame 3 of 3)
+
+Purpose: Third animation frame of the clickable mini-game creature.
+Recommended Size: 64x64px
+Format: PNG-32 with transparency
+
+Style: Same creature as frame_1.png, wings at opposite position to frame_1
+       so the loop goes: up → mid → down → mid → up.

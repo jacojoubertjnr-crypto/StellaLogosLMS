@@ -1,0 +1,29 @@
+ASSET: theme.wav
+THEME: medieval
+FOLDER: /assets/themes/medieval/music/
+
+DESCRIPTION
+  The single background music track for the entire medieval theme.
+  Plays on the login screen and continues uninterrupted into the home screen.
+  Fades out (1.5 s) when the learner navigates deeper (quest, library, shop,
+  social) and fades back in (0.8 s) when they return to login or home.
+
+  Suggested style:
+    - Opens gently (suits the login gate atmosphere), builds slightly
+      for the home hub feeling — ideally one continuous piece that
+      works in both contexts.
+    - Celtic/fantasy: lute, flute, light harp, soft drum
+    - 80–100 BPM, mood: mysterious at start, warm and lively by the loop
+
+TECHNICAL
+  Format  : WAV (MP3 also works — update the src extension in musicStore.ts)
+  Loop    : Yes — seamless loop. Match tail to head to avoid gap.
+  Volume  : Mix for ~35% system volume (store sets audio.volume = 0.35)
+  Duration: 90–180 s recommended before the loop point
+  Channels: Stereo
+
+NOTES
+  Drop the file here as theme.wav.
+  The ♪ / ♩ button appears in the bottom-right corner on login and in the
+  header bar on home once the audio is ready to play.
+  If this file is absent the music system silently does nothing.

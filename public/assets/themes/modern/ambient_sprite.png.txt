@@ -1,0 +1,9 @@
+PLACEHOLDER: ambient_sprite.png
+Theme: Modern
+
+Purpose: Side scenery sprites shown on left and right edges of the screen (High tier only).
+Recommended Size: 512x640px
+Format: PNG-32 with transparency
+
+Style: Abstract geometric shape, plant, or building silhouette. Right side is auto-flipped horizontally.
+Positioned: bottom-aligned, 25% viewport width.

@@ -1,0 +1,1 @@
+messages/bg.png — Messaging / social page background. Full-screen: 1920×1080 px.

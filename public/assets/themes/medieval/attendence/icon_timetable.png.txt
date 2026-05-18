@@ -1,0 +1,11 @@
+PLACEHOLDER: icon_timetable.png
+Theme: Medieval
+Page: AttendenceUI [The Tavern] — Timetable section icon
+
+Purpose: Small icon displayed left of the "TODAY'S TIMETABLE" label on the section bar
+         and in the overlay header. Replaces the ▶ text indicator.
+Recommended Size: 24x24px
+Format: PNG-32 with transparency
+
+Style: A sundial, hourglass, or bell (as in a school bell / class period bell) — 16-bit
+       pixel art. Gold/amber tones. Must read clearly at 24x24px.

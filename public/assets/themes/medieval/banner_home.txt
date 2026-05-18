@@ -1,0 +1,22 @@
+ASSET: banner_home.png
+SCREEN: HomeCrossroads [The Town Square] — top header bar
+CSS VAR: --theme-banner-home
+
+DESCRIPTION
+  A horizontal wooden plank bar — plain, flat, tavern-sign style.
+  Think: a thick sawn timber beam, slightly weathered, with visible wood grain
+  running left-to-right. No text, no decorative carvings — the CSS overlays
+  all text content.
+
+  Edges: slightly rounded corners or bevelled edges (2–4 px).
+  Colour: warm medium brown (#6B3A1F – #8B5A2B range), wood-grain highlights
+  in a lighter tone, subtle shadow on the bottom edge.
+
+  The plank should be solid and opaque — no transparency — so it cleanly
+  masks the background behind the header bar.
+
+STYLE: 16-bit pixel art, matches the btn_primary.png stone button palette
+DIMENSIONS: 1920 × 52 px (full-width, header height)
+RENDERING: background-size: 100% 100% (stretch to fill)
+NOTES: Keep the texture subtle so white/gold VT323 text overlaid in CSS
+  remains easy to read at any screen width.

@@ -1,0 +1,13 @@
+# Theme Asset Placeholder - Replace with Pixel Art
+
+This is a placeholder for ambient sprites (castle, trees, etc.).
+Replace with a 16-bit pixel art PNG file.
+
+Recommended: Seamless landscape elements like:
+- Medieval castle/tower
+- Trees or vegetation
+- Ambient scenery
+- Size: 512x640px or larger (will be positioned on sides)
+
+These will be positioned absolutely on the left and right edges
+and appear to be part of the background landscape.

@@ -1,0 +1,9 @@
+PLACEHOLDER: frame_3.png
+Theme: Medieval — Animated Rabbit (frame 3 of 3)
+
+Purpose: Third animation frame — completing the loop back toward frame 1.
+Recommended Size: 64x64px
+Format: PNG-32 with transparency
+
+Style: Return pose — similar to frame 1 so the loop reads naturally at 150ms/frame.
+       e.g., ears settling back down, legs extending, tail at rest.

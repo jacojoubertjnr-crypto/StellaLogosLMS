@@ -1,0 +1,10 @@
+PLACEHOLDER: cloud_drift.gif (or equivalent)
+Theme: Modern
+
+Purpose: Drifting background element. Could be a subtle geometric shape or soft cloud.
+Recommended Size: 160x80px
+Format: Animated GIF or static PNG
+
+Style: Soft white cloud or floating abstract shape.
+Anchor: background — linear-drift animation. Add entry to sprites.json.
+Performance: High tier only.

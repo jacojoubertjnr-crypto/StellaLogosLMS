@@ -1,0 +1,15 @@
+PLACEHOLDER: frame_main.png
+Theme: Sci-Fi
+
+Purpose: Main container frame for the login form (background-size: 100% 100%).
+Recommended Size: 512x640px (portrait rectangle)
+Format: PNG-32 with transparency
+
+Style: Holographic panel or metallic terminal frame. Glowing cyan border, dark interior.
+Note: background-size: 100% 100% stretches the image to fill the element.
+      Design border decorations within ~48px of top/bottom and ~32px of left/right.
+      Center area will be stretched — use a dark solid fill.
+
+Margins:
+  - Top/Bottom: 48px
+  - Left/Right: 32px

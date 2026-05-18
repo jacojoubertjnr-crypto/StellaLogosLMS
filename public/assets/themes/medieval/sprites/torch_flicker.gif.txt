@@ -1,0 +1,10 @@
+PLACEHOLDER: torch_flicker.gif
+Theme: Medieval
+
+Purpose: Animated flickering torch. Placed on left and right of banner_top via sprites.json.
+Recommended Size: 32x64px
+Format: Animated GIF
+
+Style: Pixel art torch flame animation, 4-8 frames looping.
+Anchor: top_header (see sprites.json for exact x/y coordinates).
+Performance: High tier only.

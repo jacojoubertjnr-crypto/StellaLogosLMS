@@ -1,0 +1,1 @@
+cloud_drift.png — Horizontally drifting ambient sprite on the home page (e.g. cloud, spaceship, bird flock). Size: 320×80 px. Transparent background.

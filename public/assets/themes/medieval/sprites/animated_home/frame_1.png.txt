@@ -1,0 +1,29 @@
+ASSET SET: animated_home/  (frame_1.png, frame_2.png, frame_3.png, clicked.png)
+SCREEN: HomeCrossroads [The Town Square]
+FOLDER: /assets/themes/medieval/sprites/animated_home/
+FALLBACK: If this folder is absent, the code automatically uses the
+          'animated/' creature from the login screen instead.
+
+DESCRIPTION
+  A small medieval traveller or town-crier NPC — thematically fitting for
+  a crossroads / town square scene.
+
+  Suggested character: a hooded wanderer carrying a walking staff, or a
+  herald in a tabard holding a scroll/bell. 64×64 px, pixel art.
+
+ANIMATION (3 frames, 150ms per frame)
+  frame_1.png — walking pose A (left foot forward)
+  frame_2.png — neutral / mid-stride
+  frame_3.png — walking pose B (right foot forward)
+
+  The character drifts slowly across the screen via the random-flight
+  waypoint system (waypointInterval: 3000ms), so frames should look natural
+  when looped at any position on screen.
+
+clicked.png
+  The character reacts to being clicked — e.g., stumbles, waves, or drops
+  their staff with a surprised expression. Shown for 0.9 s then respawns.
+
+STYLE: 16-bit pixel art, warm medieval palette, matches bg_home.png mood.
+DIMENSIONS: 64 × 64 px per frame (transparent PNG)
+RENDERING: image-rendering: pixelated
