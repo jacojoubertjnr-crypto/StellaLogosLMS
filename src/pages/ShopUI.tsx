@@ -146,7 +146,7 @@ function resolvePreviewPaths(item: ShopItem): string[] {
         `/assets/themes/${t}/login/bg.png`,
       ]
     case 'background':
-      return []
+      return item.assetPath ? [item.assetPath] : []
     case 'sprite':
       return []
     default:
@@ -232,16 +232,91 @@ const TYPE_ICON: Record<ItemType, string> = {
   sprite:      '✦',
 }
 
-type FilterTab = 'all' | ItemType
+type FilterTab = 'all' | ItemType | 'bg_page'
 
-const TABS: { id: FilterTab; label: string }[] = [
+const CAT_TABS: { id: FilterTab; label: string }[] = [
   { id: 'all',         label: 'ALL' },
-  { id: 'theme',       label: 'THEMES' },
-  { id: 'soundtrack',  label: 'SOUNDTRACKS' },
-  { id: 'colorscheme', label: 'COLOR SCHEMES' },
+  { id: 'theme',       label: 'THEME' },
+  { id: 'bg_page',     label: 'BACKGROUNDS' },
+  { id: 'background',  label: 'ALT BACKGROUNDS' },
   { id: 'sprite',      label: 'SPRITES' },
-  { id: 'background',  label: 'BACKGROUNDS' },
+  { id: 'soundtrack',  label: 'SOUNDTRACK' },
+  { id: 'colorscheme', label: 'COLOR SCHEMES' },
 ]
+
+const BG_PAGES = [
+  { key: 'home',         label: 'HOME' },
+  { key: 'learningTask', label: 'LEARNING TASK' },
+  { key: 'mySubjects',   label: 'MY SUBJECTS' },
+  { key: 'attendence',   label: 'ATTENDANCE' },
+  { key: 'messages',     label: 'MESSAGES' },
+  { key: 'shop',         label: 'SHOP' },
+]
+
+// ─── BgPageCard ───────────────────────────────────────────────────────────────
+// Non-purchasable visual preview of an included page background.
+
+const BgPageCard: React.FC<{ themeKey: string; page: string; label: string; themeOwned: boolean }> = ({ themeKey, page, label, themeOwned }) => {
+  const [loaded, setLoaded] = useState(false)
+  const src = `/assets/themes/${themeKey}/${page}/background.png`
+  return (
+    <div style={{
+      ...VT,
+      display: 'flex', flexDirection: 'column',
+      border: '1px solid rgba(255,215,0,0.15)',
+      background: 'var(--color-pane-bg, rgba(0,0,0,0.4))',
+      overflow: 'hidden',
+      opacity: themeOwned ? 1 : 0.55,
+    }}>
+      <div style={{ flex: 1, minHeight: '80px', position: 'relative', background: 'rgba(255,215,0,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        <img
+          src={src}
+          alt=""
+          onLoad={() => setLoaded(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', imageRendering: 'pixelated', display: loaded ? 'block' : 'none' }}
+        />
+        {!loaded && <span style={{ fontSize: '2.8rem', opacity: 0.18 }}>⛰</span>}
+        <span style={{ position: 'absolute', top: '0.35rem', right: '0.45rem', fontSize: '0.65rem', letterSpacing: '1px', color: themeOwned ? 'rgba(100,255,130,0.85)' : 'rgba(255,215,0,0.4)', background: 'rgba(0,0,0,0.65)', padding: '0.1rem 0.4rem' }}>
+          {themeOwned ? 'INCLUDED' : 'BUY THEME'}
+        </span>
+      </div>
+      <div style={{ padding: '0.45rem 0.6rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+        <span style={{ fontSize: '0.6rem', letterSpacing: '1.5px', color: 'rgba(255,215,0,0.3)' }}>PAGE BACKGROUND</span>
+        <span style={{ fontSize: '1rem', letterSpacing: '1px', color: 'rgba(255,215,0,0.88)', lineHeight: 1.1 }}>{label}</span>
+      </div>
+    </div>
+  )
+}
+
+interface ThemeSection { key: string; label: string; items: ShopItem[] }
+
+function buildSections(catalog: ShopItem[]): ThemeSection[] {
+  const map = new Map<string, ThemeSection>()
+  map.set('default', { key: 'default', label: 'DEFAULT', items: [] })
+
+  // First pass: create sections for every Theme item
+  catalog.filter(i => i.type === 'theme').forEach(ti => {
+    const key = ti.assetPath?.startsWith('themes/')
+      ? ti.assetPath.replace('themes/', '')
+      : ti.theme !== 'all' ? ti.theme : null
+    if (!key) return
+    if (!map.has(key)) map.set(key, { key, label: ti.name.toUpperCase(), items: [] })
+    map.get(key)!.items.push(ti)
+  })
+
+  // Second pass: place non-theme items into their section
+  catalog.filter(i => i.type !== 'theme').forEach(item => {
+    const compat = item.theme
+    if (compat === 'default') { map.get('default')!.items.push(item); return }
+    if (compat === 'all') return
+    if (map.has(compat)) { map.get(compat)!.items.push(item); return }
+    // Section not yet created (items without a Theme item) — create with formatted label
+    const label = compat.replace(/([A-Z])/g, ' $1').trim().toUpperCase()
+    map.set(compat, { key: compat, label, items: [item] })
+  })
+
+  return [...map.values()].filter(s => s.items.length > 0)
+}
 
 const GRID_SIZE = 9
 
@@ -441,9 +516,10 @@ export const ShopUI: React.FC = () => {
   const vocab = useThemeVocab()
   const { setTheme } = useThemeStore()
 
-  const [activeTab,    setActiveTab]    = useState<FilterTab>('all')
-  const [page,         setPage]         = useState(0)
-  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
+  const [selectedTheme, setSelectedTheme] = useState<string>('')
+  const [categoryTab,   setCategoryTab]   = useState<FilterTab>('all')
+  const [page,          setPage]          = useState(0)
+  const [selectedItem,  setSelectedItem]  = useState<ShopItem | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
 
   const { data: shopData, loading } = useQuery(SHOP_ITEMS_QUERY)
@@ -487,12 +563,34 @@ export const ShopUI: React.FC = () => {
   const rawItems: GqlShopItem[] = shopData?.shopItems ?? []
   const catalog: ShopItem[] = rawItems.map(gqlToShopItem)
 
-  const filtered   = activeTab === 'all' ? catalog : catalog.filter(i => i.type === activeTab)
+  const sections = useMemo(() => buildSections(catalog), [catalog])
+
+  // Default to first non-default section once data loads
+  useEffect(() => {
+    if (!selectedTheme && sections.length > 0) {
+      const first = sections.find(s => s.key !== 'default') ?? sections[0]
+      setSelectedTheme(first.key)
+    }
+  }, [sections])
+
+  const activeSection = sections.find(s => s.key === selectedTheme) ?? sections[0]
+  const sectionItems  = activeSection?.items ?? []
+
+  const catsInSection = new Set(sectionItems.map(i => i.type))
+  const hasBgPage = selectedTheme !== 'default' && selectedTheme !== ''
+  const visibleCatTabs = CAT_TABS.filter(t =>
+    t.id === 'all' ||
+    (t.id === 'bg_page' && hasBgPage) ||
+    catsInSection.has(t.id as ItemType)
+  )
+
+  const filtered   = categoryTab === 'all' ? sectionItems : sectionItems.filter(i => i.type === categoryTab)
   const totalPages = Math.ceil(filtered.length / GRID_SIZE)
   const pageItems  = filtered.slice(page * GRID_SIZE, (page + 1) * GRID_SIZE)
   const gridItems  = [...pageItems, ...Array(Math.max(0, GRID_SIZE - pageItems.length)).fill(null)] as (ShopItem | null)[]
 
-  const handleTabChange = (tab: FilterTab) => { setActiveTab(tab); setPage(0) }
+  const handleThemeChange = (key: string) => { setSelectedTheme(key); setCategoryTab('all'); setPage(0) }
+  const handleCatChange   = (tab: FilterTab) => { setCategoryTab(tab); setPage(0) }
 
   const handleBuy = (id: string) => {
     setMutationError(null)
@@ -551,18 +649,34 @@ export const ShopUI: React.FC = () => {
           </span>
         </div>
 
-        {/* Category tabs */}
-        <div style={{ display: 'flex', gap: '0.3rem', padding: '0.55rem 1.25rem', background: 'var(--color-pane-bg, rgba(0,0,0,0.45))', border: '1px solid rgba(255,215,0,0.2)', borderBottom: 'none', flexShrink: 0, flexWrap: 'wrap' }}>
-          {TABS.map(tab => (
+        {/* Theme selector row */}
+        <div style={{ display: 'flex', gap: '0.3rem', padding: '0.45rem 1.25rem', background: 'var(--color-pane-bg, rgba(0,0,0,0.55))', border: '1px solid rgba(255,215,0,0.2)', borderBottom: 'none', flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ ...VT, fontSize: '0.75rem', letterSpacing: '3px', color: 'rgba(255,215,0,0.3)', marginRight: '0.3rem' }}>THEME</span>
+          {sections.map(s => (
             <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              style={{ ...VT, fontSize: '1rem', letterSpacing: '1px', padding: '0.15rem 0.85rem', background: activeTab === tab.id ? 'rgba(255,215,0,0.14)' : 'transparent', border: `1px solid ${activeTab === tab.id ? 'rgba(255,215,0,0.6)' : 'rgba(255,215,0,0.18)'}`, color: activeTab === tab.id ? 'rgba(255,215,0,1)' : 'rgba(255,215,0,0.4)', cursor: 'pointer', transition: 'border-color 0.12s, color 0.12s, background 0.12s' }}
+              key={s.key}
+              onClick={() => handleThemeChange(s.key)}
+              style={{ ...VT, fontSize: '1.05rem', letterSpacing: '2px', padding: '0.2rem 1rem', background: selectedTheme === s.key ? 'rgba(255,215,0,0.18)' : 'transparent', border: `1px solid ${selectedTheme === s.key ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.18)'}`, color: selectedTheme === s.key ? 'rgba(255,215,0,1)' : 'rgba(255,215,0,0.45)', cursor: 'pointer', transition: 'border-color 0.12s, color 0.12s, background 0.12s' }}
             >
-              {tab.label}
+              {s.label}
             </button>
           ))}
         </div>
+
+        {/* Category sub-filter (only shown when there are multiple categories) */}
+        {visibleCatTabs.length > 2 && (
+          <div style={{ display: 'flex', gap: '0.25rem', padding: '0.35rem 1.25rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,215,0,0.12)', borderBottom: 'none', flexShrink: 0, flexWrap: 'wrap' }}>
+            {visibleCatTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => handleCatChange(tab.id)}
+                style={{ ...VT, fontSize: '0.85rem', letterSpacing: '1px', padding: '0.1rem 0.65rem', background: categoryTab === tab.id ? 'rgba(255,215,0,0.1)' : 'transparent', border: `1px solid ${categoryTab === tab.id ? 'rgba(255,215,0,0.45)' : 'rgba(255,215,0,0.12)'}`, color: categoryTab === tab.id ? 'rgba(255,215,0,0.9)' : 'rgba(255,215,0,0.35)', cursor: 'pointer', transition: 'border-color 0.12s, color 0.12s' }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Grid area */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--color-pane-bg, rgba(0,0,0,0.35))', border: '1px solid rgba(255,215,0,0.2)', padding: '1rem 1.25rem', gap: '0.75rem', minHeight: 0, overflow: 'hidden' }}>
@@ -582,18 +696,30 @@ export const ShopUI: React.FC = () => {
                     <span style={{ ...VT, fontSize: '0.8rem', letterSpacing: '2px', color: 'rgba(255,215,0,0.2)' }}>···</span>
                   </div>
                 ))
-              : gridItems.map((item, idx) =>
-                  item ? (
-                    <ItemCard key={item.id} item={item} points={points} onClick={() => setSelectedItem(item)} />
-                  ) : (
-                    <div key={`empty-${idx}`} style={{ background: 'rgba(255,215,0,0.01)', border: '1px dashed rgba(255,215,0,0.06)' }} />
+              : categoryTab === 'bg_page'
+                ? (() => {
+                    const themeOwned = sectionItems.some(i => i.type === 'theme' && i.owned)
+                    const padded = [...BG_PAGES, ...Array(Math.max(0, GRID_SIZE - BG_PAGES.length)).fill(null)] as (typeof BG_PAGES[0] | null)[]
+                    return padded.map((pg, idx) =>
+                      pg ? (
+                        <BgPageCard key={pg.key} themeKey={selectedTheme} page={pg.key} label={pg.label} themeOwned={themeOwned} />
+                      ) : (
+                        <div key={`empty-${idx}`} style={{ background: 'rgba(255,215,0,0.01)', border: '1px dashed rgba(255,215,0,0.06)' }} />
+                      )
+                    )
+                  })()
+                : gridItems.map((item, idx) =>
+                    item ? (
+                      <ItemCard key={item.id} item={item} points={points} onClick={() => setSelectedItem(item)} />
+                    ) : (
+                      <div key={`empty-${idx}`} style={{ background: 'rgba(255,215,0,0.01)', border: '1px dashed rgba(255,215,0,0.06)' }} />
+                    )
                   )
-                )
             }
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {totalPages > 1 && categoryTab !== 'bg_page' && (
             <div style={{ ...VT, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flexShrink: 0 }}>
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}

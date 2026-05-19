@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
@@ -12,31 +12,16 @@ const VT: React.CSSProperties = { fontFamily: "'VT323', monospace" }
 
 export const MedievalLoginScreen: React.FC = () => {
   const { username, password, isLoading, error, setUsername, setPassword, login } = useAuthStore()
-  const { currentTheme, performanceTier, setTheme } = useThemeStore()
+  const { performanceTier, setTheme } = useThemeStore()
   const navigate = useNavigate()
-  const [bannerSrc, setBannerSrc] = useState<string | null>(null)
 
   usePageBackground('login')
 
-  // Login page always resets to the default theme — the user's theme kicks in after login
+  // Login page always uses the default theme — the user's chosen theme kicks in after login
   useEffect(() => {
     setTheme('default')
     clearColorScheme()
   }, [])
-
-  useEffect(() => {
-    if (currentTheme === 'default') {
-      setBannerSrc(null)
-      return
-    }
-    const url = `/assets/themes/${currentTheme}/banner_top.png`
-    const img = new Image()
-    let cancelled = false
-    img.onload  = () => { if (!cancelled) setBannerSrc(url) }
-    img.onerror = () => { if (!cancelled) setBannerSrc(null) }
-    img.src = url
-    return () => { cancelled = true }
-  }, [currentTheme])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,29 +29,9 @@ export const MedievalLoginScreen: React.FC = () => {
     if (ok) navigate('/home')
   }
 
-  const hasBanner = bannerSrc !== null
-
   return (
     <div className="theatrical-container">
       <SpriteManager anchor="background" page="login" />
-
-      {/* Theme switcher — always fixed top-right so it never jumps position */}
-      <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 50, display: 'flex', gap: '0.5rem' }}>
-        <button onClick={() => setTheme('medieval')} className={`theme-switcher-btn${currentTheme === 'medieval' ? ' active' : ''}`}>Medieval</button>
-        <button onClick={() => setTheme('default')}  className={`theme-switcher-btn${currentTheme === 'default'  ? ' active' : ''}`}>Default</button>
-      </div>
-
-      {/* Banner — only rendered when the image actually loads */}
-      {hasBanner && (
-        <div style={{ position: 'absolute', top: '1.25rem', left: 0, width: '100%', zIndex: 2 }}>
-          <img
-            src={bannerSrc!}
-            alt=""
-            style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '170px' }}
-          />
-          <SpriteManager anchor="top_header" page="login" />
-        </div>
-      )}
 
       {performanceTier === 'High' && (
         <>
@@ -75,32 +40,35 @@ export const MedievalLoginScreen: React.FC = () => {
         </>
       )}
 
-      {/* Safe zone — pushed below banner only when banner exists */}
-      <div className={`safe-zone${hasBanner ? ' safe-zone--below-banner' : ''}`}>
+      <div className="safe-zone" style={{ gap: '0.75rem', paddingTop: '1rem' }}>
 
-        {/* Branding header — shown when no banner image is present */}
-        {!hasBanner && (
-          <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-            <div style={{ ...VT, fontSize: '3rem', letterSpacing: '8px', color: 'var(--color-accent)', textShadow: '0 2px 16px color-mix(in srgb, var(--color-accent) 30%, transparent)' }}>
-              STELLA LOGOS
-            </div>
-            <div style={{ ...VT, fontSize: '1rem', letterSpacing: '5px', color: 'var(--color-accent)', opacity: 0.45, marginTop: '0.25rem' }}>
-              LEARNING MANAGEMENT SYSTEM
-            </div>
+        {/* Branding header */}
+        <div style={{ textAlign: 'center' }}>
+          <img
+            src="/assets/themes/stella_logos_icon.png"
+            alt="Stella Logos"
+            style={{
+              width: 'min(30vh, 300px)',
+              height: 'min(30vh, 300px)',
+              objectFit: 'contain',
+              display: 'block',
+              margin: '0 auto',
+              filter: 'drop-shadow(0 0 24px color-mix(in srgb, var(--color-accent) 55%, transparent))',
+            }}
+          />
+          <div style={{ ...VT, fontSize: '1rem', letterSpacing: '5px', color: 'var(--color-accent)', opacity: 0.45, marginTop: '0.25rem' }}>
+            LEARNING MANAGEMENT SYSTEM
           </div>
-        )}
+        </div>
 
         {/* Login form */}
         <form onSubmit={handleSubmit} className="frame-parchment" style={{ gap: '0.85rem', overflow: 'visible' }}>
 
-          {/* Title inside form — only when no banner */}
-          {!hasBanner && (
-            <div style={{ ...VT, textAlign: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '1.4rem', letterSpacing: '4px', color: 'var(--color-accent)', opacity: 0.7 }}>
-                SIGN IN
-              </span>
-            </div>
-          )}
+          <div style={{ ...VT, textAlign: 'center', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '1.4rem', letterSpacing: '4px', color: 'var(--color-accent)', opacity: 0.7 }}>
+              SIGN IN
+            </span>
+          </div>
 
           {/* Username */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>

@@ -32,14 +32,20 @@ const ASSET_MANIFEST: Record<string, { relPath: string; specText: string }> = {
   ambient_sprite:  { relPath: 'ambient_sprite.png',                     specText: 'ambient_sprite.png — Tall decorative sprite (e.g. banner, statue) placed on page edges. Size: 320×640 px. Transparent background.' },
   // Music
   music_theme:     { relPath: 'music/theme.wav',                        specText: 'theme.wav — Background music for this theme. Looping WAV file. Recommended: 1–3 minutes, seamless loop point.' },
-  // Page backgrounds
-  bg_login:        { relPath: 'login/background.png',                   specText: 'login/background.png — Login page background. Full-screen: 1920×1080 px. Should be atmospheric and immersive.' },
-  bg_home:         { relPath: 'home/background.png',                    specText: 'home/background.png — Home hub page background. Full-screen: 1920×1080 px.' },
-  bg_learningTask: { relPath: 'learningTask/background.png',            specText: 'learningTask/background.png — Learning task / quest page background. Full-screen: 1920×1080 px.' },
-  bg_attendence:   { relPath: 'attendence/background.png',              specText: 'attendence/background.png — Attendance / register page background. Full-screen: 1920×1080 px.' },
-  bg_mySubjects:   { relPath: 'mySubjects/background.png',              specText: 'mySubjects/background.png — Subjects / curriculum page background. Full-screen: 1920×1080 px.' },
-  bg_messages:     { relPath: 'messages/background.png',                specText: 'messages/background.png — Messaging / social page background. Full-screen: 1920×1080 px.' },
-  bg_shop:         { relPath: 'shop/background.png',                    specText: 'shop/background.png — Shop / marketplace page background. Full-screen: 1920×1080 px.' },
+  // Page backgrounds (default — login page always uses the app default, no theme background)
+  bg_home:             { relPath: 'home/background.png',                 specText: 'home/background.png — Home hub page background. Full-screen: 1920×1080 px.' },
+  bg_learningTask:     { relPath: 'learningTask/background.png',         specText: 'learningTask/background.png — Learning task / quest page background. Full-screen: 1920×1080 px.' },
+  bg_attendence:       { relPath: 'attendence/background.png',           specText: 'attendence/background.png — Attendance / register page background. Full-screen: 1920×1080 px.' },
+  bg_mySubjects:       { relPath: 'mySubjects/background.png',           specText: 'mySubjects/background.png — Subjects / curriculum page background. Full-screen: 1920×1080 px.' },
+  bg_messages:         { relPath: 'messages/background.png',             specText: 'messages/background.png — Messaging / social page background. Full-screen: 1920×1080 px.' },
+  bg_shop:             { relPath: 'shop/background.png',                 specText: 'shop/background.png — Shop / marketplace page background. Full-screen: 1920×1080 px.' },
+  // Page backgrounds (purchasable alternatives — login excluded, always default)
+  bg_home_alt:         { relPath: 'home/background_alt.png',             specText: 'home/background_alt.png — Purchasable alternate home hub background. 1920×1080 px.' },
+  bg_learningTask_alt: { relPath: 'learningTask/background_alt.png',     specText: 'learningTask/background_alt.png — Purchasable alternate learning task background. 1920×1080 px.' },
+  bg_attendence_alt:   { relPath: 'attendence/background_alt.png',       specText: 'attendence/background_alt.png — Purchasable alternate attendance page background. 1920×1080 px.' },
+  bg_mySubjects_alt:   { relPath: 'mySubjects/background_alt.png',       specText: 'mySubjects/background_alt.png — Purchasable alternate subjects page background. 1920×1080 px.' },
+  bg_messages_alt:     { relPath: 'messages/background_alt.png',         specText: 'messages/background_alt.png — Purchasable alternate messages page background. 1920×1080 px.' },
+  bg_shop_alt:         { relPath: 'shop/background_alt.png',             specText: 'shop/background_alt.png — Purchasable alternate shop page background. 1920×1080 px.' },
   // Subject detail frame
   subject_detail:  { relPath: 'mySubjects/subject.png',                 specText: 'mySubjects/subject.png — Decorative frame shown behind subject detail popup. Size: 900×700 px. Content text is layered on top — keep the central reading area clear, decorate only the borders/corners.' },
   // Login sprites
@@ -275,16 +281,77 @@ app.post('/theme/finalize', express.json(), async (req: express.Request, res: ex
   if (!rows[0]) { res.status(404).json({ error: 'Theme not found' }); return; }
   const displayName = rows[0].display_name as string;
 
-  // Insert shop item (upsert by name)
+  // ── Theme item (upsert) ───────────────────────────────────────────────
   const assetPath = `themes/${themeName}`;
   const { rows: itemRows } = await pool.query(
     `INSERT INTO shop_items (name, description, item_type, asset_path, cost, tag, scope, theme_compatibility)
-     VALUES ($1, $2, 'Theme', $3, 500, 'theme', 'global', 'all')
+     VALUES ($1, $2, 'Theme', $3, 500, 'THEME', 'global', 'all')
      ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description, asset_path = EXCLUDED.asset_path
      RETURNING id`,
     [displayName, `${displayName} theme for Stella Logos`, assetPath],
   );
   const shopItemId = itemRows[0].id as string;
+
+  // ── Alt background items (one per uploaded page) ──────────────────────
+  const altBgPages: { key: string; page: string; label: string }[] = [
+    { key: 'bg_home_alt',         page: 'home',         label: 'Home' },
+    { key: 'bg_learningTask_alt', page: 'learningTask', label: 'Study' },
+    { key: 'bg_attendence_alt',   page: 'attendence',   label: 'Attendance' },
+    { key: 'bg_mySubjects_alt',   page: 'mySubjects',   label: 'Subjects' },
+    { key: 'bg_messages_alt',     page: 'messages',     label: 'Messages' },
+    { key: 'bg_shop_alt',         page: 'shop',         label: 'Shop' },
+  ];
+  for (const bg of altBgPages) {
+    const spec = ASSET_MANIFEST[bg.key];
+    if (!spec || !fs.existsSync(path.join(themeRoot, spec.relPath))) continue;
+    const bgAssetPath = `/assets/themes/${themeName}/${spec.relPath}`;
+    const itemName = `${displayName} - ${bg.label} Alt`;
+    await pool.query(
+      `INSERT INTO shop_items (name, description, item_type, asset_path, cost, tag, scope, theme_compatibility)
+       VALUES ($1, $2, 'Alternate Background', $3, 250, $4, $5, $6)
+       ON CONFLICT (name) DO NOTHING`,
+      [itemName, `Alternate ${bg.label.toLowerCase()} background for the ${displayName} theme.`,
+       bgAssetPath, `ALT BG - ${bg.label.toUpperCase()}`, bg.page, themeName],
+    );
+  }
+
+  // ── Sprite items (from generated sprites.json files) ──────────────────
+  const spriteScopeFiles = [
+    { jsonPath: path.join(themeRoot, 'login', 'sprites.json'),      scope: 'login' },
+    { jsonPath: path.join(themeRoot, 'attendence', 'sprites.json'), scope: 'attendence' },
+  ];
+  for (const { jsonPath, scope } of spriteScopeFiles) {
+    if (!fs.existsSync(jsonPath)) continue;
+    const spritesData = JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as { sprites: { id: string; frames: string[]; clickFrame?: string }[] };
+    for (const sprite of spritesData.sprites) {
+      const isInteractive = !!sprite.clickFrame;
+      const itemType = isInteractive ? 'Interactive Sprite' : 'Static Sprite';
+      const subtype   = isInteractive ? 'interactive' : 'static';
+      const cost      = isInteractive ? 700 : 300;
+      const spriteLabel = sprite.id.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+      const itemName  = `${displayName} - ${spriteLabel}`;
+      const spriteAsset = `/assets/themes/${themeName}/${scope}/${sprite.id}/${sprite.frames[0]}`;
+      await pool.query(
+        `INSERT INTO shop_items (name, description, item_type, asset_path, cost, tag, scope, theme_compatibility, subtype)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (name) DO NOTHING`,
+        [itemName, `${spriteLabel} sprite for the ${displayName} theme.`,
+         itemType, spriteAsset, cost, `SPRITE - ${scope.toUpperCase()}`, scope, themeName, subtype],
+      );
+    }
+  }
+
+  // ── Soundtrack item (if music/theme.wav was uploaded) ─────────────────
+  const musicPath = path.join(themeRoot, 'music', 'theme.wav');
+  if (fs.existsSync(musicPath)) {
+    const itemName = `${displayName} - Soundtrack`;
+    await pool.query(
+      `INSERT INTO shop_items (name, description, item_type, asset_path, cost, tag, scope, theme_compatibility)
+       VALUES ($1, $2, 'Soundtrack', '', 1200, 'SOUNDTRACK', 'global', $3)
+       ON CONFLICT (name) DO NOTHING`,
+      [itemName, `The ${displayName} theme soundtrack.`, themeName],
+    );
+  }
 
   // Activate theme
   await pool.query(

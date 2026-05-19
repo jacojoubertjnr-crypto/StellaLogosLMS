@@ -104,11 +104,11 @@ const ConvRow: React.FC<{ conv: GQLConversation; active: boolean; onClick: () =>
   <div
     onClick={onClick}
     style={{
-      padding: '0.6rem 0.85rem',
+      padding: '0.35rem 0.85rem',
       background: active ? 'rgba(255,215,0,0.07)' : 'transparent',
       borderLeft: `2px solid ${active ? 'rgba(255,215,0,0.55)' : 'transparent'}`,
       cursor: 'pointer', transition: 'background 0.12s',
-      display: 'flex', flexDirection: 'column', gap: '0.2rem',
+      display: 'flex', flexDirection: 'column', gap: '0.15rem',
     }}
     onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'rgba(255,215,0,0.03)' }}
     onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
@@ -116,7 +116,7 @@ const ConvRow: React.FC<{ conv: GQLConversation; active: boolean; onClick: () =>
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
         <OnlineDot online={conv.online} />
-        <span style={{ ...VT, fontSize: '1.15rem', letterSpacing: '1px', color: active ? 'rgba(255,215,0,1)' : 'rgba(255,215,0,0.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ ...VT, fontSize: '0.95rem', letterSpacing: '1px', color: active ? 'rgba(255,215,0,1)' : 'rgba(255,215,0,0.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {conv.name}
         </span>
         {conv.type === 'group' && conv.memberCount != null && (
@@ -395,6 +395,7 @@ export const SocialUI: React.FC = () => {
           width: '295px', flexShrink: 0,
           borderRight: 'none',
           display: 'flex', flexDirection: 'column', height: '100%',
+          background: 'var(--color-pane-bg)',
         }}>
 
           {/* Sidebar header */}
@@ -502,7 +503,7 @@ export const SocialUI: React.FC = () => {
         <div style={{ width: '2px', flexShrink: 0, background: 'linear-gradient(to bottom, transparent, rgba(255,215,0,0.55))' }} />
 
         {/* ── Right chat pane ───────────────────────────────────────────────── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, background: 'var(--color-pane-bg)' }}>
           {activeConv ? (
             <>
               {/* Chat header */}

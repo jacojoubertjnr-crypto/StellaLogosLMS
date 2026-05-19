@@ -78,6 +78,20 @@ export const AppHeader: React.FC = () => {
     transition: 'background 0.15s, border-color 0.15s',
   }
 
+  const backBtnStyle: React.CSSProperties = {
+    fontFamily: 'inherit',
+    fontSize: '1rem', letterSpacing: '2px',
+    padding: '2px 12px',
+    backgroundImage: 'var(--theme-btn-primary-sq)',
+    backgroundSize: '100% 100%',
+    backgroundRepeat: 'no-repeat',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    border: '1px solid rgba(255,215,0,0.45)',
+    color: 'rgba(255,215,0,0.9)',
+    cursor: 'pointer',
+    textShadow: '1px 1px 0 rgba(0,0,0,0.8)',
+  }
+
   return (
     <div style={{
       position: 'fixed',
@@ -97,12 +111,7 @@ export const AppHeader: React.FC = () => {
       {/* Left side: back button + user identity */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {!isHome && (
-          <button
-            onClick={handleBack}
-            style={headerBtnStyle}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.9)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.45)' }}
-          >
+          <button onClick={handleBack} style={backBtnStyle}>
             ◂ BACK
           </button>
         )}

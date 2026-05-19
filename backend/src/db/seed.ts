@@ -156,6 +156,17 @@ async function seed() {
       { name: 'Tavern Ambience', item_type: 'Soundtrack', cost: 1200, tag: 'SOUNDTRACK · MEDIEVAL', scope: 'global', theme: 'medieval', subtype: null,
         description: 'Crackling fire, distant lute, and low tavern murmur replace the default menu soundscape.' },
 
+      // ── MEDIEVAL ALTERNATE BACKGROUNDS (3) ───────────────────────────────
+      { name: 'Peaceful Grounds',   item_type: 'Alternate Background', cost: 250, tag: 'ALT BG · HOME',     scope: 'home',       theme: 'medieval', subtype: null,
+        asset_path: '/assets/themes/medieval/bg_home_withoutRabbit.png',
+        description: 'A quieter view of the castle grounds — the home screen background without the roaming rabbit. Same stone walls, calmer mood.' },
+      { name: 'Library of Scrolls', item_type: 'Alternate Background', cost: 250, tag: 'ALT BG · SUBJECTS', scope: 'mySubjects', theme: 'medieval', subtype: null,
+        asset_path: '/assets/themes/medieval/mySubjects/library1.png',
+        description: 'Warm candlelight fills a hall of ancient scrolls and leather-bound tomes. An alternate view of the royal library.' },
+      { name: 'Hall of Tomes',      item_type: 'Alternate Background', cost: 250, tag: 'ALT BG · SUBJECTS', scope: 'mySubjects', theme: 'medieval', subtype: null,
+        asset_path: '/assets/themes/medieval/mySubjects/library2.png',
+        description: 'Towering shelves of enchanted tomes stretch into shadow. A grander, more mysterious take on the royal library.' },
+
       // ── DEFAULT COLOUR SCHEMES — CSS-only skins, no asset folder needed (3)
       { name: 'Crimson Court', item_type: 'Color Scheme', cost: 500, tag: 'COLOUR SCHEME · DEFAULT', scope: 'global', theme: 'default', subtype: null,
         description: 'Deep crimson and burnished copper replace the default blue accent palette across all interface elements.' },

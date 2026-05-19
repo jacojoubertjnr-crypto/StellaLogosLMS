@@ -308,6 +308,18 @@ export const typeDefs = `#graphql
     quizQuestions: [QuizQuestionInput!]  # collected from all quiz blocks
   }
 
+  # ── System Config ────────────────────────────────────────────────────────────
+
+  type SystemConfig {
+    ltOntimePts:        Int!
+    ltLatePts:          Int!
+    themeCost:          Int!
+    altBgCost:          Int!
+    staticSpriteCost:   Int!
+    movingSpriteCost:   Int!
+    clickableSpriteCost: Int!
+  }
+
   # ── Queries ──────────────────────────────────────────────────────────────────
 
   type Query {
@@ -413,6 +425,9 @@ export const typeDefs = `#graphql
 
     # Admin: all custom themes including drafts
     adminThemes: [CustomTheme!]!
+
+    # System pricing/config — readable by any authenticated user
+    systemConfig: SystemConfig!
   }
 
   type LearnerActivitySummary {
@@ -538,6 +553,17 @@ export const typeDefs = `#graphql
 
     # Admin: delete a custom theme and its shop item
     adminDeleteTheme(themeName: String!): Boolean!
+
+    # Admin: update system pricing config
+    updateSystemConfig(
+      ltOntimePts:        Int
+      ltLatePts:          Int
+      themeCost:          Int
+      altBgCost:          Int
+      staticSpriteCost:   Int
+      movingSpriteCost:   Int
+      clickableSpriteCost: Int
+    ): SystemConfig!
   }
 
   input TaskGroupMemberInput {

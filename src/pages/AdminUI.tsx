@@ -78,6 +78,31 @@ const ADMIN_ENROLL = gql`
     adminEnrollLearner(learnerId: $learnerId, academicClassId: $academicClassId)
   }
 `
+
+const SYSTEM_CONFIG_QUERY = gql`
+  query SystemConfig {
+    systemConfig {
+      ltOntimePts ltLatePts themeCost altBgCost
+      staticSpriteCost movingSpriteCost clickableSpriteCost
+    }
+  }
+`
+
+const UPDATE_SYSTEM_CONFIG = gql`
+  mutation UpdateSystemConfig(
+    $ltOntimePts: Int $ltLatePts: Int $themeCost: Int $altBgCost: Int
+    $staticSpriteCost: Int $movingSpriteCost: Int $clickableSpriteCost: Int
+  ) {
+    updateSystemConfig(
+      ltOntimePts: $ltOntimePts ltLatePts: $ltLatePts themeCost: $themeCost
+      altBgCost: $altBgCost staticSpriteCost: $staticSpriteCost
+      movingSpriteCost: $movingSpriteCost clickableSpriteCost: $clickableSpriteCost
+    ) {
+      ltOntimePts ltLatePts themeCost altBgCost
+      staticSpriteCost movingSpriteCost clickableSpriteCost
+    }
+  }
+`
 const ADMIN_UNENROLL = gql`
   mutation AdminUnenrollLearner($learnerId: ID!, $academicClassId: ID!) {
     adminUnenrollLearner(learnerId: $learnerId, academicClassId: $academicClassId)
@@ -87,6 +112,7 @@ const ADMIN_UNENROLL = gql`
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface AdminUser { id: string; email: string; displayName: string; role: string; paidStatus: boolean }
+interface SystemConfig { ltOntimePts: number; ltLatePts: number; themeCost: number; altBgCost: number; staticSpriteCost: number; movingSpriteCost: number; clickableSpriteCost: number }
 interface AdminRegisterClass { id: string; name: string; grade: number; teacherId: string | null; teacherName: string | null; academicClassCount: number }
 interface AdminAcademicClass { id: string; name: string; subject: string; grade: number; totalSteps: number; registerClassId: string; registerClassName: string; teacherId: string | null; teacherName: string | null; enrolledCount: number }
 interface AdminEnrollment { learnerId: string; learnerName: string; learnerEmail: string }
@@ -438,7 +464,7 @@ const AddBar: React.FC<{ label: string; onClick: () => void }> = ({ label, onCli
 
 // ─── AdminUI ──────────────────────────────────────────────────────────────────
 
-type OpenSection = 'teachers' | 'learners' | 'registerClasses' | 'academicClasses'
+type OpenSection = 'teachers' | 'learners' | 'registerClasses' | 'academicClasses' | 'settings'
 
 export const AdminUI: React.FC = () => {
   const navigate = useNavigate()
@@ -453,6 +479,15 @@ export const AdminUI: React.FC = () => {
   const { data: usersData, refetch: refetchUsers } = useQuery(ADMIN_USERS, refetchOpts)
   const { data: regData, refetch: refetchReg } = useQuery(ADMIN_REGISTER_CLASSES, refetchOpts)
   const { data: acData, refetch: refetchAc } = useQuery(ADMIN_ACADEMIC_CLASSES, refetchOpts)
+  const { data: configData } = useQuery(SYSTEM_CONFIG_QUERY, refetchOpts)
+  const serverConfig: SystemConfig = configData?.systemConfig ?? { ltOntimePts: 250, ltLatePts: 200, themeCost: 1000, altBgCost: 250, staticSpriteCost: 250, movingSpriteCost: 300, clickableSpriteCost: 350 }
+
+  const [cfgForm, setCfgForm] = useState<SystemConfig | null>(null)
+  const activeCfg: SystemConfig = cfgForm ?? serverConfig
+  const [cfgSaved, setCfgSaved] = useState(false)
+  const [updateConfig] = useMutation(UPDATE_SYSTEM_CONFIG, {
+    onCompleted: () => { setCfgForm(null); setCfgSaved(true); setTimeout(() => setCfgSaved(false), 2000) },
+  })
 
   const allUsers: AdminUser[] = usersData?.adminUsers ?? []
   const teachers = allUsers.filter(u => u.role === 'Teacher')
@@ -609,6 +644,38 @@ export const AdminUI: React.FC = () => {
             </RowWrap>
           ))}
           {acClasses.length === 0 && <p style={{ ...VT, fontSize: '0.85rem', color: 'rgba(255,215,0,0.3)' }}>No academic classes found.</p>}
+        </ExpandingCard>
+
+        {/* SYSTEM SETTINGS */}
+        <ExpandingCard title="SYSTEM SETTINGS" isOpen={openSection === 'settings'} onToggle={() => toggle('settings')}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.5rem' }}>
+            {([
+              ['ltOntimePts',        'LT POINTS — ON TIME'],
+              ['ltLatePts',          'LT POINTS — LATE'],
+              ['themeCost',          'THEME COST'],
+              ['altBgCost',          'ALT BACKGROUND COST'],
+              ['staticSpriteCost',   'STATIC SPRITE COST'],
+              ['movingSpriteCost',   'MOVING SPRITE COST'],
+              ['clickableSpriteCost','CLICKABLE SPRITE COST'],
+            ] as [keyof SystemConfig, string][]).map(([key, label]) => (
+              <FormField key={key} label={label}>
+                <input
+                  style={{ ...inputStyle, maxWidth: '140px' }}
+                  type="number"
+                  min={0}
+                  value={activeCfg[key]}
+                  onChange={e => setCfgForm(f => ({ ...(f ?? serverConfig), [key]: parseInt(e.target.value, 10) || 0 }))}
+                />
+              </FormField>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', alignItems: 'center' }}>
+            <GoldBtn onClick={() => {
+              updateConfig({ variables: { ...activeCfg } })
+            }}>SAVE SETTINGS</GoldBtn>
+            {cfgSaved && <span style={{ ...VT, fontSize: '0.9rem', color: 'rgba(80,255,120,0.7)', letterSpacing: '1px' }}>SAVED</span>}
+            {cfgForm && <GoldBtn dim onClick={() => setCfgForm(null)}>RESET</GoldBtn>}
+          </div>
         </ExpandingCard>
 
         {/* THEME ADDER */}

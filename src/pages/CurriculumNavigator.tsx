@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { mockSubjects } from '@/mockState'
@@ -249,17 +249,8 @@ const CurrentTaskPanel: React.FC<{
   pal: Pal
   onEnter: () => void
   onBack: () => void
-  onShowArchive: () => void
-  archivedCount: number
-}> = ({ subject, pal, onEnter, onBack, onShowArchive, archivedCount }) => (
-  <motion.div
-    key="current"
-    initial={{ opacity: 0, x: 24 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -24 }}
-    transition={{ duration: 0.2 }}
-    style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}
-  >
+}> = ({ subject, pal, onEnter, onBack }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
     <div>
       <p style={{ margin: 0, fontSize: '2rem', letterSpacing: '2px', color: pal.text }}>
         {subject.name}
@@ -279,246 +270,41 @@ const CurrentTaskPanel: React.FC<{
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
       <button
         onClick={onEnter}
-        style={{
-          fontFamily: "'VT323', monospace", fontSize: '1rem', letterSpacing: '1px',
-          background: 'none', border: 'none', padding: 0,
-          color: pal.subtext, cursor: 'pointer',
-          textDecoration: 'underline', textUnderlineOffset: '3px', transition: 'color 0.1s',
-        }}
+        style={{ fontFamily: "'VT323', monospace", fontSize: '1rem', letterSpacing: '1px', background: 'none', border: 'none', padding: 0, color: pal.subtext, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px', transition: 'color 0.1s' }}
         onMouseEnter={(e) => { e.currentTarget.style.color = pal.text }}
         onMouseLeave={(e) => { e.currentTarget.style.color = pal.subtext }}
-      >
-        ▶ GO TO
-      </button>
+      >▶ GO TO</button>
       <span style={{ color: pal.faint }}>·</span>
       <button
         onClick={onBack}
-        style={{
-          fontFamily: "'VT323', monospace", fontSize: '1rem', letterSpacing: '1px',
-          background: 'none', border: 'none', padding: 0,
-          color: pal.dim, cursor: 'pointer',
-          textDecoration: 'underline', textUnderlineOffset: '3px', transition: 'color 0.1s',
-        }}
+        style={{ fontFamily: "'VT323', monospace", fontSize: '1rem', letterSpacing: '1px', background: 'none', border: 'none', padding: 0, color: pal.dim, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px', transition: 'color 0.1s' }}
         onMouseEnter={(e) => { e.currentTarget.style.color = pal.subtext }}
         onMouseLeave={(e) => { e.currentTarget.style.color = pal.dim }}
-      >
-        ◂ BACK
-      </button>
+      >◂ BACK</button>
     </div>
-
-    {archivedCount > 0 && (
-      <button
-        onClick={onShowArchive}
-        style={{
-          fontFamily: "'VT323', monospace", fontSize: '0.9rem', letterSpacing: '2px',
-          background: 'none',
-          border: `1px solid ${pal.faint}`,
-          borderRadius: '3px',
-          padding: '0.3rem 0.85rem',
-          color: pal.dim,
-          cursor: 'pointer',
-          alignSelf: 'flex-start',
-          marginTop: '0.25rem',
-          transition: 'color 0.12s, border-color 0.12s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = pal.subtext
-          e.currentTarget.style.borderColor = pal.subtext
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = pal.dim
-          e.currentTarget.style.borderColor = pal.faint
-        }}
-      >
-        ▼ PREVIOUS LEARNING TASKS ({archivedCount})
-      </button>
-    )}
-  </motion.div>
+  </div>
 )
 
 // ─── ArchivedTaskPanel ────────────────────────────────────────────────────────
 
-const ArchivedTaskPanel: React.FC<{
-  tasks: ArchivedTask[]
-  index: number
-  pal: Pal
-  onIndexChange: (i: number) => void
-  onBack: () => void
-}> = ({ tasks, index, pal, onIndexChange, onBack }) => {
-  const task = tasks[index]
-  if (!task) return null
-
-  return (
-    <motion.div
-      key="archive"
-      initial={{ opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -24 }}
-      transition={{ duration: 0.2 }}
-      style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div>
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: '0.8rem', letterSpacing: '3px', color: 'rgba(255,255,255,0.5)' }}>
-            COMPLETED {task.completedDate}
-          </div>
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: '1.75rem', letterSpacing: '2px', color: 'rgba(255,255,255,0.97)', lineHeight: 1.1, marginTop: '2px' }}>
-            TASK {task.taskNumber} — {task.title.toUpperCase()}
-          </div>
-        </div>
-
-        {/* Task navigation */}
-        {tasks.length > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <button
-              onClick={() => onIndexChange(index - 1)}
-              disabled={index === 0}
-              style={{
-                fontFamily: "'VT323', monospace", fontSize: '1rem',
-                background: 'none', border: `1px solid ${index === 0 ? pal.faint : pal.dim}`,
-                borderRadius: '3px', padding: '0.1rem 0.5rem',
-                color: index === 0 ? pal.faint : pal.dim,
-                cursor: index === 0 ? 'default' : 'pointer',
-              }}
-            >◂</button>
-            <span style={{ fontFamily: "'VT323', monospace", fontSize: '0.8rem', color: pal.dim, letterSpacing: '1px' }}>
-              {index + 1} / {tasks.length}
-            </span>
-            <button
-              onClick={() => onIndexChange(index + 1)}
-              disabled={index === tasks.length - 1}
-              style={{
-                fontFamily: "'VT323', monospace", fontSize: '1rem',
-                background: 'none', border: `1px solid ${index === tasks.length - 1 ? pal.faint : pal.dim}`,
-                borderRadius: '3px', padding: '0.1rem 0.5rem',
-                color: index === tasks.length - 1 ? pal.faint : pal.dim,
-                cursor: index === tasks.length - 1 ? 'default' : 'pointer',
-              }}
-            >▶</button>
-          </div>
-        )}
+const ArchivedTaskPanel: React.FC<{ task: ArchivedTask; pal: Pal; onEnter: () => void }> = ({ task, pal, onEnter }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
+    <div>
+      <div style={{ fontFamily: "'VT323', monospace", fontSize: '0.8rem', letterSpacing: '3px', color: pal.dim }}>
+        COMPLETED {task.completedDate}
       </div>
-
-      {/* Resources */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-        <div style={{
-          fontFamily: "'VT323', monospace", fontSize: '1.1rem', letterSpacing: '4px',
-          color: '#FFD700',
-          background: 'rgba(255,215,0,0.08)',
-          border: '1px solid rgba(255,215,0,0.25)',
-          borderRadius: '3px',
-          padding: '0.3rem 0.6rem',
-          marginBottom: '0.25rem',
-        }}>
-          CONTENT RESOURCES
-        </div>
-        {task.resources.map((r, i) => (
-          <button
-            key={i}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '0.6rem',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              borderRadius: '3px',
-              padding: '0.45rem 0.75rem',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'background 0.12s, border-color 0.12s',
-              width: '100%',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)' }}
-          >
-            <span style={{ fontSize: '1rem', flexShrink: 0 }}>{RESOURCE_ICON[r.type]}</span>
-            <span style={{ fontFamily: "'VT323', monospace", fontSize: '0.95rem', letterSpacing: '1px', color: 'rgba(255,255,255,0.88)' }}>
-              {r.label}
-            </span>
-            <span style={{ fontFamily: "'VT323', monospace", fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto', letterSpacing: '1px' }}>
-              VIEW ▶
-            </span>
-          </button>
-        ))}
+      <div style={{ fontFamily: "'VT323', monospace", fontSize: '1.75rem', letterSpacing: '2px', color: pal.text, lineHeight: 1.1, marginTop: '2px' }}>
+        TASK {task.taskNumber} — {task.title.toUpperCase()}
       </div>
-
-      {/* Divider */}
-      <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-
-      {/* Quiz */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{
-          fontFamily: "'VT323', monospace", fontSize: '1.1rem', letterSpacing: '4px',
-          color: '#FFD700',
-          background: 'rgba(255,215,0,0.08)',
-          border: '1px solid rgba(255,215,0,0.25)',
-          borderRadius: '3px',
-          padding: '0.3rem 0.6rem',
-          marginBottom: '0.1rem',
-        }}>
-          QUIZ — {task.quiz.length} QUESTIONS
-        </div>
-        {task.quiz.map(q => (
-          <div key={q.number} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: '0.95rem', color: 'rgba(255,255,255,0.92)', letterSpacing: '0.5px', lineHeight: 1.4 }}>
-              <span style={{ color: 'rgba(255,255,255,0.4)' }}>{q.number}. </span>{q.text}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingLeft: '0.75rem' }}>
-              {q.options.map(opt => (
-                <div
-                  key={opt.letter}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.3rem 0.6rem',
-                    background: opt.isCorrect ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${opt.isCorrect ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                    borderRadius: '3px',
-                  }}
-                >
-                  <span style={{ fontFamily: "'VT323', monospace", fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', minWidth: '16px' }}>
-                    {opt.letter}.
-                  </span>
-                  <span style={{ fontFamily: "'VT323', monospace", fontSize: '0.9rem', color: opt.isCorrect ? '#4ade80' : 'rgba(255,255,255,0.82)', letterSpacing: '0.5px' }}>
-                    {opt.text}
-                  </span>
-                  {opt.isCorrect && (
-                    <span style={{ fontFamily: "'VT323', monospace", fontSize: '0.72rem', color: '#4ade80', marginLeft: 'auto', letterSpacing: '1px' }}>
-                      ✓ CORRECT
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Back to current */}
-      <button
-        onClick={onBack}
-        style={{
-          fontFamily: "'VT323', monospace", fontSize: '0.9rem', letterSpacing: '2px',
-          background: 'none', border: `1px solid ${pal.faint}`, borderRadius: '3px',
-          padding: '0.3rem 0.85rem',
-          color: pal.dim,
-          cursor: 'pointer',
-          alignSelf: 'flex-start',
-          marginTop: '0.25rem',
-          transition: 'color 0.12s, border-color 0.12s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = pal.subtext
-          e.currentTarget.style.borderColor = pal.subtext
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = pal.dim
-          e.currentTarget.style.borderColor = pal.faint
-        }}
-      >
-        ▲ CURRENT TASK
-      </button>
-    </motion.div>
-  )
-}
+    </div>
+    <button
+      onClick={onEnter}
+      style={{ fontFamily: "'VT323', monospace", fontSize: '1rem', letterSpacing: '1px', background: 'none', border: 'none', padding: 0, color: pal.subtext, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px', transition: 'color 0.1s', alignSelf: 'flex-start' }}
+      onMouseEnter={(e) => { e.currentTarget.style.color = pal.text }}
+      onMouseLeave={(e) => { e.currentTarget.style.color = pal.subtext }}
+    >▶ GO TO</button>
+  </div>
+)
 
 // ─── SubjectDetail (modal overlay) ───────────────────────────────────────────
 
@@ -531,10 +317,13 @@ interface DetailProps {
 const SubjectDetail: React.FC<DetailProps> = ({ subject, onBack, onEnter }) => {
   const { currentTheme } = useThemeStore()
   const archived = getArchived(subject.name)
-
-  const [view, setView]               = useState<'current' | 'archive'>('current')
-  const [archiveIndex, setArchiveIndex] = useState(archived.length - 1)
+  const allCount = archived.length + 1
   const [subjectImgUrl, setSubjectImgUrl] = useState<string | null>(null)
+  const scrollRef  = useRef<HTMLDivElement>(null)
+  const frameRefs  = useRef<(HTMLDivElement | null)[]>([])
+  const [frameStyles, setFrameStyles] = useState<{ opacity: number; scale: number }[]>(
+    () => Array.from({ length: allCount }, (_, i) => i === allCount - 1 ? { opacity: 1, scale: 1 } : { opacity: 0.42, scale: 0.87 })
+  )
 
   useEffect(() => {
     const url = `/assets/themes/${currentTheme}/mySubjects/subject.png`
@@ -546,9 +335,37 @@ const SubjectDetail: React.FC<DetailProps> = ({ subject, onBack, onEnter }) => {
     return () => { cancelled = true }
   }, [currentTheme])
 
+  const updateStyles = useCallback(() => {
+    if (!scrollRef.current) return
+    const cr = scrollRef.current.getBoundingClientRect()
+    const containerCenter = cr.top + cr.height / 2
+    const maxDist = cr.height * 0.55
+    setFrameStyles(frameRefs.current.map((el) => {
+      if (!el) return { opacity: 0.42, scale: 0.87 }
+      const tr = el.getBoundingClientRect()
+      const distance = Math.abs((tr.top + tr.height / 2) - containerCenter)
+      const t = Math.max(0, Math.min(1, distance / maxDist))
+      return { opacity: 1 - t * 0.58, scale: 1 - t * 0.13 }
+    }))
+  }, [])
+
+  // Centre current task on open, then sync initial styles
+  useEffect(() => {
+    const t = setTimeout(() => {
+      frameRefs.current[allCount - 1]?.scrollIntoView({ block: 'center' })
+      requestAnimationFrame(updateStyles)
+    }, 60)
+    return () => clearTimeout(t)
+  }, [])
+
   const basePal = PALETTE[currentTheme as keyof typeof PALETTE] ?? PALETTE.default
-  // Themes with a frame image (light parchment/scroll) use medieval dark text
   const pal = subjectImgUrl ? PALETTE.medieval : basePal
+
+  const frameStyle: React.CSSProperties = subjectImgUrl
+    ? { backgroundImage: `url('${subjectImgUrl}')`, backgroundSize: '100% 100%', imageRendering: 'pixelated' as const, padding: '2.5rem 13rem', fontFamily: "'VT323', monospace", width: '100%', boxSizing: 'border-box' as const }
+    : pal.cardBg
+      ? { backgroundColor: pal.cardBg, border: pal.cardBorder, backdropFilter: 'blur(4px)', padding: '2rem 2.5rem', fontFamily: "'VT323', monospace", width: '100%', boxSizing: 'border-box' as const }
+      : { backgroundColor: 'var(--color-modal-bg, rgba(8,8,8,0.97))', border: '1px solid rgba(255,215,0,0.15)', padding: '2rem 2.5rem', fontFamily: "'VT323', monospace", width: '100%', boxSizing: 'border-box' as const }
 
   return (
     <motion.div
@@ -557,62 +374,65 @@ const SubjectDetail: React.FC<DetailProps> = ({ subject, onBack, onEnter }) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
+      ref={scrollRef}
+      onClick={onBack}
+      onScroll={updateStyles}
       style={{
         position: 'fixed', inset: 0, zIndex: 20,
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', padding: '2rem',
+        background: 'rgba(0,0,0,0.65)',
+        overflowY: 'auto',
+        display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
+        padding: '50vh 2rem 50vh',
+        scrollSnapType: 'y mandatory',
+        scrollBehavior: 'smooth',
       }}
     >
-      <div onClick={onBack} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', cursor: 'default' }} />
-
-      <motion.div
-        initial={{ scale: 0.94, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.94, opacity: 0 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
-        style={{ position: 'relative', width: '100%', maxWidth: '900px' }}
+      {/* Stack column — stop propagation so clicking frames doesn't dismiss */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}
       >
-        <motion.div
-          animate={{ filter: pal.detailGlow }}
-          transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+        {/* Previous task frames — distance-driven opacity/scale */}
+        {archived.map((task, i) => (
+          <div
+            key={task.taskNumber}
+            ref={(el) => { frameRefs.current[i] = el }}
+            style={{
+              opacity: frameStyles[i]?.opacity ?? 0.42,
+              transform: `scale(${frameStyles[i]?.scale ?? 0.87})`,
+              transformOrigin: 'center center',
+              transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
+              width: '100%',
+              scrollSnapAlign: 'center',
+            }}
+          >
+            <div style={frameStyle}>
+              <ArchivedTaskPanel task={task} pal={pal} onEnter={onEnter} />
+            </div>
+          </div>
+        ))}
+
+        {/* Current task frame — distance-driven opacity/scale, glow animation */}
+        <div
           style={{
-            ...(subjectImgUrl
-              ? { backgroundImage: `url('${subjectImgUrl}')`, backgroundSize: '100% 100%', imageRendering: 'pixelated' }
-              : pal.cardBg
-                ? { backgroundColor: pal.cardBg, border: pal.cardBorder, backdropFilter: 'blur(4px)' }
-                : { backgroundColor: 'var(--color-modal-bg, rgba(8,8,8,0.97))', border: '1px solid rgba(255,215,0,0.15)' }),
-            padding: '2.5rem 13rem',
-            fontFamily: "'VT323', monospace",
+            opacity: frameStyles[allCount - 1]?.opacity ?? 1,
+            transform: `scale(${frameStyles[allCount - 1]?.scale ?? 1})`,
+            transformOrigin: 'center center',
+            transition: 'opacity 0.08s, transform 0.08s',
             width: '100%',
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            boxSizing: 'border-box',
+            scrollSnapAlign: 'center',
           }}
         >
-          <AnimatePresence mode="wait">
-            {view === 'current' ? (
-              <CurrentTaskPanel
-                key="current"
-                subject={subject}
-                pal={pal}
-                onEnter={onEnter}
-                onBack={onBack}
-                onShowArchive={() => { setArchiveIndex(archived.length - 1); setView('archive') }}
-                archivedCount={archived.length}
-              />
-            ) : (
-              <ArchivedTaskPanel
-                key="archive"
-                tasks={archived}
-                index={archiveIndex}
-                pal={pal}
-                onIndexChange={setArchiveIndex}
-                onBack={() => setView('current')}
-              />
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </motion.div>
+          <motion.div
+            ref={(el) => { frameRefs.current[allCount - 1] = el }}
+            animate={{ filter: pal.detailGlow }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+            style={frameStyle}
+          >
+            <CurrentTaskPanel subject={subject} pal={pal} onEnter={onEnter} onBack={onBack} />
+          </motion.div>
+        </div>
+      </div>
     </motion.div>
   )
 }

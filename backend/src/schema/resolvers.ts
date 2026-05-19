@@ -788,6 +788,21 @@ export const resolvers = {
         createdAt: new Date(r.created_at).toISOString(),
       }));
     },
+
+    async systemConfig(_: unknown, __: unknown, ctx: ApolloContext) {
+      requireAuth(ctx);
+      const { rows } = await pool.query(`SELECT * FROM system_config WHERE id = 1`);
+      const r = rows[0];
+      return {
+        ltOntimePts:         r.lt_ontime_pts,
+        ltLatePts:           r.lt_late_pts,
+        themeCost:           r.theme_cost,
+        altBgCost:           r.alt_bg_cost,
+        staticSpriteCost:    r.static_sprite_cost,
+        movingSpriteCost:    r.moving_sprite_cost,
+        clickableSpriteCost: r.clickable_sprite_cost,
+      };
+    },
   },
 
   Mutation: {
@@ -1840,6 +1855,42 @@ export const resolvers = {
       requireRole(ctx, 'Admin');
       await pool.query(`DELETE FROM custom_themes WHERE name = $1`, [themeName]);
       return true;
+    },
+
+    async updateSystemConfig(_: unknown, args: {
+      ltOntimePts?: number; ltLatePts?: number; themeCost?: number;
+      altBgCost?: number; staticSpriteCost?: number; movingSpriteCost?: number;
+      clickableSpriteCost?: number;
+    }, ctx: ApolloContext) {
+      requireRole(ctx, 'Admin');
+      const setClauses: string[] = [];
+      const values: unknown[] = [];
+      let i = 1;
+      if (args.ltOntimePts         !== undefined) { setClauses.push(`lt_ontime_pts = $${i++}`);         values.push(args.ltOntimePts); }
+      if (args.ltLatePts            !== undefined) { setClauses.push(`lt_late_pts = $${i++}`);            values.push(args.ltLatePts); }
+      if (args.themeCost            !== undefined) { setClauses.push(`theme_cost = $${i++}`);            values.push(args.themeCost); }
+      if (args.altBgCost            !== undefined) { setClauses.push(`alt_bg_cost = $${i++}`);           values.push(args.altBgCost); }
+      if (args.staticSpriteCost     !== undefined) { setClauses.push(`static_sprite_cost = $${i++}`);    values.push(args.staticSpriteCost); }
+      if (args.movingSpriteCost     !== undefined) { setClauses.push(`moving_sprite_cost = $${i++}`);    values.push(args.movingSpriteCost); }
+      if (args.clickableSpriteCost  !== undefined) { setClauses.push(`clickable_sprite_cost = $${i++}`); values.push(args.clickableSpriteCost); }
+      if (setClauses.length > 0) {
+        values.push(1);
+        await pool.query(
+          `UPDATE system_config SET ${setClauses.join(', ')} WHERE id = $${i}`,
+          values,
+        );
+      }
+      const { rows } = await pool.query(`SELECT * FROM system_config WHERE id = 1`);
+      const r = rows[0];
+      return {
+        ltOntimePts:         r.lt_ontime_pts,
+        ltLatePts:           r.lt_late_pts,
+        themeCost:           r.theme_cost,
+        altBgCost:           r.alt_bg_cost,
+        staticSpriteCost:    r.static_sprite_cost,
+        movingSpriteCost:    r.moving_sprite_cost,
+        clickableSpriteCost: r.clickable_sprite_cost,
+      };
     },
   },
 

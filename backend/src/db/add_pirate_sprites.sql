@@ -1,0 +1,9 @@
+INSERT INTO shop_items (name, description, item_type, asset_path, cost, tag, scope, theme_compatibility, subtype)
+VALUES
+  ('Skull Torch',       'A flickering skull torch mounted on the login screen wall. Static decoration.',                     'Static Sprite',      '/assets/themes/classicPirate/login/torch_flicker/frame_1.png',  300,  'SPRITE . STATIC . LOGIN',     'login',      'classicPirate', 'static'),
+  ('Parrot',            'A colourful parrot drifts across the login screen. Click it before it flies away for bonus points.','Interactive Sprite',  '/assets/themes/classicPirate/login/dove/frame_1.png',           700,  'SPRITE . CLICKABLE . LOGIN',  'login',      'classicPirate', 'interactive'),
+  ('Cannon',            'A smoking cannon sits in the corner of the attendance screen. Non-interactive decoration.',          'Static Sprite',       '/assets/themes/classicPirate/attendence/fireplace/frame_1.png', 300,  'SPRITE . STATIC . ATTENDANCE','attendence', 'classicPirate', 'static'),
+  ('Ship Rat',          'A scruffy rat scurries across the home screen. Click it for bonus points.',                         'Interactive Sprite',  '/assets/themes/classicPirate/home/rabbit/frame_1.png',          700,  'SPRITE . CLICKABLE . HOME',   'home',       'classicPirate', 'interactive'),
+  ('Drifting Fog',      'A wisp of sea fog drifts slowly across the home screen.',                                           'Animated Sprite',     '/assets/themes/classicPirate/home/cloud_drift.png',             300,  'SPRITE . ANIMATED . HOME',    'home',       'classicPirate', 'animated'),
+  ('Sea Shanty',        'A rousing sea shanty replaces the default menu soundscape.',                                        'Soundtrack',          '',                                                              1200, 'SOUNDTRACK . PIRATES',        'global',     'classicPirate', NULL)
+ON CONFLICT (name) DO NOTHING;

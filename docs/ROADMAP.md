@@ -222,6 +222,8 @@ All UI copy that varies by theme is driven by JSON files — no hardcoded aesthe
 ### Visual Polish
 - [x] Themed scrollbars — gold thumb / dark track (`globals.css`, webkit + Firefox `scrollbar-color`)
 - [x] `CurriculumNavigator` tape scroll — smoothed to 560ms with expo-out ease `[0.22, 1, 0.36, 1]`
+- [x] `CurriculumNavigator` scroll carousel — current task frame centered on open; archived frames above faded + smaller; CSS scroll snap (`scrollSnapType: 'y mandatory'`); scroll-driven opacity (1→0.42) + scale (1→0.87) based on distance from viewport center; `50vh` padding top/bottom allows any frame to reach center; `frameRefs` array pattern for per-frame DOM measurements; ArchivedTaskPanel simplified to title + completed date + GO TO button only
+- [x] `SocialUI` `ConvRow` compactness — padding reduced from `0.6rem` to `0.35rem`; name font size from `1.15rem` to `0.95rem`; gap tightened
 
 ### AppHeader Fixes
 - [x] `/submit/:taskId` dynamic route — segment extraction (`pathname.split('/')[1]`) maps to `attendence` banner
@@ -518,13 +520,14 @@ Admin-facing wizard for uploading and registering new pixel-art themes. Themes c
 - [x] `adminDeleteTheme(themeName: String!): Boolean!` mutation — removes DB row
 
 ### Frontend — `src/pages/ThemeAdderUI.tsx` (rewritten)
-- [x] 11-step guided wizard: step 0 (name + slug), step 1 (CSS colour pickers with live swatches), steps 2–9 (8 asset groups), step 10 (finalize)
-- [x] **Simplified asset set** — custom themes consist of: banner, primary button, music, 7 page backgrounds, and 3 sprite types per page (static / moving / clickable). `frame_main`, `input_box`, and `ambient_sprite` removed from the custom theme system entirely; custom themes use `--color-pane-bg` for opaque solid panels instead.
-- [x] **8 asset groups**: BANNER & BUTTON (`banner_top`, `btn_primary`), THEME MUSIC, PAGE BACKGROUNDS (7 pages), LOGIN — STATIC SPRITE (torch frames 1–3), LOGIN — CLICKABLE SPRITE (dove frames + clicked), HOME — MOVING SPRITE (cloud_drift), HOME — CLICKABLE SPRITE (rabbit frames + clicked), ATTENDANCE — STATIC SPRITE (fireplace frames 1–4)
-- [x] **Sprite terminology**: Static sprite = animates in place at a fixed position (torch, fireplace); Moving sprite = drifts continuously across the screen (cloud_drift); Clickable sprite = moves across the screen AND reacts on click (dove, rabbit)
-- [x] **PlacementPicker component** — appears after static sprite frames are uploaded; renders the page background as a 16:9 interactive canvas; sprite thumbnail follows cursor; click locks the position as `{ x, y }` percentage; RE-PLACE and USE DEFAULT POSITION buttons; placement required before advancing past static sprite groups
-- [x] `spritePositions` state — `Record<string, { x: number; y: number }>` keyed by `'login_static'` / `'attendence_static'`; sent in the finalize payload
-- [x] `ThemePreviewPanel` — 16:9 live preview sidebar showing banner, content pane (solid `rgba(8,8,8,0.97)`), and sprites at placed/default positions; background updates as each bg group is uploaded
+- [x] 10-step guided wizard: step 0 (name + slug), step 1 (CSS colour pickers with live swatches), steps 2–8 (7 asset groups), step 9 (finalize)
+- [x] **Simplified asset set** — custom themes consist of: banner, primary button, music, 7 page backgrounds, and 3 sprite types per page (static / moving / clickable). `frame_main`, `input_box`, and `ambient_sprite` removed from the custom theme system entirely; login page removed (always uses app default). Custom themes use `--color-pane-bg` for opaque solid panels instead.
+- [x] **7 asset groups** (page-grouped layout): BRANDING (`banner_top`, `btn_primary`, music), HOME PAGE (bg + alt bg + cloud + rabbit), LEARNING TASK PAGE (bg + alt bg), MY SUBJECTS PAGE (bg + alt bg + subject_detail), ATTENDANCE PAGE (bg + alt bg + fireplace frames 1–4), MESSAGES PAGE (bg + alt bg), SHOP PAGE (bg + alt bg)
+- [x] **Sprite terminology**: Static sprite = animates in place at a fixed position (fireplace); Moving sprite = drifts continuously across the screen (cloud_drift); Clickable sprite = moves across the screen AND reacts on click (rabbit)
+- [x] **Section tabs** — tab bar below progress bar (visible once `initDone`); one tab per section plus COLOURS and REVIEW; clicking any tab jumps directly to that section — supports free navigation in both create and edit modes
+- [x] **PlacementPicker component** — appears after attendance static sprite frames are uploaded; renders the page background as a 16:9 interactive canvas; sprite thumbnail follows cursor; click locks the position as `{ x, y }` percentage; RE-PLACE and USE DEFAULT POSITION buttons; placement required before advancing past attendance group
+- [x] `spritePositions` state — `Record<string, { x: number; y: number }>` keyed by `'attendence_static'`; sent in the finalize payload
+- [x] `ThemePreviewPanel` — 16:9 live preview sidebar showing banner, content pane (solid `rgba(8,8,8,0.97)`), and sprites at placed/default positions; background updates as each group is visited
 - [x] Per asset: file picker → UPLOAD button or SKIP button; completed state shows REPLACE/ADD FILE
 - [x] Auth: JWT read from `sessionStorage` (`sl_token`) and sent as `Authorization: Bearer` header on all fetch calls
 - [x] Scroll fix: `height: 100vh` + `overflow: hidden` on outer shell; `overflowY: auto` on the inner content div
@@ -532,8 +535,8 @@ Admin-facing wizard for uploading and registering new pixel-art themes. Themes c
 - [x] `AdminUI.tsx` — THEME ADDER entry card at bottom; "OPEN WIZARD →" navigates to `/theme-adder`
 - [x] `/theme-adder` route added to `App.tsx`
 - [x] **Edit mode** — CREATE NEW / EDIT EXISTING landing; EDIT EXISTING fetches `adminThemes`, shows theme list with colour swatches; pre-populates all fields and asset statuses; asset groups never blocked in edit mode
-- [x] **Image previews** — `ASSET_REL_PATH` map (24 keys); blob URL on select → served path after upload; edit mode pre-loads previews; final review shows 40×24 thumbnail per asset
-- [x] **ASSET_MANIFEST background filenames** corrected in `backend/src/index.ts`: all `bg_*` entries use `background.png` (e.g. `login/background.png`), matching `usePageBackground` probe filename
+- [x] **Image previews** — `ASSET_REL_PATH` map; blob URL on select → served path after upload; edit mode pre-loads previews; final review shows 40×24 thumbnail per asset
+- [x] **ASSET_MANIFEST background filenames** corrected in `backend/src/index.ts`: all `bg_*` entries use `background.png` (e.g. `home/background.png`), matching `usePageBackground` probe filename
 
 ### Backend — finalize endpoint updated
 - [x] `POST /theme/finalize` — now accepts optional `spritePositions: Record<string, { x, y }>` in the body; merges admin-placed `x`/`y` percentage values into `sprites.json` for `torch_flicker` (login) and `fireplace` (attendance); defaults to `{ x: 15, y: 55 }` and `{ x: 12, y: 72 }` when no placement was made
@@ -553,8 +556,12 @@ Admin-facing wizard for uploading and registering new pixel-art themes. Themes c
 - [x] `usePageBackground`, `AppHeader` (banner), `LearnerHome` (rabbit/cloud) — all probe once; if missing, element is simply absent; no secondary probe to another theme's folder
 
 ### ShopUI custom theme fixes — `src/pages/ShopUI.tsx`
-- [x] `resolvePreviewPaths`: detects `assetPath.startsWith('themes/')` for custom themes and expands to real candidate image paths (`/assets/themes/X/home/bg.png`, `/assets/themes/X/login/bg.png`, etc.) instead of returning the folder path as a broken `<img src>`
+- [x] `resolvePreviewPaths`: detects `assetPath.startsWith('themes/')` for custom themes and expands to real candidate image paths instead of returning the folder path as a broken `<img src>`
 - [x] `handleEquip`: for custom themes not in `THEME_KEY`, extracts the theme slug from `assetPath` (`themes/X` → `X`) and passes it to `setTheme` so CSS variables actually switch
+- [x] **Theme-first layout redesign** — items now grouped by theme; theme selector row at top; category sub-tabs below (hidden when fewer than 3 categories exist); `buildSections()` groups catalog items by theme key (derived from `assetPath` for custom themes, `theme_compatibility` for built-ins); `ThemeSection` interface drives the selector
+- [x] **BACKGROUNDS tab** — non-purchasable `BgPageCard` components for each of 6 UI pages; shows INCLUDED or BUY THEME badge based on theme ownership; page backgrounds are derived from the theme folder, not from shop_items
+- [x] **ALT BACKGROUNDS tab** — purchasable alternate backgrounds for the selected theme (shop_items with `item_type = 'Alternate Background'`)
+- [x] **Pirate alt backgrounds seeded** — `classicPirate` theme alt background shop items auto-created by the finalize endpoint; finalize now also creates sprite and soundtrack shop items for each uploaded asset
 
 ### Documentation — `docs/themeGenerator.md`
 - [x] ⚠ Critical Rules section: dimensions non-negotiable, white sprite sheet backgrounds, 2–3 px dark borders

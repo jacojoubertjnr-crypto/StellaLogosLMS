@@ -27,135 +27,101 @@ interface AssetDef {
 
 interface AssetGroup {
   title: string
+  tabLabel: string
   description: string
   assets: AssetDef[]
-  placementKey?: string      // key used in spritePositions state
-  placementBgKey?: string    // which previewUrls key to show as background
-  placementSpriteKey?: string // which previewUrls key to show as the sprite
+  placementKey?: string
+  placementBgKey?: string
+  placementSpriteKey?: string
   defaultPosition?: { x: number; y: number }
 }
 
 const ASSET_GROUPS: AssetGroup[] = [
   {
-    title: 'BANNER & BUTTON',
-    description: 'The decorative top banner strip and the primary action button. These appear on every page when this theme is active.',
+    title: 'BRANDING',
+    tabLabel: 'BRANDING',
+    description: 'Global assets shown on every page: the decorative banner strip, action buttons, and background music track.',
     assets: [
-      {
-        key: 'banner_top',
-        label: 'Top Banner Strip',
-        dims: '1920 × 96 px',
-        group: 0,
-        description: 'Full-width decorative strip pinned to the very top of every page. Should read as a physical bar — wood beam, stone lintel, holographic panel, etc.',
-      },
-      {
-        key: 'btn_primary',
-        label: 'Primary Action Button (Long)',
-        dims: '384 × 96 px',
-        group: 0,
-        description: '9-slice button for wide action buttons: LOGIN, SUBMIT, BACK, SEND, etc. Left and right end-caps are fixed; the centre stretches horizontally.',
-      },
-      {
-        key: 'btn_primary_sq',
-        label: 'Primary Action Button (Square)',
-        dims: '128 × 128 px',
-        group: 0,
-        description: 'Square variant used for the home-page tile grid (Attendance, Subjects, Messages, Shop). Same 9-slice rules — fixed corners, stretchable centre. If skipped, tiles use the long button as fallback.',
-      },
+      { key: 'banner_top',     label: 'Top Banner Strip',               dims: '1920 × 96 px',      group: 0, description: 'Full-width decorative strip pinned to the very top of every page.' },
+      { key: 'btn_primary',    label: 'Primary Action Button (Long)',   dims: '384 × 96 px',       group: 0, description: '9-slice button for wide action buttons. Centre stretches horizontally.' },
+      { key: 'btn_primary_sq', label: 'Primary Action Button (Square)', dims: '128 × 128 px',      group: 0, description: 'Square variant for home-page tiles. Falls back to long button if skipped.' },
+      { key: 'music_theme',    label: 'Background Music',               dims: 'WAV — seamless loop',group: 0, description: 'Looping WAV file. 1–3 minutes, clean loop point, under 10 MB.' },
     ],
   },
   {
-    title: 'THEME MUSIC',
-    description: 'Background audio track that plays while this theme is active.',
+    title: 'HOME PAGE',
+    tabLabel: 'HOME',
+    description: 'Background, purchasable alternative background, drifting sprite, and clickable sprite for the home hub.',
     assets: [
-      {
-        key: 'music_theme',
-        label: 'Background Music',
-        dims: 'WAV — seamless loop',
-        group: 1,
-        description: 'Looping WAV file. 1–3 minutes recommended, clean loop point, under 10 MB. Plays on the login and home screens.',
-      },
+      { key: 'bg_home',        label: 'Background — Default',        dims: '1920 × 1080 px', group: 1, description: 'Hub scene. Warm and safe. Leave the bottom ~200 px clear for the mascot.' },
+      { key: 'bg_home_alt',    label: 'Background — Alternative',    dims: '1920 × 1080 px', group: 1, description: 'Purchasable alternate home scene. Different weather, season, or time of day.' },
+      { key: 'cloud_drift',    label: 'Moving Sprite',               dims: '320 × 80 px',    group: 1, description: 'Drifts continuously across the page. Transparent background.' },
+      { key: 'rabbit_1',       label: 'Clickable Sprite — Frame 1',  dims: '96 × 96 px',     group: 1, description: 'First movement frame. Faces RIGHT. Transparent background.' },
+      { key: 'rabbit_2',       label: 'Clickable Sprite — Frame 2',  dims: '96 × 96 px',     group: 1, description: 'Second movement frame.' },
+      { key: 'rabbit_3',       label: 'Clickable Sprite — Frame 3',  dims: '96 × 96 px',     group: 1, description: 'Third movement frame. Loops back to frame 1.' },
+      { key: 'rabbit_clicked', label: 'Clickable Sprite — Clicked',  dims: '96 × 96 px',     group: 1, description: 'Reaction frame when clicked.' },
     ],
   },
   {
-    title: 'PAGE BACKGROUNDS',
-    description: 'Full-screen background scenes for every page. UI panels sit on top with a solid background — the scene shows around the edges.',
+    title: 'LEARNING TASK PAGE',
+    tabLabel: 'STUDY',
+    description: 'Background and purchasable alternative background for the learning task screen.',
     assets: [
-      { key: 'bg_login',        label: 'Login Page',        dims: '1920 × 1080 px', group: 2, description: 'The first screen players see. Should set the visual tone of the theme — atmospheric and inviting.' },
-      { key: 'bg_home',         label: 'Home Hub',          dims: '1920 × 1080 px', group: 2, description: 'Hub / town square feel. Warm and safe. Leave the bottom ~200 px clear — the moving mascot walks along the ground.' },
-      { key: 'bg_learningTask', label: 'Learning Task',     dims: '1920 × 1080 px', group: 2, description: 'Focused work environment. Slightly cooler or more purposeful than the home scene.' },
-      { key: 'bg_attendence',   label: 'Attendance Page',   dims: '1920 × 1080 px', group: 2, description: 'Morning register / administrative space. Formal but warm.' },
-      { key: 'bg_mySubjects',   label: 'My Subjects',       dims: '1920 × 1080 px', group: 2, description: 'Library, archive, or data vault. Rows of books / scrolls / terminals in the mid-ground.' },
-      { key: 'bg_messages',     label: 'Messages',          dims: '1920 × 1080 px', group: 2, description: 'Social / communication space — tavern common room, plaza, network lounge.' },
-      { key: 'bg_shop',         label: 'Shop',              dims: '1920 × 1080 px', group: 2, description: 'Market hall, vendor stalls, item gallery. Richest visual detail of all pages.' },
+      { key: 'bg_learningTask',     label: 'Background — Default',     dims: '1920 × 1080 px', group: 2, description: 'Focused work environment. Slightly cooler or more purposeful than home.' },
+      { key: 'bg_learningTask_alt', label: 'Background — Alternative', dims: '1920 × 1080 px', group: 2, description: 'Purchasable alternate study environment.' },
     ],
   },
   {
-    title: 'LOGIN — STATIC SPRITE',
-    description: 'Animates in place at a fixed position on the login page — like a flickering torch, a glowing crystal, or a pulsing rune. Loops through frames without moving. After uploading you will click the background to place it.',
+    title: 'MY SUBJECTS PAGE',
+    tabLabel: 'SUBJECTS',
+    description: 'Background, purchasable alternative background, and the subject detail frame.',
     assets: [
-      { key: 'torch_1', label: 'Frame 1', dims: '80 × 160 px', group: 3, description: 'First animation frame. Transparent background. The static element (flame, glow, etc.) at its first state.' },
-      { key: 'torch_2', label: 'Frame 2', dims: '80 × 160 px', group: 3, description: 'Second frame — slight change in the animated element (taller flame, brighter glow).' },
-      { key: 'torch_3', label: 'Frame 3', dims: '80 × 160 px', group: 3, description: 'Third frame. Loops back to frame 1. The mount / housing must be pixel-perfect identical in all three frames.' },
-    ],
-    placementKey:      'login_static',
-    placementBgKey:    'bg_login',
-    placementSpriteKey:'torch_1',
-    defaultPosition:   { x: 15, y: 55 },
-  },
-  {
-    title: 'LOGIN — CLICKABLE SPRITE',
-    description: 'Moves across the login screen and reacts with an animation when clicked. Three movement frames that loop, plus one reaction frame played on click.',
-    assets: [
-      { key: 'dove_1',       label: 'Movement Frame 1',     dims: '80 × 80 px', group: 4, description: 'First frame of the movement cycle (e.g. wings up). Transparent background. Sprite should face LEFT — code flips it when moving right.' },
-      { key: 'dove_2',       label: 'Movement Frame 2',     dims: '80 × 80 px', group: 4, description: 'Second frame — mid-movement.' },
-      { key: 'dove_3',       label: 'Movement Frame 3',     dims: '80 × 80 px', group: 4, description: 'Third frame. Loops back to frame 1.' },
-      { key: 'dove_clicked', label: 'Clicked Reaction',     dims: '80 × 80 px', group: 4, description: 'Played briefly when the user clicks the sprite — surprised, delighted, or animated reaction.' },
+      { key: 'bg_mySubjects',     label: 'Background — Default',     dims: '1920 × 1080 px', group: 3, description: 'Library, archive, or data vault. Rows of books / scrolls in the mid-ground.' },
+      { key: 'bg_mySubjects_alt', label: 'Background — Alternative', dims: '1920 × 1080 px', group: 3, description: 'Purchasable alternate subjects scene.' },
+      { key: 'subject_detail',    label: 'Subject Detail Frame',     dims: '900 × 700 px',   group: 3, description: 'Scroll, parchment, or chart behind the subject popup. Leave the centre area empty.' },
     ],
   },
   {
-    title: 'HOME — MOVING SPRITE',
-    description: 'A wide sprite that drifts continuously across the home page background from one side to the other. Two copies appear simultaneously — keep the design self-contained.',
+    title: 'ATTENDANCE PAGE',
+    tabLabel: 'ATTENDANCE',
+    description: 'Background, purchasable alternative background, and static sprite. After uploading the sprite frames, click the background to place it.',
     assets: [
-      { key: 'cloud_drift', label: 'Drifting Sprite', dims: '320 × 80 px', group: 5, description: 'Slow-drifting element — cloud, spaceship, floating leaves, debris field. Transparent background. Must have a clean dark outline so it survives background removal.' },
+      { key: 'bg_attendence',     label: 'Background — Default',     dims: '1920 × 1080 px', group: 4, description: 'Morning register / administrative space. Formal but warm.' },
+      { key: 'bg_attendence_alt', label: 'Background — Alternative', dims: '1920 × 1080 px', group: 4, description: 'Purchasable alternate attendance scene.' },
+      { key: 'fireplace_1',       label: 'Static Sprite — Frame 1',  dims: '128 × 160 px',   group: 4, description: 'First animation frame. Transparent background. Structure identical across all frames.' },
+      { key: 'fireplace_2',       label: 'Static Sprite — Frame 2',  dims: '128 × 160 px',   group: 4, description: 'Second frame.' },
+      { key: 'fireplace_3',       label: 'Static Sprite — Frame 3',  dims: '128 × 160 px',   group: 4, description: 'Third frame.' },
+      { key: 'fireplace_4',       label: 'Static Sprite — Frame 4',  dims: '128 × 160 px',   group: 4, description: 'Fourth frame. Transitions seamlessly back to frame 1.' },
+    ],
+    placementKey:       'attendence_static',
+    placementBgKey:     'bg_attendence',
+    placementSpriteKey: 'fireplace_1',
+    defaultPosition:    { x: 12, y: 72 },
+  },
+  {
+    title: 'MESSAGES PAGE',
+    tabLabel: 'MESSAGES',
+    description: 'Background and purchasable alternative background for the messages screen.',
+    assets: [
+      { key: 'bg_messages',     label: 'Background — Default',     dims: '1920 × 1080 px', group: 5, description: 'Social space — tavern common room, plaza, network lounge.' },
+      { key: 'bg_messages_alt', label: 'Background — Alternative', dims: '1920 × 1080 px', group: 5, description: 'Purchasable alternate messages scene.' },
     ],
   },
   {
-    title: 'HOME — CLICKABLE SPRITE',
-    description: 'Moves across the home page and reacts when clicked. Three movement frames plus a reaction frame.',
+    title: 'SHOP PAGE',
+    tabLabel: 'SHOP',
+    description: 'Background and purchasable alternative background for the shop screen.',
     assets: [
-      { key: 'rabbit_1',       label: 'Movement Frame 1',   dims: '96 × 96 px', group: 6, description: 'First frame of the movement cycle. Sprite faces RIGHT. Transparent background.' },
-      { key: 'rabbit_2',       label: 'Movement Frame 2',   dims: '96 × 96 px', group: 6, description: 'Second movement frame.' },
-      { key: 'rabbit_3',       label: 'Movement Frame 3',   dims: '96 × 96 px', group: 6, description: 'Third movement frame. Loops back to frame 1.' },
-      { key: 'rabbit_clicked', label: 'Clicked Reaction',   dims: '96 × 96 px', group: 6, description: 'Played briefly when the user clicks the sprite.' },
+      { key: 'bg_shop',     label: 'Background — Default',     dims: '1920 × 1080 px', group: 6, description: 'Market hall, vendor stalls, item gallery. Richest visual detail of all pages.' },
+      { key: 'bg_shop_alt', label: 'Background — Alternative', dims: '1920 × 1080 px', group: 6, description: 'Purchasable alternate shop scene.' },
     ],
   },
-  {
-    title: 'MY SUBJECTS — SUBJECT FRAME',
-    description: 'Decorative image shown behind the subject detail popup when a learner clicks a subject. Text content is layered on top — only the borders and corners need artwork.',
-    assets: [
-      {
-        key: 'subject_detail',
-        label: 'Subject Detail Frame',
-        dims: '900 × 700 px',
-        group: 8,
-        description: 'Scroll, parchment, ship chart, holographic panel, etc. The subject title, progress bar, and task info are rendered on top. Leave the central reading area empty.',
-      },
-    ],
-  },
-  {
-    title: 'ATTENDANCE — STATIC SPRITE',
-    description: 'Animates in place on the attendance page — a fireplace, glowing terminal, reactor core, etc. Loops through four frames without moving. After uploading you will click the background to place it.',
-    assets: [
-      { key: 'fireplace_1', label: 'Frame 1', dims: '128 × 160 px', group: 9, description: 'First animation frame. Transparent background. The structure must be pixel-perfect identical in all four frames — only the animated element changes.' },
-      { key: 'fireplace_2', label: 'Frame 2', dims: '128 × 160 px', group: 9, description: 'Second frame.' },
-      { key: 'fireplace_3', label: 'Frame 3', dims: '128 × 160 px', group: 9, description: 'Third frame.' },
-      { key: 'fireplace_4', label: 'Frame 4', dims: '128 × 160 px', group: 9, description: 'Fourth frame. Must transition seamlessly back to frame 1.' },
-    ],
-    placementKey:      'attendence_static',
-    placementBgKey:    'bg_attendence',
-    placementSpriteKey:'fireplace_1',
-    defaultPosition:   { x: 12, y: 72 },
-  },
+]
+
+const SECTION_TABS: { label: string; step: number }[] = [
+  { label: 'COLOURS', step: 1 },
+  ...ASSET_GROUPS.map((g, i) => ({ label: g.tabLabel, step: 2 + i })),
+  { label: 'REVIEW', step: 2 + ASSET_GROUPS.length },
 ]
 
 // ── Color palette definition ───────────────────────────────────────────────────
@@ -173,20 +139,18 @@ const ASSET_REL_PATH: Record<string, string> = {
   btn_primary:     'btn_primary.png',
   btn_primary_sq:  'btn_primary_sq.png',
   music_theme:     'music/theme.wav',
-  bg_login:        'login/background.png',
-  bg_home:         'home/background.png',
-  bg_learningTask: 'learningTask/background.png',
-  bg_attendence:   'attendence/background.png',
-  bg_mySubjects:   'mySubjects/background.png',
-  bg_messages:     'messages/background.png',
-  bg_shop:         'shop/background.png',
-  torch_1:         'login/torch_flicker/frame_1.png',
-  torch_2:         'login/torch_flicker/frame_2.png',
-  torch_3:         'login/torch_flicker/frame_3.png',
-  dove_1:          'login/dove/frame_1.png',
-  dove_2:          'login/dove/frame_2.png',
-  dove_3:          'login/dove/frame_3.png',
-  dove_clicked:    'login/dove/clicked.png',
+  bg_home:             'home/background.png',
+  bg_home_alt:         'home/background_alt.png',
+  bg_learningTask:     'learningTask/background.png',
+  bg_learningTask_alt: 'learningTask/background_alt.png',
+  bg_attendence:       'attendence/background.png',
+  bg_attendence_alt:   'attendence/background_alt.png',
+  bg_mySubjects:       'mySubjects/background.png',
+  bg_mySubjects_alt:   'mySubjects/background_alt.png',
+  bg_messages:         'messages/background.png',
+  bg_messages_alt:     'messages/background_alt.png',
+  bg_shop:             'shop/background.png',
+  bg_shop_alt:         'shop/background_alt.png',
   rabbit_1:        'home/rabbit/frame_1.png',
   rabbit_2:        'home/rabbit/frame_2.png',
   rabbit_3:        'home/rabbit/frame_3.png',
@@ -575,6 +539,24 @@ export function ThemeAdderUI() {
       <div style={{ height: 3, background: '#222', flexShrink: 0 }}>
         <div style={{ height: '100%', width: `${progressPct}%`, background: GOLD, transition: 'width 0.3s' }} />
       </div>
+
+      {/* Section tabs */}
+      {initDone && (
+        <div style={{ display: 'flex', overflowX: 'auto', borderBottom: `1px solid ${GOLD}22`, background: '#0a0a0a', flexShrink: 0, scrollbarWidth: 'none' }}>
+          {SECTION_TABS.map(tab => {
+            const active = step === tab.step
+            return (
+              <button
+                key={tab.step}
+                onClick={() => setStep(tab.step)}
+                style={{ ...VT, fontSize: '0.88rem', padding: '0.45rem 0.9rem', border: 'none', borderBottom: active ? `2px solid ${GOLD}` : '2px solid transparent', background: active ? `${GOLD}11` : 'transparent', color: active ? GOLD : DIM, cursor: 'pointer', flexShrink: 0, letterSpacing: '0.05em', transition: 'color 0.15s, background 0.15s' }}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -997,8 +979,7 @@ function PlacementPicker({
 }
 
 // ── ThemePreviewPanel ──────────────────────────────────────────────────────────
-// groupIndex: 0=banner+btn  1=music  2=backgrounds  3=login-static  4=login-clickable
-//             5=home-moving  6=home-clickable  7=mySubjects-frame  8=attendance-static (was 7)
+// groupIndex: 0=BRANDING  1=HOME  2=STUDY  3=SUBJECTS  4=ATTENDANCE  5=MESSAGES  6=SHOP
 
 function ThemePreviewPanel({
   previewUrls,
@@ -1017,13 +998,11 @@ function ThemePreviewPanel({
   const bgForGroup: Record<number, string> = {
     0: 'bg_home',
     1: 'bg_home',
-    2: 'bg_login',
-    3: 'bg_login',
-    4: 'bg_login',
-    5: 'bg_home',
-    6: 'bg_home',
-    7: 'bg_mySubjects',
-    8: 'bg_attendence',
+    2: 'bg_learningTask',
+    3: 'bg_mySubjects',
+    4: 'bg_attendence',
+    5: 'bg_messages',
+    6: 'bg_shop',
   }
   const bgKey = bgForGroup[groupIndex] ?? 'bg_home'
   const bg =
@@ -1036,9 +1015,7 @@ function ThemePreviewPanel({
   const primary = colors.colorPrimary   || GOLD
   const text    = colors.colorText      || '#fff'
 
-  // Static sprite at placed position (or default preview position)
-  const loginStaticPos   = spritePositions['login_static']   ?? { x: 15, y: 55 }
-  const attendStaticPos  = spritePositions['attendence_static'] ?? { x: 12, y: 72 }
+  const attendStaticPos = spritePositions['attendence_static'] ?? { x: 12, y: 72 }
 
   return (
     <div style={{ position: 'sticky', top: 16 }}>
@@ -1096,43 +1073,28 @@ function ThemePreviewPanel({
             )}
           </div>
 
-          {/* Login static sprite (torch) at placed/default position */}
-          {(groupIndex === 3) && previewUrls['torch_1'] && (
-            <>
-              <img src={previewUrls['torch_1']} alt="" style={{ position: 'absolute', left: `${loginStaticPos.x}%`, top: `${loginStaticPos.y}%`, height: '20%', transform: 'translate(-50%,-100%)', imageRendering: 'pixelated', objectFit: 'contain', pointerEvents: 'none' }} />
-              <img src={previewUrls['torch_1']} alt="" style={{ position: 'absolute', right: `${loginStaticPos.x}%`, top: `${loginStaticPos.y}%`, height: '20%', transform: 'translate(50%,-100%)', imageRendering: 'pixelated', objectFit: 'contain', pointerEvents: 'none' }} />
-            </>
-          )}
-
-          {/* Login clickable sprite (dove) */}
-          {groupIndex === 4 && previewUrls['dove_1'] && (
-            <img src={previewUrls['dove_1']} alt="" style={{ position: 'absolute', left: '30%', top: '20%', height: '14%', imageRendering: 'pixelated', objectFit: 'contain' }} />
-          )}
-
-          {/* Home moving sprite (cloud) */}
-          {groupIndex === 5 && previewUrls['cloud_drift'] && (
+          {/* Home sprites (group 1) */}
+          {groupIndex === 1 && previewUrls['cloud_drift'] && (
             <img src={previewUrls['cloud_drift']} alt="" style={{ position: 'absolute', top: '28%', left: '12%', width: '38%', height: '9%', imageRendering: 'pixelated', objectFit: 'contain' }} />
           )}
-
-          {/* Home clickable sprite (rabbit) */}
-          {groupIndex === 6 && previewUrls['rabbit_1'] && (
+          {groupIndex === 1 && previewUrls['rabbit_1'] && (
             <img src={previewUrls['rabbit_1']} alt="" style={{ position: 'absolute', right: '5%', bottom: '9%', height: '18%', imageRendering: 'pixelated', objectFit: 'contain' }} />
           )}
 
-          {/* Subject detail frame preview */}
-          {groupIndex === 7 && previewUrls['subject_detail'] && (
+          {/* Subject detail frame (group 3) */}
+          {groupIndex === 3 && previewUrls['subject_detail'] && (
             <div style={{ position: 'absolute', top: '13%', left: '10%', right: '10%', bottom: '8%', backgroundImage: `url('${previewUrls['subject_detail']}')`, backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
               <div style={{ ...VT, padding: '12% 30%', color: primary, fontSize: 8, opacity: 0.8, letterSpacing: 1 }}>SUBJECT NAME</div>
             </div>
           )}
-          {groupIndex === 7 && !previewUrls['subject_detail'] && (
+          {groupIndex === 3 && !previewUrls['subject_detail'] && (
             <div style={{ position: 'absolute', top: '13%', left: '10%', right: '10%', bottom: '8%', background: 'rgba(8,8,8,0.9)', border: `1px dashed ${GOLD}33`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ ...VT, color: `${GOLD}33`, fontSize: 8 }}>FRAME NOT YET UPLOADED</span>
             </div>
           )}
 
-          {/* Attendance static sprite (fireplace) at placed/default position */}
-          {groupIndex === 8 && previewUrls['fireplace_1'] && (
+          {/* Attendance static sprite (group 4) */}
+          {groupIndex === 4 && previewUrls['fireplace_1'] && (
             <img src={previewUrls['fireplace_1']} alt="" style={{ position: 'absolute', left: `${attendStaticPos.x}%`, top: `${attendStaticPos.y}%`, height: '22%', transform: 'translate(-50%,-100%)', imageRendering: 'pixelated', objectFit: 'contain', pointerEvents: 'none' }} />
           )}
 
@@ -1140,7 +1102,7 @@ function ThemePreviewPanel({
         </div>
       </div>
 
-      {groupIndex === 1 && (
+      {groupIndex === 0 && (
         <div style={{ ...dimText, fontSize: '0.8rem', marginTop: '0.75rem', padding: '0.5rem 0.75rem', background: '#0e0e0e', border: '1px solid #222' }}>
           ♪ Audio files cannot be previewed visually — verify the .wav loops cleanly.
         </div>
