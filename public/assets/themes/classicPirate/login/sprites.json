@@ -9,7 +9,9 @@
       ],
       "frameDuration": 200,
       "width": 80,
-      "height": 160
+      "height": 160,
+      "x": 15,
+      "y": 55
     },
     {
       "id": "dove",

@@ -625,18 +625,21 @@ body {
 :root[data-theme='medieval'] {
   --primary-glow-effect: portal-pulse 5s ease-in-out infinite;
   --ui-frame-texture: var(--theme-frame);
-  --button-plank: var(--theme-btn-primary);
+  --theme-btn-primary-sq: var(--theme-btn-primary); /* no dedicated sq asset yet — falls back to long button */
+  --button-plank: var(--theme-btn-primary-sq);
 }
 
 :root[data-theme='scifi'] {
   --primary-glow-effect: portal-pulse 5s ease-in-out infinite;
   --ui-frame-texture: var(--theme-frame);
-  --button-plank: var(--theme-btn-primary);
+  --theme-btn-primary-sq: var(--theme-btn-primary); /* no dedicated sq asset yet — falls back to long button */
+  --button-plank: var(--theme-btn-primary-sq);
 }
 
 :root[data-theme='default'] {
   --primary-glow-effect: portal-pulse 5s ease-in-out infinite;
   --ui-frame-texture: none;
+  --theme-btn-primary-sq: none;
   --button-plank: none;
 }
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useMutation, gql } from '@apollo/client'
 import { usePageBackground } from '@/hooks/usePageBackground'
@@ -438,7 +437,6 @@ const ItemModal: React.FC<{
 // ─── ShopUI ───────────────────────────────────────────────────────────────────
 
 export const ShopUI: React.FC = () => {
-  const navigate = useNavigate()
   usePageBackground('shop')
   const vocab = useThemeVocab()
   const { setTheme } = useThemeStore()
@@ -545,13 +543,6 @@ export const ShopUI: React.FC = () => {
       >
         {/* Shop header */}
         <div style={{ ...VT, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: '52px', flexShrink: 0, background: 'var(--color-pane-bg, rgba(0,0,0,0.55))', border: '1px solid rgba(255,215,0,0.2)', borderBottom: 'none' }}>
-          <button
-            className="btn-9slice"
-            onClick={() => navigate('/home')}
-            style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-          >
-            ◂ BACK
-          </button>
           <span style={{ fontSize: '1.6rem', letterSpacing: '5px', color: 'rgba(255,215,0,0.9)', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
             {vocab.shopPageTitle}
           </span>

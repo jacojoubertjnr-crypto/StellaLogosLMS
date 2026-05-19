@@ -540,13 +540,6 @@ export const AdminUI: React.FC = () => {
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
-          <button
-            className="btn-9slice"
-            onClick={() => navigate('/home')}
-            style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-          >
-            ← HOME
-          </button>
           <span style={{ ...VT, fontSize: '1.5rem', letterSpacing: '3px', color: GOLD }}>ADMIN PANEL</span>
           <span style={{ ...VT, fontSize: '0.8rem', color: 'rgba(255,215,0,0.3)', letterSpacing: '2px' }}>{user?.displayName?.toUpperCase()}</span>
         </div>

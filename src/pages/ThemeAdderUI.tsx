@@ -49,10 +49,17 @@ const ASSET_GROUPS: AssetGroup[] = [
       },
       {
         key: 'btn_primary',
-        label: 'Primary Action Button',
+        label: 'Primary Action Button (Long)',
         dims: '384 × 96 px',
         group: 0,
-        description: '9-slice button used for all major actions (LOGIN, SUBMIT, SEND, etc.). Left and right end-caps are fixed; the centre stretches horizontally.',
+        description: '9-slice button for wide action buttons: LOGIN, SUBMIT, BACK, SEND, etc. Left and right end-caps are fixed; the centre stretches horizontally.',
+      },
+      {
+        key: 'btn_primary_sq',
+        label: 'Primary Action Button (Square)',
+        dims: '128 × 128 px',
+        group: 0,
+        description: 'Square variant used for the home-page tile grid (Attendance, Subjects, Messages, Shop). Same 9-slice rules — fixed corners, stretchable centre. If skipped, tiles use the long button as fallback.',
       },
     ],
   },
@@ -123,13 +130,26 @@ const ASSET_GROUPS: AssetGroup[] = [
     ],
   },
   {
+    title: 'MY SUBJECTS — SUBJECT FRAME',
+    description: 'Decorative image shown behind the subject detail popup when a learner clicks a subject. Text content is layered on top — only the borders and corners need artwork.',
+    assets: [
+      {
+        key: 'subject_detail',
+        label: 'Subject Detail Frame',
+        dims: '900 × 700 px',
+        group: 8,
+        description: 'Scroll, parchment, ship chart, holographic panel, etc. The subject title, progress bar, and task info are rendered on top. Leave the central reading area empty.',
+      },
+    ],
+  },
+  {
     title: 'ATTENDANCE — STATIC SPRITE',
     description: 'Animates in place on the attendance page — a fireplace, glowing terminal, reactor core, etc. Loops through four frames without moving. After uploading you will click the background to place it.',
     assets: [
-      { key: 'fireplace_1', label: 'Frame 1', dims: '128 × 160 px', group: 7, description: 'First animation frame. Transparent background. The structure must be pixel-perfect identical in all four frames — only the animated element changes.' },
-      { key: 'fireplace_2', label: 'Frame 2', dims: '128 × 160 px', group: 7, description: 'Second frame.' },
-      { key: 'fireplace_3', label: 'Frame 3', dims: '128 × 160 px', group: 7, description: 'Third frame.' },
-      { key: 'fireplace_4', label: 'Frame 4', dims: '128 × 160 px', group: 7, description: 'Fourth frame. Must transition seamlessly back to frame 1.' },
+      { key: 'fireplace_1', label: 'Frame 1', dims: '128 × 160 px', group: 9, description: 'First animation frame. Transparent background. The structure must be pixel-perfect identical in all four frames — only the animated element changes.' },
+      { key: 'fireplace_2', label: 'Frame 2', dims: '128 × 160 px', group: 9, description: 'Second frame.' },
+      { key: 'fireplace_3', label: 'Frame 3', dims: '128 × 160 px', group: 9, description: 'Third frame.' },
+      { key: 'fireplace_4', label: 'Frame 4', dims: '128 × 160 px', group: 9, description: 'Fourth frame. Must transition seamlessly back to frame 1.' },
     ],
     placementKey:      'attendence_static',
     placementBgKey:    'bg_attendence',
@@ -151,6 +171,7 @@ const COLOR_FIELDS: { key: string; label: string; description: string; default: 
 const ASSET_REL_PATH: Record<string, string> = {
   banner_top:      'banner_top.png',
   btn_primary:     'btn_primary.png',
+  btn_primary_sq:  'btn_primary_sq.png',
   music_theme:     'music/theme.wav',
   bg_login:        'login/background.png',
   bg_home:         'home/background.png',
@@ -175,6 +196,7 @@ const ASSET_REL_PATH: Record<string, string> = {
   fireplace_2:     'attendence/fireplace/frame_2.png',
   fireplace_3:     'attendence/fireplace/frame_3.png',
   fireplace_4:     'attendence/fireplace/frame_4.png',
+  subject_detail:  'mySubjects/subject.png',
 }
 
 // ── GraphQL ───────────────────────────────────────────────────────────────────
@@ -976,7 +998,7 @@ function PlacementPicker({
 
 // ── ThemePreviewPanel ──────────────────────────────────────────────────────────
 // groupIndex: 0=banner+btn  1=music  2=backgrounds  3=login-static  4=login-clickable
-//             5=home-moving  6=home-clickable  7=attendance-static
+//             5=home-moving  6=home-clickable  7=mySubjects-frame  8=attendance-static (was 7)
 
 function ThemePreviewPanel({
   previewUrls,
@@ -1000,7 +1022,8 @@ function ThemePreviewPanel({
     4: 'bg_login',
     5: 'bg_home',
     6: 'bg_home',
-    7: 'bg_attendence',
+    7: 'bg_mySubjects',
+    8: 'bg_attendence',
   }
   const bgKey = bgForGroup[groupIndex] ?? 'bg_home'
   const bg =
@@ -1096,8 +1119,20 @@ function ThemePreviewPanel({
             <img src={previewUrls['rabbit_1']} alt="" style={{ position: 'absolute', right: '5%', bottom: '9%', height: '18%', imageRendering: 'pixelated', objectFit: 'contain' }} />
           )}
 
+          {/* Subject detail frame preview */}
+          {groupIndex === 7 && previewUrls['subject_detail'] && (
+            <div style={{ position: 'absolute', top: '13%', left: '10%', right: '10%', bottom: '8%', backgroundImage: `url('${previewUrls['subject_detail']}')`, backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+              <div style={{ ...VT, padding: '12% 30%', color: primary, fontSize: 8, opacity: 0.8, letterSpacing: 1 }}>SUBJECT NAME</div>
+            </div>
+          )}
+          {groupIndex === 7 && !previewUrls['subject_detail'] && (
+            <div style={{ position: 'absolute', top: '13%', left: '10%', right: '10%', bottom: '8%', background: 'rgba(8,8,8,0.9)', border: `1px dashed ${GOLD}33`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ ...VT, color: `${GOLD}33`, fontSize: 8 }}>FRAME NOT YET UPLOADED</span>
+            </div>
+          )}
+
           {/* Attendance static sprite (fireplace) at placed/default position */}
-          {groupIndex === 7 && previewUrls['fireplace_1'] && (
+          {groupIndex === 8 && previewUrls['fireplace_1'] && (
             <img src={previewUrls['fireplace_1']} alt="" style={{ position: 'absolute', left: `${attendStaticPos.x}%`, top: `${attendStaticPos.y}%`, height: '22%', transform: 'translate(-50%,-100%)', imageRendering: 'pixelated', objectFit: 'contain', pointerEvents: 'none' }} />
           )}
 

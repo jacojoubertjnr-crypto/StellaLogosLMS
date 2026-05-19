@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, gql } from '@apollo/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/stores/authStore'
@@ -460,7 +459,6 @@ const AnnouncementForm: React.FC<{ onPost: (body: string, target: string) => voi
 // ─── StaffroomUI ─────────────────────────────────────────────────────────────
 
 export const StaffroomUI: React.FC = () => {
-  const navigate = useNavigate()
   const { user } = useAuthStore()
   const isAdmin = user?.role === 'Admin'
   const userId = user?.id ?? ''
@@ -645,14 +643,6 @@ export const StaffroomUI: React.FC = () => {
           </div>
         </ExpandingCard>
 
-        {/* Back */}
-        <button
-          className="btn-9slice"
-          onClick={() => navigate('/home')}
-          style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-        >
-          ◂ HOME
-        </button>
 
       </motion.div>
     </div>

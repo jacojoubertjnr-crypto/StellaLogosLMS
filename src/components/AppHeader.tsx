@@ -60,6 +60,24 @@ export const AppHeader: React.FC = () => {
     navigate('/')
   }
 
+  const handleBack = () => {
+    window.history.length > 1 ? navigate(-1) : navigate('/home')
+  }
+
+  const isHome = location.pathname === '/home'
+
+  const headerBtnStyle: React.CSSProperties = {
+    fontFamily: 'inherit',
+    fontSize: '1rem', letterSpacing: '2px',
+    padding: '2px 12px',
+    background: 'rgba(0,0,0,0.4)',
+    border: '1px solid rgba(255,215,0,0.45)',
+    color: 'rgba(255,215,0,0.8)',
+    cursor: 'pointer',
+    textShadow: '1px 1px 0 rgba(0,0,0,0.6)',
+    transition: 'background 0.15s, border-color 0.15s',
+  }
+
   return (
     <div style={{
       position: 'fixed',
@@ -76,8 +94,18 @@ export const AppHeader: React.FC = () => {
       imageRendering: 'pixelated',
       fontFamily: "'VT323', monospace",
     }}>
-      {/* UserIdentity [The Knight's Crest] */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+      {/* Left side: back button + user identity */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {!isHome && (
+          <button
+            onClick={handleBack}
+            style={headerBtnStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.9)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.45)' }}
+          >
+            ◂ BACK
+          </button>
+        )}
         <div style={{
           width: '28px', height: '28px', borderRadius: '50%',
           border: '2px solid rgba(255,215,0,0.6)',
@@ -107,25 +135,9 @@ export const AppHeader: React.FC = () => {
 
         <button
           onClick={handleLogout}
-          style={{
-            fontFamily: 'inherit',
-            fontSize: '1rem', letterSpacing: '2px',
-            padding: '2px 12px',
-            background: 'rgba(0,0,0,0.4)',
-            border: '1px solid rgba(255,215,0,0.45)',
-            color: 'rgba(255,215,0,0.8)',
-            cursor: 'pointer',
-            textShadow: '1px 1px 0 rgba(0,0,0,0.6)',
-            transition: 'background 0.15s, border-color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(0,0,0,0.6)'
-            e.currentTarget.style.borderColor = 'rgba(255,215,0,0.9)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(0,0,0,0.4)'
-            e.currentTarget.style.borderColor = 'rgba(255,215,0,0.45)'
-          }}
+          style={headerBtnStyle}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.9)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.45)' }}
         >
           LOGOUT
         </button>

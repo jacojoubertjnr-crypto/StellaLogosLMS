@@ -53,17 +53,18 @@ function App() {
       const base = `/assets/themes/${t.name}`
       return `
       :root[data-theme='${t.name}'] {
-        --color-primary:       ${t.colorPrimary};
-        --color-secondary:     ${t.colorSecondary};
-        --color-accent:        ${t.colorAccent};
-        --color-text:          ${t.colorText};
-        --color-bg-overlay:    ${t.colorBgOverlay};
-        --theme-bg:            url('${base}/login/background.png');
-        --theme-banner:        url('${base}/banner_top.png');
-        --theme-banner-home:   url('${base}/banner_top.png');
-        --theme-btn-primary:   url('${base}/btn_primary.png');
-        --button-plank:        url('${base}/btn_primary.png');
-        --primary-glow-effect: portal-pulse 5s ease-in-out infinite;
+        --color-primary:          ${t.colorPrimary};
+        --color-secondary:        ${t.colorSecondary};
+        --color-accent:           ${t.colorAccent};
+        --color-text:             ${t.colorText};
+        --color-bg-overlay:       ${t.colorBgOverlay};
+        --theme-bg:               url('${base}/login/background.png');
+        --theme-banner:           url('${base}/banner_top.png');
+        --theme-banner-home:      url('${base}/banner_top.png');
+        --theme-btn-primary:      url('${base}/btn_primary.png');
+        --theme-btn-primary-sq:   url('${base}/btn_primary_sq.png');
+        --button-plank:           url('${base}/btn_primary_sq.png');
+        --primary-glow-effect:    portal-pulse 5s ease-in-out infinite;
       }
       [data-theme='${t.name}'] .btn-9slice {
         background-image: url('${base}/btn_primary.png') !important;
@@ -81,7 +82,8 @@ function App() {
         box-shadow: 0 0 16px rgba(74, 158, 255, 0.2) !important;
       }
       [data-theme='${t.name}'] .tile-item {
-        background-image: url('${base}/btn_primary.png') !important;
+        background-image: url('${base}/btn_primary_sq.png'), url('${base}/btn_primary.png') !important;
+        background-size: 100% 100%, 100% 100% !important;
         background-color: transparent !important;
         border: none !important;
       }

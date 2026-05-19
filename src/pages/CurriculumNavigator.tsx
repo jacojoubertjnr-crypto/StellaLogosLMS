@@ -530,12 +530,25 @@ interface DetailProps {
 
 const SubjectDetail: React.FC<DetailProps> = ({ subject, onBack, onEnter }) => {
   const { currentTheme } = useThemeStore()
-  const pal     = PALETTE[currentTheme as keyof typeof PALETTE] ?? PALETTE.medieval
-  const imgUrl  = `/assets/themes/${currentTheme}/mySubjects/subject.png`
   const archived = getArchived(subject.name)
 
-  const [view, setView]           = useState<'current' | 'archive'>('current')
+  const [view, setView]               = useState<'current' | 'archive'>('current')
   const [archiveIndex, setArchiveIndex] = useState(archived.length - 1)
+  const [subjectImgUrl, setSubjectImgUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const url = `/assets/themes/${currentTheme}/mySubjects/subject.png`
+    const img = new Image()
+    let cancelled = false
+    img.onload  = () => { if (!cancelled) setSubjectImgUrl(url) }
+    img.onerror = () => { if (!cancelled) setSubjectImgUrl(null) }
+    img.src = url
+    return () => { cancelled = true }
+  }, [currentTheme])
+
+  const basePal = PALETTE[currentTheme as keyof typeof PALETTE] ?? PALETTE.default
+  // Themes with a frame image (light parchment/scroll) use medieval dark text
+  const pal = subjectImgUrl ? PALETTE.medieval : basePal
 
   return (
     <motion.div
@@ -563,9 +576,11 @@ const SubjectDetail: React.FC<DetailProps> = ({ subject, onBack, onEnter }) => {
           animate={{ filter: pal.detailGlow }}
           transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
           style={{
-            ...(pal.cardBg
-              ? { backgroundColor: pal.cardBg, border: pal.cardBorder, backdropFilter: 'blur(4px)' }
-              : { backgroundImage: `url('${imgUrl}')`, backgroundSize: '100% 100%', imageRendering: 'pixelated' }),
+            ...(subjectImgUrl
+              ? { backgroundImage: `url('${subjectImgUrl}')`, backgroundSize: '100% 100%', imageRendering: 'pixelated' }
+              : pal.cardBg
+                ? { backgroundColor: pal.cardBg, border: pal.cardBorder, backdropFilter: 'blur(4px)' }
+                : { backgroundColor: 'var(--color-modal-bg, rgba(8,8,8,0.97))', border: '1px solid rgba(255,215,0,0.15)' }),
             padding: '2.5rem 13rem',
             fontFamily: "'VT323', monospace",
             width: '100%',
@@ -741,14 +756,6 @@ export const CurriculumNavigator: React.FC = () => {
               </div>
 
               <NavArrow direction="down" enabled={canDown && !isAnimating} onClick={scrollDown} />
-
-              <button
-                className="btn-9slice"
-                onClick={() => navigate('/home')}
-                style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-              >
-                ◂ {vocab.subjectsReturnLabel}
-              </button>
             </motion.div>
           )}
         </AnimatePresence>

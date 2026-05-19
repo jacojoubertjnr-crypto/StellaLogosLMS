@@ -837,14 +837,6 @@ export const AttendenceUI: React.FC = () => {
           <span style={{ fontSize: '1.1rem', color: 'rgba(255,215,0,0.45)' }}>▶</span>
         </div>
 
-        {/* Return */}
-        <button
-          className="btn-9slice"
-          onClick={() => navigate('/home')}
-          style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-        >
-          ◂ {vocab.attendanceReturnLabel}
-        </button>
       </motion.div>
     </div>
   )

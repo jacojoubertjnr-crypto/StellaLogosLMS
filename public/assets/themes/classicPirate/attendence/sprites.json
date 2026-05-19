@@ -10,7 +10,9 @@
       ],
       "frameDuration": 150,
       "width": 128,
-      "height": 160
+      "height": 160,
+      "x": 12,
+      "y": 72
     }
   ]
 }

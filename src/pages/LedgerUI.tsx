@@ -1,5 +1,4 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery, gql } from '@apollo/client'
 import { usePageBackground } from '@/hooks/usePageBackground'
@@ -48,7 +47,6 @@ interface LedgerEntry {
 }
 
 export const LedgerUI: React.FC = () => {
-  const navigate = useNavigate()
   usePageBackground('home')
 
   const { data, loading } = useQuery<{
@@ -70,13 +68,6 @@ export const LedgerUI: React.FC = () => {
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <button
-            className="btn-9slice"
-            onClick={() => navigate('/home')}
-            style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-          >
-            ◂ BACK
-          </button>
           <span style={{ ...VT, fontSize: '1.6rem', letterSpacing: '4px', color: GOLD }}>POINTS HISTORY</span>
           <span style={{ ...VT, fontSize: '1.2rem', letterSpacing: '2px', color: GOLD }}>
             ★ {balance.toLocaleString()}

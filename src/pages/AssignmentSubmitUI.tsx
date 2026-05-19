@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { usePageBackground } from '@/hooks/usePageBackground'
 import { mockLearningTaskDetails } from '@/mockState'
 
@@ -8,7 +8,6 @@ const VT: React.CSSProperties = { fontFamily: "'VT323', monospace" }
 
 export const AssignmentSubmitUI: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>()
-  const navigate   = useNavigate()
   usePageBackground('attendence') // reuse tavern background until a dedicated one is made
 
   const task = taskId ? mockLearningTaskDetails[taskId] : null
@@ -133,14 +132,6 @@ export const AssignmentSubmitUI: React.FC = () => {
           </div>
         )}
 
-        {/* Back button */}
-        <button
-          className="btn-9slice"
-          onClick={() => navigate('/attendence')}
-          style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-        >
-          ◂ BACK TO REGISTER
-        </button>
 
       </motion.div>
     </div>

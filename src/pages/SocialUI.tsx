@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useMutation, gql } from '@apollo/client'
 import { usePageBackground } from '@/hooks/usePageBackground'
@@ -254,7 +253,6 @@ const NewChatModal: React.FC<{
 // ── SocialUI [The Messenger Bird] ─────────────────────────────────────────────
 
 export const SocialUI: React.FC = () => {
-  const navigate = useNavigate()
   const vocab = useThemeVocab()
   const { user } = useAuthStore()
   const myId = user?.id ?? ''
@@ -498,16 +496,6 @@ export const SocialUI: React.FC = () => {
             </div>
           )}
 
-          {/* Return button */}
-          <div style={{ flexShrink: 0, padding: '0.75rem', borderTop: '1px solid rgba(255,215,0,0.1)' }}>
-            <button
-              className="btn-9slice"
-              onClick={() => navigate('/home')}
-              style={{ fontFamily: "'VT323', monospace", letterSpacing: '2px' }}
-            >
-              ◂ {vocab.messagesReturnLabel}
-            </button>
-          </div>
         </div>
 
         {/* ── Gradient divider ─────────────────────────────────────────────── */}

@@ -26,7 +26,8 @@ const ASSET_MANIFEST: Record<string, { relPath: string; specText: string }> = {
   // UI-wide
   banner_top:      { relPath: 'banner_top.png',                         specText: 'banner_top.png — Full-width banner strip displayed at the top of every page. Size: 1920×96 px. Style: decorative top edge with theme motifs, transparent bottom edge.' },
   frame_main:      { relPath: 'frame_main.png',                         specText: 'frame_main.png — 9-slice decorative frame for content panels. Size: 512×512 px. Transparent center (at least 256×256). Opaque border of ~32 px on each side.' },
-  btn_primary:     { relPath: 'btn_primary.png',                        specText: 'btn_primary.png — 9-slice primary button texture. Size: 384×96 px. Transparent center. ~24 px cap on each end.' },
+  btn_primary:     { relPath: 'btn_primary.png',                        specText: 'btn_primary.png — 9-slice primary button texture (long). Size: 384×96 px. Transparent center. ~24 px cap on each end. Used for LOGIN, SUBMIT, BACK, and all wide action buttons.' },
+  btn_primary_sq:  { relPath: 'btn_primary_sq.png',                     specText: 'btn_primary_sq.png — 9-slice square button texture. Size: 128×128 px. Used for home-page tile grid (Attendance, Subjects, Messages, Shop). If omitted, tiles fall back to btn_primary.png.' },
   input_box:       { relPath: 'input_box.png',                          specText: 'input_box.png — Single-line input field frame. Size: 512×64 px. 9-slice with transparent center.' },
   ambient_sprite:  { relPath: 'ambient_sprite.png',                     specText: 'ambient_sprite.png — Tall decorative sprite (e.g. banner, statue) placed on page edges. Size: 320×640 px. Transparent background.' },
   // Music
@@ -39,6 +40,8 @@ const ASSET_MANIFEST: Record<string, { relPath: string; specText: string }> = {
   bg_mySubjects:   { relPath: 'mySubjects/background.png',              specText: 'mySubjects/background.png — Subjects / curriculum page background. Full-screen: 1920×1080 px.' },
   bg_messages:     { relPath: 'messages/background.png',                specText: 'messages/background.png — Messaging / social page background. Full-screen: 1920×1080 px.' },
   bg_shop:         { relPath: 'shop/background.png',                    specText: 'shop/background.png — Shop / marketplace page background. Full-screen: 1920×1080 px.' },
+  // Subject detail frame
+  subject_detail:  { relPath: 'mySubjects/subject.png',                 specText: 'mySubjects/subject.png — Decorative frame shown behind subject detail popup. Size: 900×700 px. Content text is layered on top — keep the central reading area clear, decorate only the borders/corners.' },
   // Login sprites
   torch_1:         { relPath: 'login/torch_flicker/frame_1.png',        specText: 'torch_flicker/frame_1.png — First frame of the torch flicker animation (left/right torches on login screen). Size: 80×160 px. Transparent background.' },
   torch_2:         { relPath: 'login/torch_flicker/frame_2.png',        specText: 'torch_flicker/frame_2.png — Second frame of torch flicker. Size: 80×160 px.' },
