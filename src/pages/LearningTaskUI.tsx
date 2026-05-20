@@ -117,14 +117,14 @@ const RESOURCES: { type: string; title: string; desc: string; href: string }[] =
 
 // ─── Bot / group config ───────────────────────────────────────────────────────
 
-const MOCK_TEAM = ['Aria', 'Conrad', 'Petra', 'Rex']
+const MOCK_TEAM = ['AriaBOT', 'ConradBOT', 'PetraBOT', 'RexBOT']
 
 const INITIAL_CHAT: ChatMessage[] = [
   { id: 1, author: 'Mr. Bot', body: 'Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.', time: '09:00', isTeacher: true },
-  { id: 2, author: 'Conrad BOT', body: 'Ready on my end.', time: '09:01' },
-  { id: 3, author: 'Petra BOT',  body: 'Ready here too.', time: '09:01' },
-  { id: 4, author: 'Rex BOT',    body: "Let's go — I found the content video really useful for structuring my answers.", time: '09:02' },
-  { id: 5, author: 'Aria BOT',   body: 'Same. Question 5 was tricky though — I second-guessed myself.', time: '09:03' },
+  { id: 2, author: 'ConradBOT', body: 'Ready on my end.', time: '09:01' },
+  { id: 3, author: 'PetraBOT',  body: 'Ready here too.', time: '09:01' },
+  { id: 4, author: 'RexBOT',    body: "Let's go — I found the content video really useful for structuring my answers.", time: '09:02' },
+  { id: 5, author: 'AriaBOT',   body: 'Same. Question 5 was tricky though — I second-guessed myself.', time: '09:03' },
 ]
 
 // ─── Bot Phase-1 metacog answers (smart / stupid per role) ───────────────────
@@ -826,7 +826,7 @@ const LeaderPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; 
               <button key={name} onClick={() => onSend(`${name}, what do you think about this discrepancy?`)} style={{
                 fontFamily: FONT, fontSize: '1.1rem', padding: '3px 10px', background: 'rgba(255,215,0,0.06)',
                 border: '1px solid rgba(255,215,0,0.3)', color: ACCENT, cursor: 'pointer',
-              }}>{name.split(' ')[0]}</button>
+              }}>{name}</button>
             ))}
           </div>
         </div>
