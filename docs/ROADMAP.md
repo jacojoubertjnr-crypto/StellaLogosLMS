@@ -797,42 +797,44 @@ Iterative improvements to the Phase III cooperative layout in `LearningTaskUI.ts
 - [x] `memberNames` prop on LeaderCompact — passed dynamically from `members3b` array (not hardcoded); works regardless of bot tier
 
 ### Developer infrastructure
-- [x] **`src/stores/devStore.ts`** — Zustand store; `aiBotsEnabled` (default `false`); `toggleAiBots` writes to `localStorage` key `sl_dev_ai_bots`; reads on init; no persist middleware (manual localStorage, consistent with project pattern)
-- [x] **`src/components/DevBotToggle.tsx`** — fixed bottom-left floating button; visible only when user is logged in; green when ON, orange when OFF; shows "teacher help API active" sub-label when ON
-- [x] **`src/lib/botEngine.ts`** — bot engine scaffold; `aiBotsEnabled` controls whether Anthropic API calls fire for teacher help; all scripted bot chat remains hardcoded strings regardless of toggle
-- [x] **`App.tsx`** — `DevBotToggle` imported and rendered inside `<BrowserRouter>` before `<Routes>`
+- [x] **`src/stores/devStore.ts`** — Zustand store; `aiBotsEnabled` (default `false`, always starts OFF on login); connectivity test fires on enable; no persist middleware
+- [x] **`src/components/DevBotToggle.tsx`** — fixed bottom-left; runs live API ping on enable with popup feedback (testing / ok / fail states); only calls `setAiBots(true)` on successful test
+- [x] **`src/lib/botEngine.ts`** — full bot engine (see Phase 10)
+- [x] **`src/stores/taskContextStore.ts`** — `phase`, `tab`, `role` store for widget context awareness
+- [x] **`App.tsx` / `ProtectedLayout.tsx`** — `DevBotToggle` and `TeacherHelpWidget` rendered globally
 
 ### Login pre-fill
 - [x] **`authStore.ts`** — initial `username` set to `'learner@stellalogos.dev'` and `password` to `'learner1234'`; login form pre-fills on mount without requiring quick-fill chips
 
 ---
 
-## Phase 10: Bot System — Simulated Group Discussion 🔲 HOLD (implement last)
+## Phase 10: Bot System — Simulated Group Discussion ✅ COMPLETE
 
-> **Design spec:** `docs/bots.md` — read this in full before touching any code.
->
-> **Do not implement until the program is feature-complete and all Phase III mechanics are finalised.**
-> Bot dialogue scripts are tightly coupled to the exact role panel behaviours (pulse timings, question
-> advance logic, scribe capture flow, angle-checker triad). Any tweak to Phase III after the bots are
-> written will require re-auditing every script.
+> **Design spec:** `docs/bots.md`
 
 ### What this phase delivers
 - 8 simulated learner bots (smart + stupid variant per role) that populate Phase III for solo users
-- 1 teacher bot that monitors user inactivity and role compliance
+- 1 teacher bot (Mr. Bot) — global help widget, context-aware, Anthropic API powered
 - Frontend-only — no DB tables, no GraphQL changes, no persistence
 
-### Bot roster (see `docs/bots.md` for full scripts)
-- [ ] Aria / Finn — Leader (smart / stupid)
-- [ ] Conrad / Ollie — Timer (smart / stupid)
-- [ ] Petra / Mila — Scribe (smart / stupid)
-- [ ] Rex / Bea — Angle Checker (smart / stupid)
-- [ ] Mr. Bot — Teacher bot (always active)
+### Bot roster
+- [x] AriaBOT / FinnBOT — Leader (smart / stupid)
+- [x] ConradBOT / OllieBOT — Timer (smart / stupid)
+- [x] PetraBOT / MilaBOT — Scribe (smart / stupid)
+- [x] RexBOT / BeaBOT — Angle Checker (smart / stupid)
+- [x] Mr. Bot — Teacher bot (always active on all pages)
 
 ### Implementation tasks
-- [x] `src/lib/botEngine.ts` created — bot roster scaffold, answer-sheet structure, session start/stop hooks; `aiBotsEnabled` flag from `devStore` gates all API calls
-- [ ] Wire bot engine fully into Phase III — replace `DEV_GROUP` with bot assignment; wire distribution chart to bot answer sheets
-- [ ] Add `teacherSend` helper (injects `isTeacher: true` messages as Mr. Bot)
-- [ ] Add `userLastActionAt` inactivity tracker (updated on every user chat send and role-panel button press)
+- [x] `src/lib/botEngine.ts` — full bot roster, scripted timed messages per role × tier, `startBotSession()` / cleanup, `BOT_NAMES`, `BOT_ACCURACY`, `randomTiers()`
+- [x] `startBotSession` wired into Phase3b — fires proactive timed bot messages throughout 30-minute session; bots for the user's own role are silenced automatically
+- [x] Phase3b reactive template engine — `getBotP3bResponse()` in `LearningTaskUI.tsx`; 1 primary bot responds on every user message (1.8s), 45% chance of secondary (3.6s); 6 response variants per role × tier
+- [x] `src/components/TeacherHelpWidget.tsx` — collapsible chat panel (top-right, Learner-only); unread badge; AI-powered via Express proxy; DevBotToggle gates API calls
+- [x] `src/lib/teacherHelpApi.ts` — 16 rich page/phase/role context strings; `getPageContext(pathname, phase, tab, role)`; `callTeacherHelpApi()` hits `/teacher-help` proxy
+- [x] `src/stores/taskContextStore.ts` — `phase`, `tab`, `role` synced from `LearningTaskUI`; widget reads all three for context-aware help
+- [x] Backend `POST /teacher-help` — JWT-gated Express endpoint; `SAFETY_SYSTEM` prompt; calls Anthropic API server-side; API key in `backend/.env` only
+- [x] `DevBotToggle` — connectivity test on enable (live API ping with popup feedback); always starts OFF on login
+- [x] Bot naming convention: `ConradBOT` format (no space) throughout
+- [x] Voice (TTS) — implemented with Web Speech API then removed; deferred to future paid implementation
 
 ---
 

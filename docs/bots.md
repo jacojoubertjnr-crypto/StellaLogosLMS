@@ -1,6 +1,6 @@
 # Stella Logos — Bot System Design
 
-> **Status:** Implementation in progress.
+> **Status:** Core implementation complete.
 > **Scope:** Three independent systems — Register Class, Phase III Cooperative Discussion, and Teacher Help.
 > All bot logic is frontend-only. No DB reads/writes. Bots reset on every session entry.
 
@@ -58,24 +58,26 @@ These rules apply to every bot message in the system — scripted dialogue, API 
 
 | # | Name | Role | Tier | Quiz Accuracy | Personality |
 |---|---|---|---|---|---|
-| 1 | Aria | Leader | Smart | 82% | Decisive, organised, keeps discussion on track |
-| 2 | Finn | Leader | Stupid | 33% | Well-meaning but uncertain, advances questions too fast |
-| 3 | Conrad | Timer | Smart | 78% | Punctual, clear alerts, good pace management |
-| 4 | Ollie | Timer | Stupid | 30% | Forgetful, late warnings, misses pulses |
-| 5 | Petra | Scribe | Smart | 80% | Accurate captures, clear draft, triggers Final Solution well |
-| 6 | Mila | Scribe | Stupid | 28% | Disorganised, captures wrong things, slow to finalise |
-| 7 | Rex | Angle Checker | Smart | 85% | Genuine contrarian, raises real alternative perspectives |
-| 8 | Bea | Angle Checker | Stupid | 25% | Superficial, agrees with group, trivial challenges |
+| 1 | AriaBOT | Leader | Smart | 82% | Decisive, organised, keeps discussion on track |
+| 2 | FinnBOT | Leader | Stupid | 33% | Well-meaning but uncertain, advances questions too fast |
+| 3 | ConradBOT | Timer | Smart | 78% | Punctual, clear alerts, good pace management |
+| 4 | OllieBOT | Timer | Stupid | 30% | Forgetful, late warnings, misses pulses |
+| 5 | PetraBOT | Scribe | Smart | 80% | Accurate captures, clear draft, triggers Final Solution well |
+| 6 | MilaBOT | Scribe | Stupid | 28% | Disorganised, captures wrong things, slow to finalise |
+| 7 | RexBOT | Angle Checker | Smart | 85% | Genuine contrarian, raises real alternative perspectives |
+| 8 | BeaBOT | Angle Checker | Stupid | 25% | Superficial, agrees with group, trivial challenges |
 
 ### Teacher Bot
 
 | Name | Appears in | Function |
 |---|---|---|
-| Mr. Bot | **Every page** — global help widget (top of screen) | Always-on help responder; inactivity monitor; Phase III coach; **voice-capable (TTS)** |
+| Mr. Bot | **Every page** — global help widget (top of screen) | Always-on help responder; context-aware for every page and Phase III role; powered by Anthropic API |
 
-The teacher bot widget is a **persistent collapsible chat panel** rendered in `App.tsx` (or `ProtectedLayout`), visible on all routes when the user is logged in. It is separate from the 1:1 `TeacherChatBar` (which is the real teacher's lesson channel). The widget is powered exclusively by the Anthropic API (`claude-sonnet-4-6`) — no scripted responses. Mr. Bot's API responses can optionally be read aloud via the Web Speech API (`SpeechSynthesis`) — learner can toggle voice on/off. The widget shows an unread badge when the bot proactively posts a nudge.
+The teacher bot widget is a **persistent collapsible chat panel** rendered in `ProtectedLayout`, visible on all routes when the user is logged in as a Learner. It is separate from the 1:1 `TeacherChatBar` (the real teacher's channel). The widget is powered exclusively by the Anthropic API (`claude-sonnet-4-6`) via the Express `/teacher-help` proxy — no scripted responses. The widget shows an unread badge count when a reply arrives while the panel is closed.
 
-**Voice implementation:** Use the browser-native `window.speechSynthesis.speak()` (no cost, no server round-trip). Choose a voice with `lang: 'en-ZA'` or `lang: 'en-GB'` for a South African / British accent closest to "Mr. Bot". Voice is opt-in — a small 🔊 toggle button inside the widget header.
+**Context awareness:** `taskContextStore` (Zustand) holds `phase`, `tab`, and `role`. `LearningTaskUI` writes these on every state change. The widget reads them and passes them to `getPageContext()` in `teacherHelpApi.ts`, which returns a detailed UI description for the current screen — including role-specific Phase III guidance (leader, timer, scribe, angle-checker, learner).
+
+**Voice:** Deferred — Web Speech API TTS was removed. Will be re-implemented as a proper paid feature when budget allows.
 
 ---
 
@@ -775,73 +777,23 @@ No backend changes. No new DB tables. No GraphQL changes.
 The bot **dialogue is fully scripted** (hardcoded strings — see scripts in this document).
 Do **NOT** call the Anthropic API for scripted bot chat messages.
 
-The Anthropic API (`claude-sonnet-4-6`) is used **only** in the global Teacher Help Widget (`TeacherHelpWidget.tsx`). Every message the learner types to Mr. Bot goes through the API with a strict safety system prompt — not a hardcoded reply. This allows natural, contextual responses to whatever the learner actually types.
+The Anthropic API (`claude-sonnet-4-6`) is used **only** in the global Teacher Help Widget (`TeacherHelpWidget.tsx`). Every message the learner types to Mr. Bot goes through the API with a strict safety system prompt — not a hardcoded reply.
 
-```typescript
-// src/lib/teacherHelpApi.ts
+**Architecture — browser → Vite proxy → Express → Anthropic:**
+The browser never calls the Anthropic API directly (CORS blocks it). All calls go:
+`TeacherHelpWidget` → `POST /teacher-help` (Vite proxy) → Express endpoint (`backend/src/index.ts`) → `https://api.anthropic.com/v1/messages`
 
-const SAFETY_SYSTEM = `
-You are Mr. Bot, a warm, patient, and encouraging high school IT teacher
-in a South African digital Learning Management System called Stella Logos.
-Your students are school learners aged 13–16.
+The API key lives in `backend/.env` only — never in client code or `.env.local`. The Express endpoint is JWT-gated (reads `Authorization: Bearer <token>` and calls `verifyToken`).
 
-STRICT RULES — never break these:
-1. Only discuss topics related to the LMS, the current learning task, school subjects, or study skills.
-2. If the student asks about anything outside of school or the current task, gently redirect them back
-   to their work without commenting on the off-topic subject.
-3. Never use slang, bad language, or content inappropriate for school-age children.
-4. Keep responses under 5 sentences. Be warm and direct. Address the student by name when given.
-5. Never speculate about real-world events, people, politics, or anything outside of the academic context.
-`.trim()
+**Dev note:** Curro Holdings corporate network uses SSL inspection (MITM). The backend has `NODE_TLS_REJECT_UNAUTHORIZED=0` guarded by `NODE_ENV !== 'production'` to allow outbound HTTPS in dev.
 
-export async function callTeacherHelpApi(
-  helpScript: string,
-  userMessage: string,
-  displayName: string,
-  apiKey: string
-): Promise<string> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 300,
-      system: `${SAFETY_SYSTEM}\n\nCurrent screen context for ${displayName}:\n${helpScript}`,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  })
-  const data = await response.json()
-  return data.content?.map((i: { text?: string }) => i.text ?? '').join('\n') ?? 'I\'m not sure — please try again.'
-}
-```
-
-**API key storage:** The key is stored in `import.meta.env.VITE_ANTHROPIC_API_KEY` (`.env.local`, never committed). The `TeacherHelpWidget` reads it from the env at runtime. If the key is absent or the call fails, Mr. Bot posts a fallback: *"I'm having trouble connecting right now — check the help scripts in your task description, or ask your teacher directly."*
-
-**Cost note:** Sonnet 4.6 costs ~$0.003 per response at 300 tokens. A typical session = 2–5 help queries = < $0.02/session. Voice (Web Speech API) is free — browser-native, no billing.
+**Cost note:** Sonnet 4.6 costs ~$0.003 per response at 300 tokens. A typical session = 2–5 help queries = < $0.02/session.
 
 ---
 
-## Voice (Teacher Bot Only)
+## Voice (Deferred)
 
-Mr. Bot's responses can be read aloud using the browser-native Web Speech API — no cost, no external service. Learner opts in via a 🔊 toggle inside the widget header.
-
-```typescript
-function speakTeacherReply(text: string) {
-  if (!window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'en-ZA'   // South African English; falls back to en-GB
-  utterance.rate = 0.95
-  utterance.pitch = 0.9
-  window.speechSynthesis.speak(utterance)
-}
-```
-
-Only Mr. Bot's messages trigger TTS. Scripted learner bot messages are **text only**.
+Web Speech API TTS was implemented and then removed. The quality of the browser-native voices was unsatisfactory. This feature will be re-implemented using a proper paid TTS service when budget allows. All Mr. Bot responses are currently text-only.
 
 ---
 Data Structures
