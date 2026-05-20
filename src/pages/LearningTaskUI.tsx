@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePageBackground } from '@/hooks/usePageBackground'
 import { useQuestStore } from '@/stores/questStore'
 import { useTaskContextStore } from '@/stores/taskContextStore'
-import { randomTiers, BOT_NAMES, BOT_ACCURACY, ROLE_ORDER as BOT_ROLE_ORDER, type BotRole, type BotTier } from '@/lib/botEngine'
+import { randomTiers, BOT_NAMES, BOT_ACCURACY, ROLE_ORDER as BOT_ROLE_ORDER, startBotSession, type BotRole, type BotTier } from '@/lib/botEngine'
 
 const MY_TASK_GROUP = gql`
   query MyTaskGroup($academicClassId: ID!) {
@@ -1597,6 +1597,24 @@ const Phase3b: React.FC<{
     ), 600)
   }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Proactive bot session — timed messages from Timer, Scribe, Angle Checker, Leader bots
+  useEffect(() => {
+    if (!isBotMode || !role) return
+    const stop = startBotSession({
+      userRole:         role as BotRole,
+      realRoles:        new Set([role as BotRole]),
+      postMessage:      addBotMsg,
+      advanceQuestion:  () => {},
+      triggerFinalPhase:(draft) => { setScribeDraft(draft); setFinalPhaseActive(true) },
+      sessionDurationMs: 30 * 60 * 1000,
+      tiers:            botTiers,
+      getUserIntent:    () => undefined,
+      getCurrentQuestion: () => 0,
+      userName,
+    })
+    return stop
+  }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSend = (text: string) => {
     onUserSend(text)
     if (!isBotMode || !role) return
@@ -2209,7 +2227,6 @@ export const LearningTaskUI: React.FC = () => {
   const [subPhase, setSubPhase]     = useState<'review' | 'cooperative'>('review')
   const { setTaskContext, setRole: setStoreRole, clearTaskContext } = useTaskContextStore()
   useEffect(() => { setTaskContext(phase) }, [phase])
-  useEffect(() => { setStoreRole(role ?? '') }, [role])
   useEffect(() => () => clearTaskContext(), [])
   const [metacogAnswers, setMetacogAnswers] = useState<MetacogState | null>(null)
 
@@ -2222,6 +2239,7 @@ export const LearningTaskUI: React.FC = () => {
 
   const [phase2Answers, setPhase2Answers] = useState<Record<number, number>>({})
   const [role,  setRole]  = useState<Role | null>(null)
+  useEffect(() => { setStoreRole(role ?? '') }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
   const [chat,  setChat]  = useState<ChatMessage[]>([])
   const [finalPhaseActive,  setFinalPhaseActive]  = useState(false)
   const [scribeDraft,       setScribeDraft]       = useState('')
