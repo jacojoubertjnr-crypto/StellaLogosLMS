@@ -1086,17 +1086,44 @@ const Phase3a: React.FC<{
     setAdvancing(true)
     setPicking(false)
 
-    const leaderName = BOT_NAMES.leader[botTiers.leader]
-    const timerName  = BOT_NAMES.timer[botTiers.timer]
-    const isSmartL   = botTiers.leader === 'smart'
-    const isSmartT   = botTiers.timer  === 'smart'
+    const finalAnsIdx  = d.intent === 'keep' ? userAns : (d.newIdx ?? userAns)
+    const finalLabel   = OPT_LABELS[finalAnsIdx] ?? '?'
+    const userOwnLabel = OPT_LABELS[userAns] ?? '?'
 
-    setTimeout(() => postBot(leaderName, d.intent === 'keep'
-      ? (isSmartL ? `Good call, ${userName}. I'll align with that.` : 'ok yeah')
-      : (isSmartL ? `Makes sense — ${d.newIdx !== undefined ? OPT_LABELS[d.newIdx] : 'that'} is the stronger answer.` : 'ok sure')
-    ), 600)
-    setTimeout(() => postBot(timerName, isSmartT ? 'Agreed — moving on.' : 'ok'), 1100)
-    setTimeout(() => goNext(qIdx), 1600)
+    // User's decision in chat immediately
+    postBot(userName, d.intent === 'keep'
+      ? `I'm keeping ${userOwnLabel}.`
+      : `Changing to ${finalLabel}.`
+    )
+
+    // Each bot posts their own individual decision
+    const delays = [500, 950, 1350]
+    BOT_3.forEach((r, i) => {
+      const botName  = BOT_NAMES[r][botTiers[r]]
+      const isSmart  = botTiers[r] === 'smart'
+      const ownAns   = botAnswers[r][qId] ?? -1
+      const ownLabel = OPT_LABELS[ownAns] ?? '?'
+      const keeping  = ownAns === finalAnsIdx
+
+      let msg: string
+      if (r === 'leader') {
+        msg = keeping
+          ? (isSmart ? `Option ${ownLabel} — keeping mine.`           : `keeping ${ownLabel} same as before`)
+          : (isSmart ? `Changing to ${finalLabel} — better call.`     : `ok changing to ${finalLabel}`)
+      } else if (r === 'timer') {
+        msg = keeping
+          ? (isSmart ? `Sticking with ${ownLabel}.`                   : `keeping ${ownLabel} I think`)
+          : (isSmart ? `${finalLabel} makes more sense — changing.`   : `oh ok ${finalLabel} then`)
+      } else {
+        msg = keeping
+          ? (isSmart ? `I had ${ownLabel} — no reason to change.`     : `I got ${ownLabel} too!`)
+          : (isSmart ? `Fine — ${finalLabel}. Noted.`                 : `ok ${finalLabel} sure`)
+      }
+
+      setTimeout(() => postBot(botName, msg), delays[i])
+    })
+
+    setTimeout(() => goNext(qIdx), 1900)
   }
 
   if (!q) return null
