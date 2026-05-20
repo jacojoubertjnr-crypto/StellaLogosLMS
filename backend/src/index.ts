@@ -1,4 +1,6 @@
 import 'dotenv/config';
+// Curro Holdings corporate network uses SSL inspection — disable cert check in dev
+if (process.env.NODE_ENV !== 'production') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -428,6 +430,65 @@ app.get('/analytics/export', async (req: express.Request, res: express.Response)
       statement: typeof r.statement === 'object' ? r.statement : JSON.parse(r.statement),
       recordedAt: r.recorded_at.toISOString(),
     })));
+  }
+});
+
+// Teacher help proxy  POST /teacher-help  { pageContext, userMessage, displayName }
+// Proxies to Anthropic API server-side so the API key is never exposed to the browser.
+app.post('/teacher-help', express.json(), async (req: express.Request, res: express.Response) => {
+  const authHeader = (req.headers.authorization as string) ?? '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const user = token ? verifyToken(token) : null;
+  if (!user) { res.status(401).json({ error: 'Unauthorized' }); return; }
+
+  const { pageContext, userMessage, displayName } = req.body as {
+    pageContext: string; userMessage: string; displayName: string;
+  };
+  if (!userMessage?.trim()) { res.status(400).json({ error: 'userMessage required' }); return; }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) { res.status(503).json({ error: 'Teacher help not configured' }); return; }
+
+  const SAFETY_SYSTEM = `You are Mr. van der Berg, a warm, patient, and encouraging high school IT teacher in a South African digital Learning Management System called Stella Logos. Your students are school learners aged 13–16.
+
+STRICT RULES — never break these:
+1. Only discuss topics related to the LMS, the current learning task, school subjects, or study skills.
+2. If the student asks about anything outside of school or the current task, gently redirect them back to their work without commenting on the off-topic subject.
+3. Never use slang, bad language, or content inappropriate for school-age children.
+4. Keep responses under 5 sentences. Be warm and direct.
+5. Never speculate about real-world events, people, politics, or anything outside the academic context.
+6. If you are unsure what the student needs, ask one short clarifying question.`;
+
+  try {
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 300,
+        system: `${SAFETY_SYSTEM}\n\nContext about what ${displayName} can currently see and do:\n${pageContext ?? 'General LMS screen.'}`,
+        messages: [{ role: 'user', content: userMessage }],
+      }),
+    });
+
+    if (!upstream.ok) {
+      const err = await upstream.text();
+      console.error('Anthropic API error:', upstream.status, err);
+      res.status(502).json({ error: 'Upstream API error' });
+      return;
+    }
+
+    const data = await upstream.json() as { content: { type: string; text?: string }[] };
+    const reply = data.content?.map(b => b.text ?? '').join('\n').trim()
+      || "I'm not sure about that — could you try rephrasing your question?";
+    res.json({ reply });
+  } catch (err) {
+    console.error('Teacher help proxy error:', err);
+    res.status(500).json({ error: 'Internal error' });
   }
 });
 

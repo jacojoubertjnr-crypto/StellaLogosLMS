@@ -1,6 +1,6 @@
 # Stella Logos — Bot System Design
 
-> **Status:** Design phase. No code written yet.
+> **Status:** Implementation in progress.
 > **Scope:** Three independent systems — Register Class, Phase III Cooperative Discussion, and Teacher Help.
 > All bot logic is frontend-only. No DB reads/writes. Bots reset on every session entry.
 
@@ -13,8 +13,8 @@ Three bot systems serve different moments in the learner journey:
 | System | Where | Purpose |
 |---|---|---|
 | **Register Class Bots** | `AttendenceUI` — Class Chat | Simulate a live register class so the chat never feels empty |
-| **Phase III Bots** | `LearningTaskUI` — Cooperative Discussion | Give solo users a full group experience |
-| **Teacher Bot** | Every chat surface + help trigger | Monitors inactivity; provides context-aware help on demand |
+| **Cooperative Bots** | `LearningTaskUI` — Phases I, II, and III | Give solo users a full group experience across all task phases |
+| **Teacher Bot (global)** | Every page — persistent help widget at top of screen | Always-on, context-aware help; voice-capable; uses Anthropic API |
 
 ---
 
@@ -22,9 +22,24 @@ Three bot systems serve different moments in the learner journey:
 
 - **No persistence.** All bot state resets on every page mount.
 - **Always positive.** Bots support the user, never frustrate or obstruct. Even "stupid" tier bots eventually do their job.
-- **Teacher bot is independent.** It fires on its own timers regardless of what the other bots do.
-- **Help is context-aware.** When the user types `help me` or `help`, the teacher bot detects the current route and phase and responds with targeted guidance.
-- **Natural pacing.** Register bots use realistic morning rhythms. Phase III bots follow the pedagogical flow.
+- **Teacher bot is always active.** It runs independently of everything else. Every page, every route, any time the learner needs guidance.
+- **Help is context-aware.** When the user types `help me` or `help`, or taps the help widget, the teacher bot detects the current route and phase and responds with targeted guidance.
+- **Natural pacing.** Register bots use realistic morning rhythms. Cooperative bots follow the pedagogical flow.
+- **Educational content only.** All bot messages — scripted and API-generated — must remain within the scope of the LMS and the current learning task. No exceptions.
+- **Child-safe language.** The system is used by school learners (young teenagers). All bot dialogue must be age-appropriate: no slang that could be misread, no aggressive language, no references to content outside of school or the current task. "Stupid" tier bots are confused and slow, not rude.
+
+---
+
+## Content Safety Rules
+
+These rules apply to every bot message in the system — scripted dialogue, API responses, and register chat.
+
+1. **On-topic only.** Bot messages must relate to the LMS, the current learning task, or school life. No pop culture references, no politics, no social commentary beyond what's in the curriculum.
+2. **No bad language.** Zero tolerance. Scripts are pre-written and reviewed. API calls use a strict system prompt that instructs Mr. van der Berg to refuse any off-topic or inappropriate response.
+3. **Age-appropriate tone.** Write for a 13–16 year old school context. Friendly, direct, occasionally light-hearted (e.g. Daan's dry humour), but always school-appropriate.
+4. **No personal opinions on non-academic topics.** Bots may express academic opinions ("I think the answer is B because...") but must not comment on social issues, religion, politics, or personal lifestyle.
+5. **Constructive framing.** "Stupid" tier bots are characterised by academic confusion, forgetfulness, and lack of rigor — never meanness, bullying, or discouraging language toward the user.
+6. **API safety net.** The system prompt sent to the Anthropic API for all teacher bot calls includes a hard refusal instruction: if the user's message is off-topic, Mr. van der Berg redirects gently back to the task without elaborating on the off-topic content.
 
 ---
 
@@ -56,7 +71,11 @@ Three bot systems serve different moments in the learner journey:
 
 | Name | Appears in | Function |
 |---|---|---|
-| Mr. van der Berg | Register chat + TeacherChatBar + Phase III | Inactivity monitor; help responder; morning register greeter |
+| Mr. van der Berg | **Every page** — global help widget (top of screen) | Always-on help responder; inactivity monitor; Phase III coach; **voice-capable (TTS)** |
+
+The teacher bot widget is a **persistent collapsible chat panel** rendered in `App.tsx` (or `ProtectedLayout`), visible on all routes when the user is logged in. It is separate from the 1:1 `TeacherChatBar` (which is the real teacher's lesson channel). The widget is powered exclusively by the Anthropic API (`claude-sonnet-4-6`) — no scripted responses. Mr. van der Berg's API responses can optionally be read aloud via the Web Speech API (`SpeechSynthesis`) — learner can toggle voice on/off. The widget shows an unread badge when the bot proactively posts a nudge.
+
+**Voice implementation:** Use the browser-native `window.speechSynthesis.speak()` (no cost, no server round-trip). Choose a voice with `lang: 'en-ZA'` or `lang: 'en-GB'` for a South African / British accent closest to "Mr. van der Berg". Voice is opt-in — a small 🔊 toggle button inside the widget header.
 
 ---
 
@@ -163,7 +182,9 @@ chance of responding with a subject-relevant nudge after a 8–15 s delay:
 
 ---
 
-# PART 2 — PHASE III COOPERATIVE DISCUSSION BOTS
+# PART 2 — COOPERATIVE BOTS (Phases I, II, and III)
+
+Cooperative bots are **only active during the Learning Task** (`/task` route). They have no presence on any other page. They communicate via text chat only — no voice.
 
 ---
 
@@ -178,7 +199,22 @@ Example: user → `scribe`; bots → Aria (leader, smart), Ollie (timer, stupid)
 
 ---
 
-## Quiz Simulation
+## Phase I — Metacognitive Scaffold (Bots answer the reflection questions)
+
+Before Phase III begins, each bot must have answered the four metacognitive reflection questions so their "Member Solution" card is populated:
+
+1. **Core problem** — what is the main problem in the challenge?
+2. **Criteria** — what makes a good solution?
+3. **Solution** — what is their proposed solution?
+4. **Audit** — step-by-step reasoning / method
+
+Answers are **scripted** per tier. Smart tier answers are academically sound, well-phrased, and logically structured. Stupid tier answers are vague, incomplete, or misidentify the problem.
+
+Bot metacog answers are generated when bots are assigned at Phase III entry (they simulate having worked through Phase I independently). They populate the `botMetacog[role]` map that drives the Member Solutions cards.
+
+---
+
+## Phase II — Quiz Simulation (Bots answer the quiz)
 
 Pre-generated at Phase III entry using the real quiz length.
 
@@ -187,8 +223,9 @@ Pre-generated at Phase III entry using the real quiz length.
 | Smart | 15–17 of 20 | 75%–85% |
 | Stupid | 5–8 of 20 | 25%–40% |
 
-The Leader panel's distribution chart draws from all four answer sheets (user + 3 bots), making the
-chart live and realistic.
+The Leader panel's distribution chart draws from all four answer sheets (user + 3 bots), making the chart live and realistic.
+
+**Quiz Review (Phase III discussion):** When the leader advances to a question, the bots comment on it in chat according to their role. Smart bots give reasoned responses; stupid bots guess or agree with the majority without justification. Scripts for each question comment are generic ("I thought the answer was B because the scenario mentions X") — they don't need to know the real correct answer, only whether their pre-generated answer matched the majority.
 
 ---
 
@@ -561,6 +598,15 @@ The detection logic reads `window.location.pathname` + a shared `currentPhase` r
 type Role = 'leader' | 'timer' | 'scribe' | 'angle-checker' | 'learner'
 type Tier = 'smart' | 'stupid'
 
+// ── Metacognitive answers (Phase I simulation) ────────────────────────────
+
+interface BotMetacog {
+  coreProblem: string    // what is the core problem?
+  criteria: string       // what makes a good solution?
+  solution: string       // proposed solution
+  audit: string          // step-by-step reasoning
+}
+
 // ── Phase III bots ─────────────────────────────────────────────────────────
 
 interface Phase3Bot {
@@ -569,12 +615,13 @@ interface Phase3Bot {
   tier: Tier
   quizAccuracy: number     // 0–1; used to pre-generate answers[]
   answers: boolean[]       // length = quiz.length; true = correct
+  metacog: BotMetacog      // pre-generated Phase I answers
 }
 
 interface BotContext {
   userRole: Role
   userName: string
-  sendChat: (text: string) => void
+  sendChat: (botName: string, text: string) => void
   teacherSend: (text: string) => void
   onNextQuestion: () => void                      // Leader bot only
   onTriggerFinalPhase: (draft: string) => void   // Scribe bot only
@@ -588,7 +635,6 @@ interface BotState {
   userLastActionAt: number      // Date.now() of last user action
   phaseElapsedMs: number        // ms since Phase III started
   sessionDurationMs: number     // total configured session length
-  currentPhaseTab?: string      // 'resources' | 'quiz' (for Phase II help)
 }
 
 interface Phase3Session {
@@ -599,16 +645,11 @@ interface Phase3Session {
 
 // ── Register class bots ────────────────────────────────────────────────────
 
-interface RegisterBot {
-  name: string
-  personality: 'enthusiastic' | 'organised' | 'laid-back' | 'quiet'
-}
-
 interface RegisterBotContext {
   displayName: string
-  sendRegisterChat: (text: string) => void   // posts to register class chat as this bot
+  sendRegisterChat: (botName: string, text: string) => void
   teacherSend: (text: string) => void
-  getCheckedIn: () => boolean                // whether the user has checked in
+  getCheckedIn: () => boolean
 }
 
 interface RegisterSession {
@@ -630,15 +671,28 @@ type HelpContext =
   | { route: '/task'; phase: 3; role: Role }
   | { route: '/task'; phase: 4 }
   | { route: '/task'; phase: 5 }
+```
 
-function resolveHelpContext(
-  pathname: string,
-  phase: number,
-  tab: string,
-  role: Role
-): HelpContext { /* ... */ }
+---
 
-function getHelpScript(ctx: HelpContext, displayName: string): string { /* ... */ }
+## Phase I — Scripted Metacog Answers (per tier)
+
+These are generic answers that work for any IT learning task. Smart tier answers are structured and thoughtful; stupid tier answers are vague or miss the point. They populate the Member Solutions cards in Phase III.
+
+### Smart tier (applies to Aria, Conrad, Petra, Rex)
+```
+coreProblem: "The core problem is identifying the most efficient algorithm for the given scenario and understanding how it handles edge cases."
+criteria: "A good solution should work correctly for all inputs, use appropriate data structures, be readable, and run within a reasonable time complexity."
+solution: "I would use a loop-based approach with a conditional check at each step, keeping track of state in a variable. This avoids unnecessary recursion and is easy to trace."
+audit: "Step 1: Define the input and expected output. Step 2: Identify any edge cases. Step 3: Write pseudocode. Step 4: Implement and trace through with a sample input. Step 5: Check output."
+```
+
+### Stupid tier (applies to Finn, Ollie, Mila, Bea)
+```
+coreProblem: "The problem is getting the program to work properly."
+criteria: "It should give the right answer."
+solution: "I would try different things until it works. Maybe use an if statement."
+audit: "I'm not totally sure of the steps but I think you just code it and test it."
 ```
 
 ---
@@ -704,77 +758,91 @@ function getHelpScript(ctx: HelpContext, displayName: string): string { /* ... *
 
 | File | Action | Notes |
 |---|---|---|
-| `src/lib/botEngine.ts` | **Create** | All bot data, Phase III engine, register engine, help system |
-| `src/pages/LearningTaskUI.tsx` | **Modify** | Wire Phase III bots; replace DEV_GROUP; add teacherSend; add help intercept |
+| `src/lib/botEngine.ts` | **Create/expand** | All bot data, Phase I–III engine, register engine, help routing |
+| `src/lib/teacherHelpApi.ts` | **Create** | Anthropic API call + safety system prompt; used only for help widget |
+| `src/components/TeacherHelpWidget.tsx` | **Create** | Global persistent chat panel; collapsible; voice toggle; unread badge |
+| `src/pages/LearningTaskUI.tsx` | **Modify** | Wire cooperative bots; metacog answers; Phase III chat; distribution chart |
 | `src/pages/AttendenceUI.tsx` | **Modify** | Wire register session on mount; wire class chat help intercept |
-| `src/components/TeacherChatBar.tsx` | **Modify** | Wire help intercept for 1:1 teacher chat on lesson routes |
+| `src/App.tsx` / `ProtectedLayout.tsx` | **Modify** | Mount `TeacherHelpWidget` globally (visible on all protected routes) |
 
 No backend changes. No new DB tables. No GraphQL changes.
 
 
-## what follows is a suggestion for the API implimentation, but as it was not developed after we finished the COOPERATIVE learning section it is possible that it needs to be updated to the final roles of the program
+---
 
-Stella Logos — Bot Engine Implementation Brief
-> For Claude Code / VS Code
-> Stack: React + TypeScript (frontend only, no backend changes)
----
-Context
-This is a Learning Management System called Stella Logos. You are implementing a pure
-frontend bot engine — no DB, no API, no persistence. All bot state resets on every page mount.
-Three bot systems need to be built:
-Register Class Bots — simulate a live morning class chat in `AttendenceUI`
-Phase III Cooperative Discussion Bots — simulate group learning partners in `LearningTaskUI`
-Teacher Help System — context-aware help responses triggered by the user typing "help"
-All bot speech is injected via two functions already wired into the UI:
-`sendChat(text)` — posts a learner bot message to the chat
-`teacherSend(text)` — posts as Mr. van der Berg (`isTeacher: true`)
----
-Anthropic API Integration
-The bot DIALOGUE is fully scripted (hardcoded strings — see scripts below).
-Do NOT call the Anthropic API for scripted bot chat messages.
-The Anthropic API (`claude-sonnet-4-6`) is used ONLY for the Teacher Help System
-when the user types `help`, `help me`, or `?`. In that one case, instead of a fixed
-string, call the API with the relevant help script as a system prompt so the teacher
-can respond naturally to the user's specific wording.
+## Anthropic API Integration
+
+The bot **dialogue is fully scripted** (hardcoded strings — see scripts in this document).
+Do **NOT** call the Anthropic API for scripted bot chat messages.
+
+The Anthropic API (`claude-sonnet-4-6`) is used **only** in the global Teacher Help Widget (`TeacherHelpWidget.tsx`). Every message the learner types to Mr. van der Berg goes through the API with a strict safety system prompt — not a hardcoded reply. This allows natural, contextual responses to whatever the learner actually types.
+
 ```typescript
 // src/lib/teacherHelpApi.ts
-// Called only on help trigger — not for scripted bot messages
+
+const SAFETY_SYSTEM = `
+You are Mr. van der Berg, a warm, patient, and encouraging high school IT teacher
+in a South African digital Learning Management System called Stella Logos.
+Your students are school learners aged 13–16.
+
+STRICT RULES — never break these:
+1. Only discuss topics related to the LMS, the current learning task, school subjects, or study skills.
+2. If the student asks about anything outside of school or the current task, gently redirect them back
+   to their work without commenting on the off-topic subject.
+3. Never use slang, bad language, or content inappropriate for school-age children.
+4. Keep responses under 5 sentences. Be warm and direct. Address the student by name when given.
+5. Never speculate about real-world events, people, politics, or anything outside of the academic context.
+`.trim()
 
 export async function callTeacherHelpApi(
   helpScript: string,
   userMessage: string,
-  displayName: string
+  displayName: string,
+  apiKey: string
 ): Promise<string> {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      system: `You are Mr. van der Berg, a warm and supportive high school IT teacher 
-               in a digital LMS called Stella Logos. Respond to the student's help request
-               using the following context about what they can do on this screen:
-               ${helpScript}
-               Keep your response under 5 sentences. Address the student as ${displayName}.`,
-      messages: [{ role: "user", content: userMessage }]
-    })
-  });
-  const data = await response.json();
-  return data.content.map((i: any) => i.text || "").join("\n");
+      model: 'claude-sonnet-4-6',
+      max_tokens: 300,
+      system: `${SAFETY_SYSTEM}\n\nCurrent screen context for ${displayName}:\n${helpScript}`,
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  })
+  const data = await response.json()
+  return data.content?.map((i: { text?: string }) => i.text ?? '').join('\n') ?? 'I\'m not sure — please try again.'
 }
 ```
-Cost note: The Anthropic API costs ~$0.003 per help interaction (Sonnet 4.6 rates).
-Most users will trigger help 0–2 times per session — negligible cost.
-Google Cloud TTS (teacher voice only) adds ~$0.04 per session. Total per session: ~$0.49.
+
+**API key storage:** The key is stored in `import.meta.env.VITE_ANTHROPIC_API_KEY` (`.env.local`, never committed). The `TeacherHelpWidget` reads it from the env at runtime. If the key is absent or the call fails, Mr. van der Berg posts a fallback: *"I'm having trouble connecting right now — check the help scripts in your task description, or ask your teacher directly."*
+
+**Cost note:** Sonnet 4.6 costs ~$0.003 per response at 300 tokens. A typical session = 2–5 help queries = < $0.02/session. Voice (Web Speech API) is free — browser-native, no billing.
+
 ---
-File Plan
-File	Action
-`src/lib/botEngine.ts`	CREATE — all bot logic, rosters, sessions, help routing
-`src/lib/teacherHelpApi.ts`	CREATE — Anthropic API call for help system only
-`src/pages/AttendenceUI.tsx`	MODIFY — mount/unmount register session
-`src/pages/LearningTaskUI.tsx`	MODIFY — mount/unmount Phase III session
-`src/components/TeacherChatBar.tsx`	MODIFY — wire help intercept
-No backend changes. No new DB tables. No GraphQL changes.
+
+## Voice (Teacher Bot Only)
+
+Mr. van der Berg's responses can be read aloud using the browser-native Web Speech API — no cost, no external service. Learner opts in via a 🔊 toggle inside the widget header.
+
+```typescript
+function speakTeacherReply(text: string) {
+  if (!window.speechSynthesis) return
+  window.speechSynthesis.cancel()
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'en-ZA'   // South African English; falls back to en-GB
+  utterance.rate = 0.95
+  utterance.pitch = 0.9
+  window.speechSynthesis.speak(utterance)
+}
+```
+
+Only Mr. van der Berg's messages trigger TTS. Scripted learner bot messages are **text only**.
+
 ---
 Data Structures
 ```typescript
@@ -1278,20 +1346,22 @@ function handleSubmit(input: string) {
 }
 ```
 ---
-Critical Rules for Claude Code
-`stop()` must be airtight. Store every `setTimeout` and `setInterval` handle in a
-`handles: ReturnType<typeof setTimeout>[]` array. In `stop()`: `handles.forEach(clearTimeout)`.
-Stale timers posting after unmount will cause ghost messages.
-`stopped` flag. Set `stopped = true` in `stop()`. Check `if (stopped) return` at the
-top of every timer callback before calling `sendChat` or `teacherSend`.
-Nomsa's 30% rule. In the register chat response pool, only add Nomsa to the candidate
-array if `Math.random() < 0.3`.
-Smart/Stupid is decided fresh each Phase III session. Never cache tier assignment
-between sessions. `assignPhase3Bots` runs on every Phase III entry.
-Anthropic API for help only. All scripted bot messages use hardcoded strings.
-Only `callTeacherHelpApi` in `teacherHelpApi.ts` calls the Anthropic API.
-Teacher voice (TTS) — teacher bot only. Only Mr. van der Berg's messages go through
-Google Cloud TTS. All student bot messages are text only. Use Google Cloud TTS free tier
-(1M chars/month) — at ~500 chars per teacher message × ~10 messages per session, you have
-headroom for ~200 sessions/month on the free tier before charges begin.
+
+# Critical Rules for Implementation
+
+1. **`stop()` must be airtight.** Store every `setTimeout` and `setInterval` handle in a `handles: ReturnType<typeof setTimeout>[]` array. In `stop()`: `handles.forEach(clearTimeout)`. Stale timers posting after unmount will cause ghost messages.
+
+2. **`stopped` flag.** Set `stopped = true` in `stop()`. Check `if (stopped) return` at the top of every timer callback before calling `sendChat` or `teacherSend`.
+
+3. **Nomsa's 30% rule.** In the register chat response pool, only add Nomsa to the candidate array if `Math.random() < 0.3`.
+
+4. **Smart/Stupid is decided fresh each Phase III session.** Never cache tier assignment between sessions. `assignPhase3Bots` runs on every Phase III entry.
+
+5. **Anthropic API for teacher help widget only.** All scripted bot messages use hardcoded strings. Only `callTeacherHelpApi` in `teacherHelpApi.ts` calls the Anthropic API.
+
+6. **Voice is teacher only.** Only Mr. van der Berg's responses trigger `window.speechSynthesis.speak()`. All student/learner bot messages are text only.
+
+7. **Content safety always applies.** No scripted bot message may contain language or references outside the school/task context. The Anthropic API system prompt includes a hard safety instruction that overrides the model's default behaviour. If the API returns an off-topic or inappropriate response (detectable by tone-checking the start of the reply), fall back to the generic redirect: *"Let's keep focused on your learning task, [name]. What would you like help with?"*
+
+8. **`aiBotsEnabled` gates the teacher help widget API calls.** When the `devStore.aiBotsEnabled` flag is `false`, the widget still renders and Mr. van der Berg can receive messages, but instead of calling the API it posts a scripted placeholder: *"[Dev mode — AI bots disabled. Enable via the DEV toggle bottom-left to activate live responses.]"*
 

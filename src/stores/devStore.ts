@@ -1,18 +1,12 @@
 import { create } from 'zustand'
 
-const STORAGE_KEY = 'sl_dev_ai_bots'
-
+// Always starts OFF — must be explicitly enabled each session
 interface DevState {
   aiBotsEnabled: boolean
-  toggleAiBots: () => void
+  setAiBots: (enabled: boolean) => void
 }
 
 export const useDevStore = create<DevState>((set) => ({
-  aiBotsEnabled: localStorage.getItem(STORAGE_KEY) === 'true',
-  toggleAiBots: () =>
-    set((s) => {
-      const next = !s.aiBotsEnabled
-      localStorage.setItem(STORAGE_KEY, String(next))
-      return { aiBotsEnabled: next }
-    }),
+  aiBotsEnabled: false,
+  setAiBots: (enabled) => set({ aiBotsEnabled: enabled }),
 }))

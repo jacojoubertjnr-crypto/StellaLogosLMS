@@ -13,11 +13,12 @@ export default defineConfig({
     port: 5173,
     open: true,
     proxy: {
-      '/graphql':   'http://localhost:4000',
-      '/upload':    'http://localhost:4000',
-      '/uploads':   'http://localhost:4000',
-      '/analytics': 'http://localhost:4000',
-      '/theme':     'http://localhost:4000',
+      '/graphql':      'http://localhost:4000',
+      '/upload':       'http://localhost:4000',
+      '/uploads':      'http://localhost:4000',
+      '/analytics':    'http://localhost:4000',
+      '/theme':        'http://localhost:4000',
+      '/teacher-help': 'http://localhost:4000',
     },
   },
 })

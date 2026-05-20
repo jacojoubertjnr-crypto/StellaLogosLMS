@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { gql } from '@apollo/client'
 import { AppHeader } from '@/components/AppHeader'
 import { TeacherChatBar } from '@/components/TeacherChatBar'
+import { TeacherHelpWidget } from '@/components/TeacherHelpWidget'
 import { DevNav } from '@/components/DevNav'
 import { useBackgroundPreloader } from '@/hooks/useBackgroundPreloader'
 import { useAuthStore } from '@/stores/authStore'
@@ -38,6 +39,7 @@ export const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <>
       <AppHeader />
+      <TeacherHelpWidget />
       {isLearner && isLessonRoute && <TeacherChatBar />}
       {children}
       {import.meta.env.DEV && <DevNav />}
