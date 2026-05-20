@@ -31,9 +31,10 @@ Use the full email address — the form does not accept short usernames:
 
 - Stack: React + Vite, Tailwind CSS, Zustand, TypeScript (frontend) + Apollo Server 5, Node.js, PostgreSQL (backend).
 - Theme system: each theme lives in `public/assets/themes/[theme-name]/` with per-page subfolders and shared root assets.
-- State: Zustand stores — `themeStore.ts`, `authStore.ts`, `questStore.ts`, `musicStore.ts`, `entryStore.ts`.
-- Auth: JWT stored in `sessionStorage` (`sl_token`). Login hits the real GraphQL API — no hardcoded demo credentials.
-- Phases complete: 1 (Login), 3 (Auth/Backend), 4 (Learner screens), 5 (Teacher dashboard + Register UI + Hub + Staffroom + Task Designer + Admin UI + Theme Adder), 5b (Grouping engine), 6 (Shop), 7 (Backend data layer), 9 (Messaging), CSS Architecture Polish. Next: Phase 2 (Sci-Fi theme assets) or Phase 8 (Polish & Launch).
+- State: Zustand stores — `themeStore.ts`, `authStore.ts`, `questStore.ts`, `musicStore.ts`, `entryStore.ts`, `devStore.ts`.
+- Auth: JWT stored in `sessionStorage` (`sl_token`). Login hits the real GraphQL API — no hardcoded demo credentials. Login form pre-fills with `learner@stellalogos.dev` / `learner1234` from `authStore` initial state.
+- Dev tooling: `src/stores/devStore.ts` — `aiBotsEnabled` flag (default `false`), persisted to `localStorage` key `sl_dev_ai_bots`. `src/components/DevBotToggle.tsx` — fixed bottom-left button, visible only when logged in; gates Anthropic API calls for teacher help in `botEngine.ts`.
+- Phases complete: 1 (Login), 3 (Auth/Backend), 3b (Cooperative Discussion UI polish + bot infrastructure), 4 (Learner screens), 5 (Teacher dashboard + Register UI + Hub + Staffroom + Task Designer + Admin UI + Theme Adder), 5b (Grouping engine), 6 (Shop), 7 (Backend data layer), 9 (Messaging), CSS Architecture Polish. Next: Phase 2 (Sci-Fi theme assets), Phase 8 (Polish & Launch), or Phase 10 (Bot System).
 - Theme system: `medieval` is a **purchasable** theme (not a built-in fallback). `default` is CSS-variables-only — no asset files. Missing theme assets degrade gracefully to CSS; no fallback to another theme's files.
 - Page backgrounds are probed as `background.png` (not `bg.png`). Custom themes uploaded via Theme Adder now save as `background.png` (fixed in `backend/src/index.ts` ASSET_MANIFEST).
 - Theme Designer (`/theme-adder`) supports both CREATE NEW and EDIT EXISTING modes. Edit mode pre-loads asset status and colour palette from the DB. Section tabs allow jumping directly to any section in both modes.

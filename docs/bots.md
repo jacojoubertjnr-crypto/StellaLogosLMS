@@ -710,3 +710,588 @@ function getHelpScript(ctx: HelpContext, displayName: string): string { /* ... *
 | `src/components/TeacherChatBar.tsx` | **Modify** | Wire help intercept for 1:1 teacher chat on lesson routes |
 
 No backend changes. No new DB tables. No GraphQL changes.
+
+
+## what follows is a suggestion for the API implimentation, but as it was not developed after we finished the COOPERATIVE learning section it is possible that it needs to be updated to the final roles of the program
+
+Stella Logos — Bot Engine Implementation Brief
+> For Claude Code / VS Code
+> Stack: React + TypeScript (frontend only, no backend changes)
+---
+Context
+This is a Learning Management System called Stella Logos. You are implementing a pure
+frontend bot engine — no DB, no API, no persistence. All bot state resets on every page mount.
+Three bot systems need to be built:
+Register Class Bots — simulate a live morning class chat in `AttendenceUI`
+Phase III Cooperative Discussion Bots — simulate group learning partners in `LearningTaskUI`
+Teacher Help System — context-aware help responses triggered by the user typing "help"
+All bot speech is injected via two functions already wired into the UI:
+`sendChat(text)` — posts a learner bot message to the chat
+`teacherSend(text)` — posts as Mr. van der Berg (`isTeacher: true`)
+---
+Anthropic API Integration
+The bot DIALOGUE is fully scripted (hardcoded strings — see scripts below).
+Do NOT call the Anthropic API for scripted bot chat messages.
+The Anthropic API (`claude-sonnet-4-6`) is used ONLY for the Teacher Help System
+when the user types `help`, `help me`, or `?`. In that one case, instead of a fixed
+string, call the API with the relevant help script as a system prompt so the teacher
+can respond naturally to the user's specific wording.
+```typescript
+// src/lib/teacherHelpApi.ts
+// Called only on help trigger — not for scripted bot messages
+
+export async function callTeacherHelpApi(
+  helpScript: string,
+  userMessage: string,
+  displayName: string
+): Promise<string> {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      system: `You are Mr. van der Berg, a warm and supportive high school IT teacher 
+               in a digital LMS called Stella Logos. Respond to the student's help request
+               using the following context about what they can do on this screen:
+               ${helpScript}
+               Keep your response under 5 sentences. Address the student as ${displayName}.`,
+      messages: [{ role: "user", content: userMessage }]
+    })
+  });
+  const data = await response.json();
+  return data.content.map((i: any) => i.text || "").join("\n");
+}
+```
+Cost note: The Anthropic API costs ~$0.003 per help interaction (Sonnet 4.6 rates).
+Most users will trigger help 0–2 times per session — negligible cost.
+Google Cloud TTS (teacher voice only) adds ~$0.04 per session. Total per session: ~$0.49.
+---
+File Plan
+File	Action
+`src/lib/botEngine.ts`	CREATE — all bot logic, rosters, sessions, help routing
+`src/lib/teacherHelpApi.ts`	CREATE — Anthropic API call for help system only
+`src/pages/AttendenceUI.tsx`	MODIFY — mount/unmount register session
+`src/pages/LearningTaskUI.tsx`	MODIFY — mount/unmount Phase III session
+`src/components/TeacherChatBar.tsx`	MODIFY — wire help intercept
+No backend changes. No new DB tables. No GraphQL changes.
+---
+Data Structures
+```typescript
+// src/lib/botEngine.ts
+
+type Role = 'leader' | 'timer' | 'scribe' | 'angle-checker' | 'learner'
+type Tier = 'smart' | 'stupid'
+
+interface Phase3Bot {
+  name: string
+  role: Exclude<Role, 'learner'>
+  tier: Tier
+  quizAccuracy: number   // 0–1
+  answers: boolean[]     // pre-generated; length = quiz.length
+}
+
+interface BotContext {
+  userRole: Role
+  userName: string
+  sendChat: (text: string) => void
+  teacherSend: (text: string) => void
+  onNextQuestion: () => void
+  onTriggerFinalPhase: (draft: string) => void
+  getState: () => BotState
+}
+
+interface BotState {
+  currentQuestion: number
+  notebookSize: number
+  triadUsed: number
+  userLastActionAt: number       // Date.now() of last user action
+  phaseElapsedMs: number
+  sessionDurationMs: number
+  currentPhaseTab?: 'resources' | 'quiz'
+}
+
+interface Phase3Session {
+  bots: Phase3Bot[]
+  start(ctx: BotContext): void
+  stop(): void   // clears ALL intervals and timeouts — must be called on unmount
+}
+
+interface RegisterBotContext {
+  displayName: string
+  sendRegisterChat: (botName: string, text: string) => void
+  teacherSend: (text: string) => void
+  getCheckedIn: () => boolean
+}
+
+interface RegisterSession {
+  start(ctx: RegisterBotContext): void
+  stop(): void
+}
+
+type HelpContext =
+  | { route: '/home' }
+  | { route: '/attendence' }
+  | { route: '/learningtask' }
+  | { route: '/subjects' }
+  | { route: '/social' }
+  | { route: '/shop' }
+  | { route: '/task'; phase: 1 }
+  | { route: '/task'; phase: 2; tab: 'resources' | 'quiz' }
+  | { route: '/task'; phase: 3; role: Role }
+  | { route: '/task'; phase: 4 }
+  | { route: '/task'; phase: 5 }
+```
+---
+Bot Rosters
+Register Class Bots
+```typescript
+const REGISTER_BOT_ROSTER = [
+  { name: 'Thabo Dlamini',  personality: 'enthusiastic' },
+  { name: 'Keisha Naidoo',  personality: 'organised'    },
+  { name: 'Daan van Zyl',   personality: 'laid-back'    },
+  { name: 'Nomsa Sithole',  personality: 'quiet'        },
+]
+```
+Phase III Bots
+```typescript
+const PHASE3_BOT_ROSTER = [
+  { name: 'Aria',   role: 'leader',        tier: 'smart',  quizAccuracy: 0.82 },
+  { name: 'Finn',   role: 'leader',        tier: 'stupid', quizAccuracy: 0.33 },
+  { name: 'Conrad', role: 'timer',         tier: 'smart',  quizAccuracy: 0.78 },
+  { name: 'Ollie',  role: 'timer',         tier: 'stupid', quizAccuracy: 0.30 },
+  { name: 'Petra',  role: 'scribe',        tier: 'smart',  quizAccuracy: 0.80 },
+  { name: 'Mila',   role: 'scribe',        tier: 'stupid', quizAccuracy: 0.28 },
+  { name: 'Rex',    role: 'angle-checker', tier: 'smart',  quizAccuracy: 0.85 },
+  { name: 'Bea',    role: 'angle-checker', tier: 'stupid', quizAccuracy: 0.25 },
+]
+```
+Answer generation:
+```typescript
+function generateAnswers(accuracy: number, total: number): boolean[] {
+  const correct = Math.round(accuracy * total)
+  const answers = Array(total).fill(false)
+  const indices = [...Array(total).keys()].sort(() => Math.random() - 0.5)
+  indices.slice(0, correct).forEach(i => (answers[i] = true))
+  return answers
+}
+```
+Bot assignment (called on Phase III entry):
+```typescript
+function assignPhase3Bots(userRole: Role, quizLength: number): Phase3Bot[] {
+  const allRoles: Exclude<Role, 'learner'>[] = ['leader', 'timer', 'scribe', 'angle-checker']
+  const botRoles = allRoles.filter(r => r !== userRole)
+  return botRoles.map(role => {
+    const tier: Tier = Math.random() < 0.5 ? 'smart' : 'stupid'
+    const template = PHASE3_BOT_ROSTER.find(b => b.role === role && b.tier === tier)!
+    return { ...template, answers: generateAnswers(template.quizAccuracy, quizLength) }
+  })
+}
+```
+---
+Register Class Scripts
+All timings are milliseconds after page mount.
+Use `setTimeout` chains stored in a handles array for clean `stop()`.
+`ctx.sendRegisterChat(botName, message)` posts as that bot.
+`ctx.teacherSend(message)` posts as Mr. van der Berg.
+Teacher Bot (Register)
+```typescript
+t(5000,  () => ctx.teacherSend("Good morning, class. Please check in using the check-in button at the top when you're ready. Have a great day."))
+t(90000, () => ctx.teacherSend("A reminder: check the assessment column in your timetable for any tasks that are due today or this week."))
+t(180000,() => { if (!ctx.getCheckedIn()) ctx.teacherSend(`I notice you haven't checked in yet, ${ctx.displayName}. Please tap the check-in button at the top of the page.`) })
+t(300000,() => ctx.teacherSend("We'll be moving to lessons shortly. Make sure you know which period you're in and have everything you need."))
+```
+Thabo Dlamini
+```typescript
+t(12000,  () => ctx.sendRegisterChat('Thabo Dlamini', 'Morning everyone 👋'))
+t(35000,  () => ctx.sendRegisterChat('Thabo Dlamini', 'Morning sir! Ready for another day'))
+t(120000, () => ctx.sendRegisterChat('Thabo Dlamini', 'anyone finish the IT assignment? I was up late trying to sort out my algorithm'))
+t(240000, () => ctx.sendRegisterChat('Thabo Dlamini', "at least it's Friday... wait, it's not is it 😩"))
+```
+Keisha Naidoo
+```typescript
+t(25000,  () => ctx.sendRegisterChat('Keisha Naidoo', "Morning! Don't forget to check in 😊"))
+t(70000,  () => ctx.sendRegisterChat('Keisha Naidoo', 'Thabo I finished it last night — the trick is to trace through the loop step by step before you code it'))
+t(150000, () => ctx.sendRegisterChat('Keisha Naidoo', "Also check the timetable — there's an assessment column that shows what's due. Tap the row for details."))
+t(210000, () => ctx.sendRegisterChat('Keisha Naidoo', "Sir already posted an announcement about today's lesson. Make sure you check the ticker at the top."))
+```
+Daan van Zyl
+```typescript
+t(50000,  () => ctx.sendRegisterChat('Daan van Zyl', 'morning... I think. barely awake'))
+t(100000, () => ctx.sendRegisterChat('Daan van Zyl', 'trace through the loop 💀 I just vibed with it and hoped for the best'))
+t(180000, () => ctx.sendRegisterChat('Daan van Zyl', 'why does register have to be first thing. give us 10 minutes to become human first'))
+t(270000, () => ctx.sendRegisterChat('Daan van Zyl', 'ok actually checking my timetable now. oh great, double period. excellent.'))
+```
+Nomsa Sithole
+```typescript
+t(90000,  () => ctx.sendRegisterChat('Nomsa Sithole', 'Morning. Checked in.'))
+t(170000, () => ctx.sendRegisterChat('Nomsa Sithole', 'The loop made sense once I drew it out. Flow diagrams help.'))
+t(240000, () => ctx.sendRegisterChat('Nomsa Sithole', 'The timetable shows what period the IT lesson is. Worth checking.'))
+```
+Responses to User Posts in Register Chat
+Wire this to the chat's onMessage event (filtering out bot messages):
+```typescript
+const GENERIC_REPLIES = [
+  'haha yeah', 'same honestly', 'good point',
+  "didn't think of it that way", 'lol true', 'that makes sense',
+  'I was wondering the same thing', "ask sir, he'll know",
+  'check the timetable for that'
+]
+
+function onUserRegisterMessage(text: string) {
+  // Pick a random bot; Nomsa only included on 30% roll
+  const candidates = ['Thabo Dlamini', 'Keisha Naidoo', 'Daan van Zyl']
+  if (Math.random() < 0.3) candidates.push('Nomsa Sithole')
+  const bot = candidates[Math.floor(Math.random() * candidates.length)]
+  const reply = GENERIC_REPLIES[Math.floor(Math.random() * GENERIC_REPLIES.length)]
+  const delay = 2000 + Math.random() * 4000
+  setTimeout(() => ctx.sendRegisterChat(bot, reply), delay)
+
+  // 40% chance teacher responds if message contains a question
+  if (text.includes('?') && Math.random() < 0.4) {
+    const teacherDelay = 8000 + Math.random() * 7000
+    setTimeout(() => ctx.teacherSend(
+      `Good question, ${ctx.displayName}. Check your timetable for the details, or tap GO TO LESSON when you're ready to begin today's task.`
+    ), teacherDelay)
+  }
+}
+```
+---
+Phase III Scripts
+All timings are `t+` ms after Phase III chat becomes active.
+Scripts use `setTimeout` + `setInterval`. Store ALL handles. Clear ALL in `stop()`.
+Add a `stopped` boolean flag — check it inside every callback before posting.
+Leader Bot — Aria (Smart)
+```typescript
+t(30000,  () => send('Right, let\'s keep this tight. I\'ll walk us through each question — speak up if you disagree with the majority answer.'))
+t(60000,  () => { ctx.onNextQuestion(); send('Question 1 — does anyone have a different answer to the majority here?') })
+
+// Advance loop: questions 2–20, every ~90s
+let q = 2
+const advanceInterval = setInterval(() => {
+  if (stopped || q > 20) { clearInterval(advanceInterval); return }
+  ctx.onNextQuestion()
+  send(`Question ${q} — any dissenting views?`)
+  q++
+}, 90000)
+
+// Participation pulse every 20s
+setInterval(() => send('[System] Leader pulse confirmed — Active.'), 20000)
+
+// Prompter at t+60s
+t(60000, () => send(`@Scribe, have you captured the key point for Q${ctx.getState().currentQuestion}?`))
+
+// Inactivity check: poll every 10s, fire once if user silent 60s
+setInterval(() => {
+  if (Date.now() - ctx.getState().userLastActionAt > 60000)
+    send(`I'm not hearing from everyone — ${ctx.userRole}, what's your take on this one?`)
+}, 10000)
+```
+Leader Bot — Finn (Stupid)
+```typescript
+t(15000, () => send('ok everyone ready? let\'s start'))
+t(45000, () => { ctx.onNextQuestion(); send('next one') })
+
+// Advance loop every ~45s (too fast)
+let q = 2
+const advanceInterval = setInterval(() => {
+  if (stopped || q > 20) { clearInterval(advanceInterval); return }
+  ctx.onNextQuestion(); send('moving on'); q++
+}, 45000)
+
+t(80000,  () => send('[System] Leader pulse confirmed — Active.'))
+t(120000, () => send('anyone? lol'))
+
+// Inactivity 90s
+setInterval(() => {
+  if (Date.now() - ctx.getState().userLastActionAt > 90000) send('hello?')
+}, 10000)
+```
+Timer Bot — Conrad (Smart)
+```typescript
+t(0,      () => send('[Timer] Time Status — Full session started.'))
+t(20000,  () => send("Timer here. I'll divide the session evenly and keep you posted."))
+
+// Elapsed-based messages — check via polling every 5s
+setInterval(() => {
+  const { phaseElapsedMs, sessionDurationMs } = ctx.getState()
+  const pct = phaseElapsedMs / sessionDurationMs
+  if (pct >= 0.5  && !firedHalf)   { firedHalf = true;  send('Halfway through — good progress so far.') }
+  if (pct >= 0.75 && !fired75)     { fired75 = true;    send('⚠ 25% time remaining — Scribe, please start drafting the final answer.') }
+  if (pct >= 0.9  && !fired90)     { fired90 = true;    send('⚠ [TIMER ALERT] The group is stalling — time to MOVE ON!') }
+}, 5000)
+
+// Time status pulse every 30s
+setInterval(() => {
+  const remaining = Math.ceil((ctx.getState().sessionDurationMs - ctx.getState().phaseElapsedMs) / 60000)
+  send(`[Timer] Time Status — ${remaining} min remaining.`)
+}, 30000)
+```
+Timer Bot — Ollie (Stupid)
+```typescript
+t(45000, () => send("oh right, I'm the timer... let me start that now"))
+
+// Two pulses only
+t(60000,  () => { const r = Math.ceil((ctx.getState().sessionDurationMs - ctx.getState().phaseElapsedMs) / 60000); send(`[Timer] Time Status — ${r} min remaining.`) })
+t(150000, () => { const r = Math.ceil((ctx.getState().sessionDurationMs - ctx.getState().phaseElapsedMs) / 60000); send(`[Timer] Time Status — ${r} min remaining.`) })
+
+setInterval(() => {
+  const pct = ctx.getState().phaseElapsedMs / ctx.getState().sessionDurationMs
+  if (pct >= 0.6 && !firedHalf)  { firedHalf = true;  send('wait are we halfway? I think so') }
+  if (pct >= 0.85 && !fired85)   { fired85 = true;    send("wait how much time do we have left? I think it's running out") }
+  if (pct >= 0.95 && !fired95)   { fired95 = true;    send('⚠ [TIMER ALERT] The group is stalling — time to MOVE ON!') }
+}, 5000)
+```
+Scribe Bot — Petra (Smart)
+```typescript
+t(25000, () => send("Scribe ready. I'll capture key points as we go and draft the final solution."))
+
+// Capture after even questions (2, 4, 6...)
+// Wire to onNextQuestion event: if currentQuestion % 2 === 0, post capture
+
+t(0, () => {
+  // Poll for even questions
+  let lastCaptured = 0
+  setInterval(() => {
+    const q = ctx.getState().currentQuestion
+    if (q % 2 === 0 && q !== lastCaptured && q > 0) {
+      lastCaptured = q
+      send(`✎ Capturing: key point for Q${q} noted.`)
+    }
+  }, 3000)
+})
+
+// 70% elapsed
+setInterval(() => {
+  const pct = ctx.getState().phaseElapsedMs / ctx.getState().sessionDurationMs
+  if (pct >= 0.7 && !fired70) {
+    fired70 = true
+    send("My draft is shaping up — I'll trigger the Final Solution on the Leader's signal.")
+  }
+  if ((ctx.getState().currentQuestion >= 18 || pct >= 0.9) && !firedFinal) {
+    firedFinal = true
+    ctx.onTriggerFinalPhase('Based on our discussion: [compiled consensus answers].')
+  }
+}, 5000)
+```
+Scribe Bot — Mila (Stupid)
+```typescript
+t(60000, () => send("I'll try to keep notes"))
+
+// Sporadic captures at q3, q9, q15
+const milaNotes = ['✎ Capturing: ok', '✎ Adding: yeah I agree', '✎ noted: I think so']
+let noteIndex = 0
+setInterval(() => {
+  const q = ctx.getState().currentQuestion
+  if ([3, 9, 15].includes(q) && !capturedQuestions.has(q)) {
+    capturedQuestions.add(q)
+    send(milaNotes[noteIndex++ % milaNotes.length])
+  }
+  if (ctx.getState().phaseElapsedMs / ctx.getState().sessionDurationMs >= 0.95 && !firedFinal) {
+    firedFinal = true
+    ctx.onTriggerFinalPhase("here's what I have: [incomplete, 3-question list only].")
+  }
+}, 3000)
+```
+Angle Checker — Rex (Smart)
+```typescript
+t(35000,  () => send("Angle Checker in position. I'll flag it if I think we're all agreeing too fast."))
+t(60000,  () => send('◈ ALTERNATIVE PERSPECTIVE: Have we considered the opposite conclusion?'))
+t(120000, () => send("◈ DEVIL'S ADVOCATE: If we're wrong, what would that look like?"))
+t(180000, () => send("◈ BLIND SPOT CHECK: What are we assuming that we haven't verified?"))
+
+// Counter-perspectives after q3, q7, q12, q17
+setInterval(() => {
+  const q = ctx.getState().currentQuestion
+  if ([3, 7, 12, 17].includes(q) && !challenged.has(q)) {
+    challenged.add(q)
+    send(`Hold on — Q${q}: I answered differently. The scenario wording changes the interpretation.`)
+  }
+}, 3000)
+
+// Perspective pulse every 30s
+setInterval(() => send('[Angle Checker] ◈ Perspective Pulse — actively monitoring for logic gaps.'), 30000)
+```
+Angle Checker — Bea (Stupid)
+```typescript
+t(90000, () => send('angle checker here, all looks good to me!'))
+t(180000,() => send('◈ hmm I guess I should check... nope, we\'re all good.'))
+t(90000, () => send('[Angle Checker] ◈ Perspective Pulse — actively monitoring for logic gaps.'))
+
+// After each question (rotate agreements)
+const beaAgreements = ['yeah I agree with you all', 'same answer as everyone else!', 'makes sense to me']
+let beaIdx = 0
+setInterval(() => {
+  const q = ctx.getState().currentQuestion
+  if (q !== lastQ && q > 0) {
+    lastQ = q
+    send(beaAgreements[beaIdx++ % beaAgreements.length])
+  }
+}, 3000)
+```
+Teacher Bot — Mr. van der Berg (Phase III)
+```typescript
+t(0, () => ctx.teacherSend('Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.'))
+
+// Inactivity checks (poll every 10s)
+setInterval(() => {
+  const idle = Date.now() - ctx.getState().userLastActionAt
+  if (idle > 240000 && !fired240) { fired240 = true; ctx.teacherSend(`${ctx.userName}, please engage with your group. This is your cooperative task.`) }
+  else if (idle > 120000 && !fired120) { fired120 = true; ctx.teacherSend(`I notice you've been quiet — remember, your role as ${ctx.userRole} requires active participation.`) }
+}, 10000)
+
+// Role-specific nudges:
+// Leader: poll for question advance stall
+// Timer: poll for time status gap
+// Scribe: check notebookSize after 180s
+// Angle Checker: check triadUsed after 180s
+// (implement as one-shot timers that check the relevant state field)
+```
+---
+Teacher Help System
+Trigger Detection (all chat inputs)
+```typescript
+const HELP_PATTERN = /(^|\s)(help me|help|\?)(\s|$)/i
+
+function handleChatSubmit(input: string) {
+  postMessage(input)  // always show user's message
+
+  if (HELP_PATTERN.test(input)) {
+    const helpCtx = resolveHelpContext(pathname, phase, tab, userRole)
+    const script = getHelpScript(helpCtx, displayName)
+    const delay = 2000 + Math.random() * 2000
+
+    setTimeout(async () => {
+      const reply = await callTeacherHelpApi(script, input, displayName)
+      teacherSend(reply)
+      // If teacher voice is enabled: pass reply through Google Cloud TTS → play audio
+    }, delay)
+  }
+}
+```
+Help Context Resolver
+```typescript
+function resolveHelpContext(pathname: string, phase: number, tab: string, role: Role): HelpContext {
+  switch (pathname) {
+    case '/home':          return { route: '/home' }
+    case '/attendence':    return { route: '/attendence' }
+    case '/learningtask':  return { route: '/learningtask' }
+    case '/subjects':      return { route: '/subjects' }
+    case '/social':        return { route: '/social' }
+    case '/shop':          return { route: '/shop' }
+    case '/task':
+      if (phase === 1) return { route: '/task', phase: 1 }
+      if (phase === 2) return { route: '/task', phase: 2, tab: tab as 'resources' | 'quiz' }
+      if (phase === 3) return { route: '/task', phase: 3, role }
+      if (phase === 4) return { route: '/task', phase: 4 }
+      if (phase === 5) return { route: '/task', phase: 5 }
+  }
+  return { route: '/home' }
+}
+```
+Help Script Map
+Store all help scripts as a Record in `botEngine.ts`, keyed as follows.
+The full script text for each key is in the Stella Logos Bot System Design document (Part 3).
+```typescript
+const HELP_SCRIPTS: Record<string, string> = {
+  'home':             `...`,   // HomeCrossroads help
+  'attendence':       `...`,   // Attendance / Register help
+  'learningtask':     `...`,   // Quest Path help
+  'task-phase1':      `...`,   // Challenge & Reflection help
+  'task-phase2-resources': `...`,
+  'task-phase2-quiz': `...`,
+  'task-phase3-leader':        `...`,
+  'task-phase3-timer':         `...`,
+  'task-phase3-scribe':        `...`,
+  'task-phase3-angle-checker': `...`,
+  'task-phase3-learner':       `...`,
+  'task-phase4':      `...`,
+  'task-phase5':      `...`,
+  'subjects':         `...`,
+  'social':           `...`,
+  'shop':             `...`,
+}
+
+function getHelpScript(ctx: HelpContext, displayName: string): string {
+  let key = ctx.route.replace('/', '')
+  if (ctx.route === '/task') {
+    key += `-phase${ctx.phase}`
+    if ('tab' in ctx) key += `-${ctx.tab}`
+    if ('role' in ctx) key += `-${ctx.role}`
+  }
+  return (HELP_SCRIPTS[key] || HELP_SCRIPTS['home']).replace(/\[displayName\]/g, displayName)
+}
+```
+---
+Wiring Summary
+AttendenceUI.tsx
+```typescript
+useEffect(() => {
+  const session = createRegisterSession()
+  session.start({
+    displayName: user.displayName,
+    sendRegisterChat: (botName, text) => addChatMessage({ sender: botName, text, isBot: true }),
+    teacherSend: (text) => addChatMessage({ sender: 'Mr. van der Berg', text, isTeacher: true }),
+    getCheckedIn: () => checkedIn,
+  })
+  return () => session.stop()
+}, [])
+```
+LearningTaskUI.tsx (Phase III entry)
+```typescript
+useEffect(() => {
+  if (currentPhase !== 3) return
+  const bots = assignPhase3Bots(userRole, quiz.length)
+  const session = createPhase3Session(bots)
+  session.start({
+    userRole,
+    userName: user.displayName,
+    sendChat: (text) => addChatMessage({ text, isBot: true, sender: botName }),
+    teacherSend: (text) => addChatMessage({ text, isTeacher: true, sender: 'Mr. van der Berg' }),
+    onNextQuestion: () => dispatch({ type: 'ADVANCE_QUESTION' }),
+    onTriggerFinalPhase: (draft) => dispatch({ type: 'TRIGGER_FINAL', payload: draft }),
+    getState: () => ({
+      currentQuestion: state.currentQuestion,
+      notebookSize: state.notebook.length,
+      triadUsed: state.triadUsed,
+      userLastActionAt: state.userLastActionAt,
+      phaseElapsedMs: Date.now() - state.phaseStartTime,
+      sessionDurationMs: state.sessionDurationMs,
+    })
+  })
+  return () => session.stop()
+}, [currentPhase])
+```
+TeacherChatBar.tsx
+```typescript
+function handleSubmit(input: string) {
+  postMessage(input)
+  if (HELP_PATTERN.test(input)) {
+    const ctx = resolveHelpContext(pathname, phase, tab, userRole)
+    const script = getHelpScript(ctx, user.displayName)
+    setTimeout(async () => {
+      const reply = await callTeacherHelpApi(script, input, user.displayName)
+      teacherSend(reply)
+      playTeacherVoice(reply)   // Google Cloud TTS — teacher voice only
+    }, 2000 + Math.random() * 2000)
+  }
+}
+```
+---
+Critical Rules for Claude Code
+`stop()` must be airtight. Store every `setTimeout` and `setInterval` handle in a
+`handles: ReturnType<typeof setTimeout>[]` array. In `stop()`: `handles.forEach(clearTimeout)`.
+Stale timers posting after unmount will cause ghost messages.
+`stopped` flag. Set `stopped = true` in `stop()`. Check `if (stopped) return` at the
+top of every timer callback before calling `sendChat` or `teacherSend`.
+Nomsa's 30% rule. In the register chat response pool, only add Nomsa to the candidate
+array if `Math.random() < 0.3`.
+Smart/Stupid is decided fresh each Phase III session. Never cache tier assignment
+between sessions. `assignPhase3Bots` runs on every Phase III entry.
+Anthropic API for help only. All scripted bot messages use hardcoded strings.
+Only `callTeacherHelpApi` in `teacherHelpApi.ts` calls the Anthropic API.
+Teacher voice (TTS) — teacher bot only. Only Mr. van der Berg's messages go through
+Google Cloud TTS. All student bot messages are text only. Use Google Cloud TTS free tier
+(1M chars/month) — at ~500 chars per teacher message × ~10 messages per session, you have
+headroom for ~200 sessions/month on the free tier before charges begin.
+

@@ -247,34 +247,61 @@ app.get('/theme/asset-status/:themeName', (req: express.Request, res: express.Re
   res.json(status);
 });
 
-// POST /theme/finalize  body: { themeName, spritePositions? }
+// POST /theme/finalize  body: { themeName, spritePositions?, spritePaths? }
 app.post('/theme/finalize', express.json(), async (req: express.Request, res: express.Response) => {
   if (!requireAdminRest(req, res)) return;
-  const { themeName, spritePositions } = req.body as {
+  type SpritePathEntry = { mode: 'random' } | { mode: 'path'; x1: number; y1: number; x2: number; y2: number };
+  const { themeName, spritePositions, spritePaths } = req.body as {
     themeName: string;
     spritePositions?: Record<string, { x: number; y: number }>;
+    spritePaths?: Record<string, SpritePathEntry>;
   };
   const themeRoot = path.join(THEMES_DIR, themeName);
 
-  // Merge admin-placed positions into sprite manifests
-  const loginPos    = spritePositions?.['login_static']     ?? { x: 15, y: 55 };
-  const attendPos   = spritePositions?.['attendence_static'] ?? { x: 12, y: 72 };
-
-  const loginSpritesJson = {
-    sprites: [
-      { ...LOGIN_SPRITES_JSON.sprites[0], x: loginPos.x, y: loginPos.y },
-      { ...LOGIN_SPRITES_JSON.sprites[1] },
-    ],
-  };
+  // ── Attendance sprites.json (fireplace at placed/default position) ────
+  const attendPos = spritePositions?.['attendence_static'] ?? { x: 12, y: 72 };
   const attendenceSpritesJson = {
     sprites: [
       { ...ATTENDENCE_SPRITES_JSON.sprites[0], x: attendPos.x, y: attendPos.y },
     ],
   };
-
-  // Generate sprites.json files
-  fs.writeFileSync(path.join(themeRoot, 'login', 'sprites.json'),     JSON.stringify(loginSpritesJson, null, 2), 'utf8');
   fs.writeFileSync(path.join(themeRoot, 'attendence', 'sprites.json'), JSON.stringify(attendenceSpritesJson, null, 2), 'utf8');
+
+  // ── Home sprites.json (cloud_drift + rabbit with custom or random paths) ──
+  const homeSprites: object[] = [];
+  const cloudPathEntry = spritePaths?.['home_cloud'];
+  const rabbitPathEntry = spritePaths?.['home_rabbit'];
+
+  if (cloudPathEntry && fs.existsSync(path.join(themeRoot, 'home', 'cloud_drift.png'))) {
+    const movement = cloudPathEntry.mode === 'random'
+      ? { type: 'random_flight', waypointInterval: 4000, frameRate: 200, yMin: 5, yMax: 55 }
+      : { type: 'path_drift', x1: cloudPathEntry.x1, y1: cloudPathEntry.y1, x2: cloudPathEntry.x2, y2: cloudPathEntry.y2, speed: '14s', frameRate: 200 };
+    homeSprites.push({
+      id: 'cloud_drift', file: 'cloud_drift', anchor: 'background',
+      position: { x: '0%', y: '0%' }, size: { width: '320px', height: '80px' },
+      frameCount: 1,
+      spritePath: `/assets/themes/${themeName}/home/cloud_drift`,
+      movement,
+    });
+  }
+
+  if (rabbitPathEntry && fs.existsSync(path.join(themeRoot, 'home', 'rabbit', 'frame_1.png'))) {
+    const movement = rabbitPathEntry.mode === 'random'
+      ? { type: 'random_flight', waypointInterval: 3000, frameRate: 150, yMin: 55, yMax: 90 }
+      : { type: 'path_drift', x1: rabbitPathEntry.x1, y1: rabbitPathEntry.y1, x2: rabbitPathEntry.x2, y2: rabbitPathEntry.y2, speed: '9s', frameRate: 150 };
+    homeSprites.push({
+      id: 'rabbit', file: 'rabbit', anchor: 'background',
+      position: { x: '0%', y: '0%' }, size: { width: '96px', height: '96px' },
+      frameCount: 3,
+      spritePath: `/assets/themes/${themeName}/home/rabbit`,
+      movement,
+      clickFrame: 'clicked.png',
+    });
+  }
+
+  if (homeSprites.length > 0) {
+    fs.writeFileSync(path.join(themeRoot, 'home', 'sprites.json'), JSON.stringify({ sprites: homeSprites }, null, 2), 'utf8');
+  }
 
   // Fetch display name from DB
   const { rows } = await pool.query(`SELECT display_name FROM custom_themes WHERE name = $1`, [themeName]);

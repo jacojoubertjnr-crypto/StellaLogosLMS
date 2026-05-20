@@ -1155,6 +1155,125 @@ export const resolvers = {
       return { learnerId: rows[0].learner_id, displayName: uRows[0].display_name, role: rows[0].role };
     },
 
+    async joinActiveTaskSession(
+      _: unknown,
+      { academicClassId }: { academicClassId: string },
+      ctx: ApolloContext,
+    ) {
+      const user = requireRole(ctx, 'Learner');
+      const ROLE_ORDER = ['Leader', 'Timer', 'Scribe', 'AngleChecker'];
+
+      const { rows: classRows } = await pool.query(
+        `SELECT active_task_id FROM academic_classes WHERE id = $1`,
+        [academicClassId],
+      );
+      if (!classRows[0]) throw new GraphQLError('Class not found', { extensions: { code: 'NOT_FOUND' } });
+      if (!classRows[0].active_task_id) throw new GraphQLError('No active task for this class', { extensions: { code: 'PRECONDITION_FAILED' } });
+
+      const { rows: enrollRows } = await pool.query(
+        `SELECT 1 FROM enrollments WHERE learner_id = $1 AND academic_class_id = $2`,
+        [user.userId, academicClassId],
+      );
+      if (!enrollRows[0]) throw new GraphQLError('Not enrolled in this class', { extensions: { code: 'FORBIDDEN' } });
+
+      const client = await pool.connect();
+      let groupId: string, convId: string, sessionDate: string;
+      try {
+        await client.query('BEGIN');
+
+        // Idempotency: return existing group if already joined today
+        const { rows: existing } = await client.query(
+          `SELECT tg.id, tg.conversation_id, tg.session_date
+             FROM task_groups tg
+             JOIN task_group_members tgm ON tgm.group_id = tg.id AND tgm.learner_id = $1
+            WHERE tg.academic_class_id = $2 AND tg.session_date = CURRENT_DATE
+            LIMIT 1`,
+          [user.userId, academicClassId],
+        );
+
+        if (existing[0]) {
+          groupId = existing[0].id;
+          convId = existing[0].conversation_id;
+          sessionDate = existing[0].session_date;
+          await client.query('ROLLBACK');
+        } else {
+          // Find an open group (< 4 real members) and lock the row to prevent races
+          const { rows: open } = await client.query(
+            `SELECT id, conversation_id, session_date
+               FROM task_groups
+              WHERE academic_class_id = $1
+                AND session_date = CURRENT_DATE
+                AND (SELECT COUNT(*) FROM task_group_members WHERE group_id = id) < 4
+              LIMIT 1
+                FOR UPDATE SKIP LOCKED`,
+            [academicClassId],
+          );
+
+          if (open[0]) {
+            groupId = open[0].id;
+            convId = open[0].conversation_id;
+            sessionDate = open[0].session_date;
+
+            const { rows: takenRows } = await client.query(
+              `SELECT role FROM task_group_members WHERE group_id = $1`,
+              [groupId],
+            );
+            const taken = takenRows.map((r: { role: string }) => r.role);
+            const assignedRole = ROLE_ORDER.find(r => !taken.includes(r)) ?? 'AngleChecker';
+
+            await client.query(
+              `INSERT INTO task_group_members (group_id, learner_id, role) VALUES ($1, $2, $3)
+               ON CONFLICT (group_id, learner_id) DO UPDATE SET role = EXCLUDED.role`,
+              [groupId, user.userId, assignedRole],
+            );
+            await client.query(
+              `INSERT INTO conversation_participants (conversation_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+              [convId, user.userId],
+            );
+          } else {
+            // No open group — create a new one with this learner as Leader
+            const { rows: convRows } = await client.query(`INSERT INTO conversations (type) VALUES ('group') RETURNING id`);
+            convId = convRows[0].id;
+            const { rows: groupRows } = await client.query(
+              `INSERT INTO task_groups (academic_class_id, conversation_id) VALUES ($1, $2) RETURNING id, session_date`,
+              [academicClassId, convId],
+            );
+            groupId = groupRows[0].id;
+            sessionDate = groupRows[0].session_date;
+            await client.query(
+              `INSERT INTO task_group_members (group_id, learner_id, role) VALUES ($1, $2, 'Leader')`,
+              [groupId, user.userId],
+            );
+            await client.query(
+              `INSERT INTO conversation_participants (conversation_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+              [convId, user.userId],
+            );
+          }
+          await client.query('COMMIT');
+        }
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+
+      const { rows: members } = await pool.query(
+        `SELECT tgm.learner_id, u.display_name, tgm.role
+           FROM task_group_members tgm
+           JOIN users u ON u.id = tgm.learner_id
+          WHERE tgm.group_id = $1`,
+        [groupId!],
+      );
+      return {
+        id: groupId!,
+        academicClassId,
+        conversationId: convId!,
+        sessionDate: sessionDate!,
+        members: members.map(m => ({ learnerId: m.learner_id, displayName: m.display_name, role: m.role })),
+      };
+    },
+
     async markAttendance(_: unknown, { registerClassId, learnerId, status }: { registerClassId: string; learnerId: string; status: string }, ctx: ApolloContext) {
       requireRole(ctx, 'Teacher');
       const { rows } = await pool.query(

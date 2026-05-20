@@ -25,6 +25,8 @@ interface AssetDef {
   group: number
 }
 
+interface SpritePathKey { key: string; label: string; spritePreviewKey: string }
+
 interface AssetGroup {
   title: string
   tabLabel: string
@@ -34,6 +36,7 @@ interface AssetGroup {
   placementBgKey?: string
   placementSpriteKey?: string
   defaultPosition?: { x: number; y: number }
+  spritePathKeys?: SpritePathKey[]
 }
 
 const ASSET_GROUPS: AssetGroup[] = [
@@ -60,6 +63,10 @@ const ASSET_GROUPS: AssetGroup[] = [
       { key: 'rabbit_2',       label: 'Clickable Sprite — Frame 2',  dims: '96 × 96 px',     group: 1, description: 'Second movement frame.' },
       { key: 'rabbit_3',       label: 'Clickable Sprite — Frame 3',  dims: '96 × 96 px',     group: 1, description: 'Third movement frame. Loops back to frame 1.' },
       { key: 'rabbit_clicked', label: 'Clickable Sprite — Clicked',  dims: '96 × 96 px',     group: 1, description: 'Reaction frame when clicked.' },
+    ],
+    spritePathKeys: [
+      { key: 'home_cloud',  label: 'MOVING SPRITE',    spritePreviewKey: 'cloud_drift' },
+      { key: 'home_rabbit', label: 'CLICKABLE SPRITE',  spritePreviewKey: 'rabbit_1' },
     ],
   },
   {
@@ -188,6 +195,7 @@ interface AdminTheme {
 
 type WizardMode = 'pick' | 'edit-pick' | 'create' | 'edit'
 type AssetStatus = 'pending' | 'uploaded' | 'skipped'
+type SpritePath = { mode: 'random' } | { mode: 'path'; x1: number; y1: number; x2: number; y2: number }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function ThemeAdderUI() {
@@ -211,6 +219,8 @@ export function ThemeAdderUI() {
   const [selectedFiles, setSelectedFiles] = useState<Record<string, File | null>>({})
   const [previewUrls,   setPreviewUrls]   = useState<Record<string, string>>({})
   const [spritePositions, setSpritePositions] = useState<Record<string, { x: number; y: number }>>({})
+
+  const [spritePaths, setSpritePaths] = useState<Record<string, SpritePath>>({})
 
   const [initDone,   setInitDone]   = useState(false)
   const [finalizing, setFinalizing] = useState(false)
@@ -245,6 +255,7 @@ export function ThemeAdderUI() {
     Object.values(previewUrls).forEach(url => { if (url.startsWith('blob:')) URL.revokeObjectURL(url) })
     setPreviewUrls({})
     setSpritePositions({})
+    setSpritePaths({})
     setInitDone(false)
     setFinalizing(false)
     setError('')
@@ -385,7 +396,7 @@ export function ThemeAdderUI() {
       const res = await fetch('/theme/finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHdrs() },
-        body: JSON.stringify({ themeName: themeName.trim(), spritePositions }),
+        body: JSON.stringify({ themeName: themeName.trim(), spritePositions, spritePaths }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Finalize failed'); setFinalizing(false); return }
@@ -410,9 +421,12 @@ export function ThemeAdderUI() {
   const needsPlacement  = !!currentGroup?.placementKey
   const placementDone   = !needsPlacement || !!spritePositions[currentGroup?.placementKey ?? '']
 
+  const pathsDone = !currentGroup?.spritePathKeys?.length ||
+    currentGroup.spritePathKeys.every(pk => !!spritePaths[pk.key])
+
   const groupDone = mode === 'edit'
     ? true
-    : allAssetsResolved && placementDone
+    : allAssetsResolved && placementDone && pathsDone
 
   const isEditing   = mode === 'edit'
   const isAssetStep = step >= 2 && step <= lastGroupStep
@@ -744,6 +758,26 @@ export function ThemeAdderUI() {
                       />
                     )}
 
+                    {/* Movement path pickers — shown after all assets resolved */}
+                    {currentGroup.spritePathKeys && allAssetsResolved && (() => {
+                      const bgKey = currentGroup.assets.find(a => a.key.startsWith('bg_') && !a.key.endsWith('_alt'))?.key
+                      const bgUrl = bgKey ? (previewUrls[bgKey] ?? null) : null
+                      return currentGroup.spritePathKeys.map(pk => (
+                        <PathPicker
+                          key={pk.key}
+                          pathKey={pk.key}
+                          label={pk.label}
+                          bgUrl={bgUrl}
+                          spriteUrl={previewUrls[pk.spritePreviewKey] ?? null}
+                          path={spritePaths[pk.key] ?? null}
+                          onSet={p => {
+                            if (p) setSpritePaths(s => ({ ...s, [pk.key]: p }))
+                            else setSpritePaths(s => { const n = { ...s }; delete n[pk.key]; return n })
+                          }}
+                        />
+                      ))
+                    })()}
+
                     {error && <div style={{ ...VT, color: '#ff4444', fontSize: '1rem', marginBottom: '1rem', marginTop: '0.5rem' }}>{error}</div>}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
@@ -756,7 +790,9 @@ export function ThemeAdderUI() {
                       <div style={{ ...dimText, textAlign: 'right', marginTop: '0.4rem', fontSize: '0.9rem' }}>
                         {!allAssetsResolved
                           ? 'Upload or skip all assets above to continue.'
-                          : 'Place the sprite on the background to continue.'}
+                          : !placementDone
+                            ? 'Place the sprite on the background to continue.'
+                            : 'Set movement paths for all sprites to continue.'}
                       </div>
                     )}
                   </div>
@@ -1108,6 +1144,222 @@ function ThemePreviewPanel({
         </div>
       )}
       <div style={{ ...dimText, fontSize: '0.75rem', marginTop: '0.4rem' }}>Updates live as you select and upload files.</div>
+    </div>
+  )
+}
+
+// ── PathPicker ─────────────────────────────────────────────────────────────────
+// Lets the admin choose between RANDOM movement or a drawn custom path for a sprite.
+
+function PathPicker({
+  pathKey,
+  label,
+  bgUrl,
+  spriteUrl,
+  path,
+  onSet,
+}: {
+  pathKey: string
+  label: string
+  bgUrl: string | null
+  spriteUrl: string | null
+  path: SpritePath | null
+  onSet: (p: SpritePath | null) => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [drawMode,  setDrawMode]  = useState(false)
+  const [startPt,   setStartPt]   = useState<{ x: number; y: number } | null>(null)
+  const [mousePt,   setMousePt]   = useState<{ x: number; y: number } | null>(null)
+
+  function getRelPos(e: React.MouseEvent) {
+    const rect = containerRef.current!.getBoundingClientRect()
+    return {
+      x: Math.round(((e.clientX - rect.left) / rect.width)  * 1000) / 10,
+      y: Math.round(((e.clientY - rect.top)  / rect.height) * 1000) / 10,
+    }
+  }
+
+  function handleCanvasClick(e: React.MouseEvent) {
+    const pos = getRelPos(e)
+    if (!startPt) {
+      setStartPt(pos)
+    } else {
+      onSet({ mode: 'path', x1: startPt.x, y1: startPt.y, x2: pos.x, y2: pos.y })
+      setDrawMode(false)
+      setStartPt(null)
+    }
+  }
+
+  const showCanvas = drawMode || path?.mode === 'path'
+  const markerId   = `arrow-${pathKey}`
+
+  const drawnStart = drawMode ? startPt : (path?.mode === 'path' ? { x: path.x1, y: path.y1 } : null)
+  const drawnEnd   = (!drawMode && path?.mode === 'path') ? { x: path.x2, y: path.y2 } : null
+  const previewEnd = (drawMode && startPt) ? mousePt : null
+
+  return (
+    <div style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+      {/* Header */}
+      <div style={{ ...VT, color: GOLD, fontSize: '1.3rem', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        {label} MOVEMENT
+        {path?.mode === 'random' && <span style={{ color: 'rgba(100,255,130,0.9)', fontSize: '1rem' }}>✓ RANDOM</span>}
+        {path?.mode === 'path'   && <span style={{ color: 'rgba(100,255,130,0.9)', fontSize: '1rem' }}>✓ CUSTOM PATH</span>}
+      </div>
+
+      {/* Mode selector — shown when nothing is set and not drawing */}
+      {!path && !drawMode && (
+        <>
+          <div style={{ ...dimText, fontSize: '0.9rem', marginBottom: '0.5rem' }}>How should this sprite move across the screen?</div>
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+            <button onClick={() => onSet({ mode: 'random' })}
+              style={{ ...VT, background: 'transparent', border: `1px solid ${GOLD}55`, color: GOLD, padding: '0.35rem 1rem', fontSize: '1.05rem', cursor: 'pointer' }}>
+              RANDOM — DRIFTS FREELY
+            </button>
+            <button onClick={() => { setDrawMode(true); setStartPt(null) }}
+              style={{ ...VT, background: 'transparent', border: `1px solid ${GOLD}55`, color: GOLD, padding: '0.35rem 1rem', fontSize: '1.05rem', cursor: 'pointer' }}>
+              DRAW CUSTOM PATH
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Random mode summary */}
+      {path?.mode === 'random' && (
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <span style={{ ...dimText, fontSize: '0.9rem' }}>Sprite drifts freely across the entire page.</span>
+          <button onClick={() => onSet(null)}
+            style={{ ...VT, background: 'transparent', border: '1px solid #555', color: '#888', padding: '0.2rem 0.6rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+            CHANGE
+          </button>
+        </div>
+      )}
+
+      {/* Custom path summary (locked) */}
+      {path?.mode === 'path' && !drawMode && (
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+          <span style={{ ...dimText, fontSize: '0.9rem' }}>
+            {path.x1.toFixed(1)}%, {path.y1.toFixed(1)}% → {path.x2.toFixed(1)}%, {path.y2.toFixed(1)}%
+          </span>
+          <button onClick={() => { onSet(null); setStartPt(null) }}
+            style={{ ...VT, background: 'transparent', border: '1px solid #555', color: '#888', padding: '0.2rem 0.6rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+            REDRAW
+          </button>
+        </div>
+      )}
+
+      {/* Drawing instruction */}
+      {drawMode && (
+        <div style={{ ...dimText, fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+          {!startPt ? 'Click to set the START point of the path.' : 'Now click the END point.'}
+        </div>
+      )}
+
+      {/* 16:9 canvas */}
+      {showCanvas && (
+        <div
+          ref={containerRef}
+          onClick={drawMode ? handleCanvasClick : undefined}
+          onMouseMove={drawMode ? e => setMousePt(getRelPos(e)) : undefined}
+          onMouseLeave={drawMode ? () => setMousePt(null) : undefined}
+          style={{
+            position: 'relative', width: '100%', paddingBottom: '56.25%',
+            background: bgUrl ? 'transparent' : '#0e0e0e',
+            border: `1px solid ${path?.mode === 'path' && !drawMode ? GOLD + '66' : GOLD + '33'}`,
+            cursor: drawMode ? 'crosshair' : 'default',
+            overflow: 'hidden', borderRadius: 2,
+          }}
+        >
+          <div style={{ position: 'absolute', inset: 0 }}>
+            {bgUrl
+              ? <img src={bgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', imageRendering: 'pixelated' }} />
+              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ ...VT, color: '#333', fontSize: '0.85rem', letterSpacing: '1px' }}>BACKGROUND NOT YET UPLOADED</span>
+                </div>
+            }
+
+            {/* SVG overlay */}
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
+              <defs>
+                <marker id={markerId} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" fill="rgba(255,140,60,0.9)" />
+                </marker>
+              </defs>
+
+              {/* Dashed preview line while drawing */}
+              {drawMode && drawnStart && previewEnd && (
+                <line x1={`${drawnStart.x}%`} y1={`${drawnStart.y}%`}
+                      x2={`${previewEnd.x}%`}  y2={`${previewEnd.y}%`}
+                  stroke="rgba(255,140,60,0.6)" strokeWidth="2" strokeDasharray="8 4"
+                  markerEnd={`url(#${markerId})`} />
+              )}
+
+              {/* Locked path line */}
+              {!drawMode && drawnStart && drawnEnd && (
+                <line x1={`${drawnStart.x}%`} y1={`${drawnStart.y}%`}
+                      x2={`${drawnEnd.x}%`}   y2={`${drawnEnd.y}%`}
+                  stroke="rgba(255,140,60,0.88)" strokeWidth="2.5"
+                  markerEnd={`url(#${markerId})`} />
+              )}
+
+              {/* Start dot — green */}
+              {drawnStart && (
+                <circle cx={`${drawnStart.x}%`} cy={`${drawnStart.y}%`} r="7"
+                  fill="rgba(80,230,110,0.9)" stroke="rgba(0,0,0,0.55)" strokeWidth="1.5" />
+              )}
+
+              {/* End dot — orange-red (locked only) */}
+              {!drawMode && drawnEnd && (
+                <circle cx={`${drawnEnd.x}%`} cy={`${drawnEnd.y}%`} r="7"
+                  fill="rgba(255,90,50,0.9)" stroke="rgba(0,0,0,0.55)" strokeWidth="1.5" />
+              )}
+            </svg>
+
+            {/* Sprite ghost at start point */}
+            {spriteUrl && drawnStart && (
+              <img src={spriteUrl} alt="" style={{
+                position: 'absolute', left: `${drawnStart.x}%`, top: `${drawnStart.y}%`,
+                height: '10%', transform: 'translate(-50%, -50%)',
+                imageRendering: 'pixelated', pointerEvents: 'none', opacity: 0.85,
+              }} />
+            )}
+
+            {/* Instruction overlay */}
+            {drawMode && !startPt && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.38)', pointerEvents: 'none' }}>
+                <span style={{ ...VT, color: GOLD, fontSize: '1.1rem', letterSpacing: '3px', textShadow: '1px 1px 0 rgba(0,0,0,0.9)' }}>CLICK START POINT</span>
+              </div>
+            )}
+
+            {drawMode && startPt && (
+              <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', ...VT, color: `${GOLD}bb`, fontSize: '0.8rem', letterSpacing: '2px', background: 'rgba(0,0,0,0.72)', padding: '2px 10px', pointerEvents: 'none' }}>
+                START SET — CLICK END POINT
+              </div>
+            )}
+
+            {path?.mode === 'path' && !drawMode && (
+              <div style={{ position: 'absolute', top: 6, right: 8, ...VT, color: `${GOLD}cc`, fontSize: '0.75rem', letterSpacing: '1px', background: 'rgba(0,0,0,0.7)', padding: '1px 6px' }}>
+                PATH LOCKED ✓
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Cancel / reset-start controls during drawing */}
+      {drawMode && (
+        <div style={{ marginTop: '0.4rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button onClick={() => { setDrawMode(false); setStartPt(null) }}
+            style={{ ...VT, background: 'transparent', border: '1px solid #555', color: '#888', padding: '0.25rem 0.75rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+            CANCEL
+          </button>
+          {startPt && (
+            <button onClick={() => setStartPt(null)}
+              style={{ ...VT, background: 'transparent', border: `1px solid ${GOLD}44`, color: DIM, padding: '0.25rem 0.75rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+              RESET START
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

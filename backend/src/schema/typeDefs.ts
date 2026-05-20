@@ -504,6 +504,9 @@ export const typeDefs = `#graphql
     # Teacher/system: assign or change a member's role within a task group
     assignGroupRole(groupId: ID!, learnerId: ID!, role: String!): TaskGroupMember!
 
+    # Learner: auto-join the active task session for their class (finds or creates a group of up to 4; empty slots are filled by bots on the frontend)
+    joinActiveTaskSession(academicClassId: ID!): TaskGroup!
+
     # Staffroom: send to staff chat (isSpeakerPost only allowed if caller holds the podium)
     sendStaffMessage(body: String!, isSpeakerPost: Boolean): StaffMessage!
 

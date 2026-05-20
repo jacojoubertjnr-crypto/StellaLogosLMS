@@ -652,15 +652,22 @@ export const ShopUI: React.FC = () => {
         {/* Theme selector row */}
         <div style={{ display: 'flex', gap: '0.3rem', padding: '0.45rem 1.25rem', background: 'var(--color-pane-bg, rgba(0,0,0,0.55))', border: '1px solid rgba(255,215,0,0.2)', borderBottom: 'none', flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ ...VT, fontSize: '0.75rem', letterSpacing: '3px', color: 'rgba(255,215,0,0.3)', marginRight: '0.3rem' }}>THEME</span>
-          {sections.map(s => (
-            <button
-              key={s.key}
-              onClick={() => handleThemeChange(s.key)}
-              style={{ ...VT, fontSize: '1.05rem', letterSpacing: '2px', padding: '0.2rem 1rem', background: selectedTheme === s.key ? 'rgba(255,215,0,0.18)' : 'transparent', border: `1px solid ${selectedTheme === s.key ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.18)'}`, color: selectedTheme === s.key ? 'rgba(255,215,0,1)' : 'rgba(255,215,0,0.45)', cursor: 'pointer', transition: 'border-color 0.12s, color 0.12s, background 0.12s' }}
-            >
-              {s.label}
-            </button>
-          ))}
+          {sections.map(s => {
+            const themeOwned = s.items.some(i => i.type === 'theme' && i.owned)
+            const isActive = selectedTheme === s.key
+            return (
+              <button
+                key={s.key}
+                onClick={() => handleThemeChange(s.key)}
+                style={{ ...VT, fontSize: '1.05rem', letterSpacing: '2px', padding: '0.2rem 1rem', background: isActive ? 'rgba(255,215,0,0.18)' : 'transparent', border: `1px solid ${isActive ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.18)'}`, color: isActive ? 'rgba(255,215,0,1)' : 'rgba(255,215,0,0.45)', cursor: 'pointer', transition: 'border-color 0.12s, color 0.12s, background 0.12s', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                {themeOwned && (
+                  <span style={{ fontSize: '0.75rem', color: 'rgba(100,255,130,0.9)', lineHeight: 1 }}>✓</span>
+                )}
+                {s.label}
+              </button>
+            )
+          })}
         </div>
 
         {/* Category sub-filter (only shown when there are multiple categories) */}

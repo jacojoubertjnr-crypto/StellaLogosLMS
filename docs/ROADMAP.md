@@ -779,6 +779,34 @@ Cross-cutting visual consistency work done after Phase 5f — applies to all pag
 
 ---
 
+## Phase 3b: Cooperative Discussion UI Polish ✅ COMPLETE
+
+Iterative improvements to the Phase III cooperative layout in `LearningTaskUI.tsx`, plus developer infrastructure for AI bot testing.
+
+### Layout redesign
+- [x] **Full-width frames** — `maxWidth: 'none'` inline override on `.frame-parchment` (class has `max-width: 560px`) applied to challenge frame, solution cards frame, ScribeDraftPanel, and final solution review pane
+- [x] **Two-column top section** — role panel (left, `flex: 1`) + group chat (right, `flex: 1`) side by side at the top
+- [x] **ScribeDraftPanel** — new component; draft-only; scribe gets editable textarea, all others see read-only view with live scribe text; replaces the old ScribeWorkspace (which mixed solution cards + draft)
+- [x] **Block order**: 1) Role + Chat columns · 2) Group draft (ScribeDraftPanel) · 3) RLC Challenge (scrollable, 100px height) · 4) Member Solutions (4 cards, full width)
+- [x] **Member solutions** — individual solution cards in a flex-wrap row; scribe sees "ADD TO DRAFT" button on each card; others see read-only; `addToDraft` uses closure value (not functional updater) to avoid TypeScript error
+
+### Role panel improvements
+- [x] **LeaderCompact — START button** — "START COOPERATIVE GROUP CHAT" fires a readiness message asking members to click their Participation Pulse and asking the Timer if they are ready; button toggles to confirmation state
+- [x] **Leader prompter** — prompt text changed from long question format to `"NAME, give some input."` — short and directive
+- [x] **Participation tracking** — LeaderCompact `sinceLastMsg(name)` scans chat from end; color thresholds: green (≤2 msgs ago), yellow (≤5), red (>5 / never spoken); borders and backgrounds on each member button update live as chat grows
+- [x] `memberNames` prop on LeaderCompact — passed dynamically from `members3b` array (not hardcoded); works regardless of bot tier
+
+### Developer infrastructure
+- [x] **`src/stores/devStore.ts`** — Zustand store; `aiBotsEnabled` (default `false`); `toggleAiBots` writes to `localStorage` key `sl_dev_ai_bots`; reads on init; no persist middleware (manual localStorage, consistent with project pattern)
+- [x] **`src/components/DevBotToggle.tsx`** — fixed bottom-left floating button; visible only when user is logged in; green when ON, orange when OFF; shows "teacher help API active" sub-label when ON
+- [x] **`src/lib/botEngine.ts`** — bot engine scaffold; `aiBotsEnabled` controls whether Anthropic API calls fire for teacher help; all scripted bot chat remains hardcoded strings regardless of toggle
+- [x] **`App.tsx`** — `DevBotToggle` imported and rendered inside `<BrowserRouter>` before `<Routes>`
+
+### Login pre-fill
+- [x] **`authStore.ts`** — initial `username` set to `'learner@stellalogos.dev'` and `password` to `'learner1234'`; login form pre-fills on mount without requiring quick-fill chips
+
+---
+
 ## Phase 10: Bot System — Simulated Group Discussion 🔲 HOLD (implement last)
 
 > **Design spec:** `docs/bots.md` — read this in full before touching any code.
@@ -801,8 +829,8 @@ Cross-cutting visual consistency work done after Phase 5f — applies to all pag
 - [ ] Mr. van der Berg — Teacher bot (always active)
 
 ### Implementation tasks
-- [ ] Create `src/lib/botEngine.ts` — bot roster, answer-sheet generator, session start/stop
-- [ ] Modify `LearningTaskUI.tsx` — wire bot engine into Phase III; replace `DEV_GROUP` with bot assignment; wire distribution chart to bot answer sheets
+- [x] `src/lib/botEngine.ts` created — bot roster scaffold, answer-sheet structure, session start/stop hooks; `aiBotsEnabled` flag from `devStore` gates all API calls
+- [ ] Wire bot engine fully into Phase III — replace `DEV_GROUP` with bot assignment; wire distribution chart to bot answer sheets
 - [ ] Add `teacherSend` helper (injects `isTeacher: true` messages as Mr. van der Berg)
 - [ ] Add `userLastActionAt` inactivity tracker (updated on every user chat send and role-panel button press)
 

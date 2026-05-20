@@ -23,6 +23,7 @@ import { LearningTaskManager } from '@/pages/LearningTaskManager'
 import { AdminUI } from '@/pages/AdminUI'
 import { LedgerUI } from '@/pages/LedgerUI'
 import { ThemeAdderUI } from '@/pages/ThemeAdderUI'
+import { DevBotToggle } from '@/components/DevBotToggle'
 import '@/styles/globals.css'
 
 const CUSTOM_THEMES_QUERY = gql`
@@ -121,6 +122,7 @@ function App() {
   return (
     <BrowserRouter>
       <ThemeMusicController />
+      <DevBotToggle />
       <Routes>
         {/* Level 0: LoginPortal [The Mystic Gate] */}
         <Route

@@ -5,6 +5,7 @@ import { useQuery, useMutation, gql } from '@apollo/client'
 import { useAuthStore } from '@/stores/authStore'
 import { usePageBackground } from '@/hooks/usePageBackground'
 import { useQuestStore } from '@/stores/questStore'
+import { randomTiers, BOT_NAMES, BOT_ACCURACY, ROLE_ORDER as BOT_ROLE_ORDER, type BotRole, type BotTier } from '@/lib/botEngine'
 
 const MY_TASK_GROUP = gql`
   query MyTaskGroup($academicClassId: ID!) {
@@ -32,6 +33,20 @@ const SEND_GROUP_MESSAGE = gql`
   mutation SendGroupMessage($conversationId: ID!, $body: String!) {
     sendMessage(conversationId: $conversationId, body: $body) {
       id senderName body time
+    }
+  }
+`
+
+const JOIN_ACTIVE_TASK_SESSION = gql`
+  mutation JoinActiveTaskSession($academicClassId: ID!) {
+    joinActiveTaskSession(academicClassId: $academicClassId) {
+      id
+      conversationId
+      members {
+        learnerId
+        displayName
+        role
+      }
     }
   }
 `
@@ -99,22 +114,9 @@ const RESOURCES: { type: string; title: string; desc: string; href: string }[] =
   { type: 'PDF',   title: 'Reference Document',    desc: 'Study material for this learning task',              href: '/assets/learning-tasks/LearningTask1/Content/content_document.pdf' },
 ]
 
-// ─── Dev Group Config ─────────────────────────────────────────────────────────
-// For dev purposes: 4 fixed learners always in the same group with fixed roles.
-// Replace with real group-assignment logic when the backend supports it.
+// ─── Bot / group config ───────────────────────────────────────────────────────
 
-const DEV_GROUP: { email: string; name: string; role: Role }[] = [
-  { email: 'learner@stellalogos.dev',  name: 'Aria BOT',   role: 'leader'        },
-  { email: 'learner2@stellalogos.dev', name: 'Conrad BOT', role: 'timer'         },
-  { email: 'learner3@stellalogos.dev', name: 'Petra BOT',  role: 'scribe'        },
-  { email: 'learner4@stellalogos.dev', name: 'Rex BOT',    role: 'angle-checker' },
-]
-
-const DEV_GROUP_ROLE_MAP: Record<string, Role> = Object.fromEntries(
-  DEV_GROUP.map(m => [m.email, m.role])
-)
-
-const MOCK_TEAM = DEV_GROUP.map(m => m.name)
+const MOCK_TEAM = ['Aria', 'Conrad', 'Petra', 'Rex']
 
 const INITIAL_CHAT: ChatMessage[] = [
   { id: 1, author: 'Mr. van der Berg', body: 'Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.', time: '09:00', isTeacher: true },
@@ -123,6 +125,150 @@ const INITIAL_CHAT: ChatMessage[] = [
   { id: 4, author: 'Rex BOT',    body: "Let's go — I found the content video really useful for structuring my answers.", time: '09:02' },
   { id: 5, author: 'Aria BOT',   body: 'Same. Question 5 was tricky though — I second-guessed myself.', time: '09:03' },
 ]
+
+// ─── Bot Phase-1 metacog answers (smart / stupid per role) ───────────────────
+
+const BOT_METACOG: Record<BotRole, Record<BotTier, MetacogState>> = {
+  leader: {
+    smart: {
+      problem:  "The learner faces a high-stakes formal presentation with no preparation structure, no knowledge of the board's expectations, and severe performance anxiety — all within a 24-hour window.",
+      solution: "A structured three-stage approach: research and outline (evening), rehearsal and refinement (morning), confident delivery (presentation).",
+      criteria: "The board engages with the ideas, the learner stays within 5 minutes, and at least one recommendation is acknowledged.",
+      audit:    "1. Research the school board's recent decisions online.\n2. Draft a 5-point outline: problem, evidence, proposal, cost, benefit.\n3. Create one clear visual aid.\n4. Rehearse 3 times — solo, in mirror, to a friend.\n5. Prepare 3 likely questions and answers.\n6. Sleep 8 hours and arrive 10 minutes early.",
+    },
+    stupid: {
+      problem:  "She has to give a big presentation and she's nervous and not prepared.",
+      solution: "Just practice as much as possible and write some notes to help.",
+      criteria: "If the board doesn't look bored and she gets through it.",
+      audit:    "1. Write some notes.\n2. Practice in front of a mirror.\n3. Go to the presentation and do it.",
+    },
+  },
+  timer: {
+    smart: {
+      problem:  "The core problem is time pressure combined with lack of focus — without a timed plan the learner will either over-prepare on irrelevant areas or rush the delivery.",
+      solution: "Divide the 24 hours into strict timed blocks: 2 h research, 3 h writing, 1 h visual, 3 h rehearsal, 8 h sleep, 1 h morning review.",
+      criteria: "All preparation blocks are completed on schedule and the learner delivers without exceeding 5 minutes.",
+      audit:    "1. Write a schedule with phone alarms for each block.\n2. Research for exactly 2 hours.\n3. Draft and structure for 3 hours.\n4. Create one simple visual.\n5. Use a stopwatch during rehearsal.\n6. Review notes at breakfast.",
+    },
+    stupid: {
+      problem:  "Not enough time to get ready for the presentation.",
+      solution: "Do everything as fast as possible and hope for the best.",
+      criteria: "If you don't run out of things to say.",
+      audit:    "1. Set a timer.\n2. Write notes quickly.\n3. Practice once.\n4. Go and do it.",
+    },
+  },
+  scribe: {
+    smart: {
+      problem:  "The learner must synthesise scattered notes and nervous energy into a coherent, evidence-based 5-minute argument that persuades a formal audience.",
+      solution: "Create a structured written outline first, then convert it to spoken cue cards — every point backed by evidence.",
+      criteria: "The outline covers 5 key points, fits 5 minutes when read aloud, and each claim has at least one piece of evidence.",
+      audit:    "1. Collect all ideas from the three exercise books.\n2. Sort into: problem, evidence, solution, impact, recommendation.\n3. Write one paragraph per category (max 3 sentences).\n4. Convert to bullet-point cue cards.\n5. Read aloud and time — cut anything that overruns.\n6. Review for clarity the morning of the presentation.",
+    },
+    stupid: {
+      problem:  "Her notes are all over the place and she doesn't know what to say.",
+      solution: "Write out what she wants to say and read it if she has to.",
+      criteria: "If she remembers most of what she planned to say.",
+      audit:    "1. Gather all the notes.\n2. Write out the main points.\n3. Read through a couple of times.\n4. Go do the presentation.",
+    },
+  },
+  'angle-checker': {
+    smart: {
+      problem:  "The real risk is not the lack of time but the lack of audience awareness — the learner doesn't know what the board actually wants, so even a well-prepared talk could miss the mark entirely.",
+      solution: "Before preparing content, spend 30 minutes researching the board's stated priorities, then build the presentation around those — not personal opinions.",
+      criteria: "Every point links directly to a known board priority. The board asks at least one follow-up question, indicating genuine engagement.",
+      audit:    "1. Search the school website and meeting minutes for the board's current priorities.\n2. Identify 2–3 priorities relevant to digital learning.\n3. Structure the presentation around those priorities.\n4. Check each point: 'Does this answer something the board cares about?'\n5. Rehearse with someone who will challenge your assumptions.\n6. Prepare for: 'What evidence do you have for this?'",
+    },
+    stupid: {
+      problem:  "She doesn't really know what the board wants to hear.",
+      solution: "Just talk about what she thinks is important and hope they agree.",
+      criteria: "If they don't ask hard questions.",
+      audit:    "1. Think about what she knows.\n2. Talk about the most important stuff.\n3. Answer any questions as best she can.",
+    },
+  },
+}
+
+// ─── Phase 3b template bot responses ─────────────────────────────────────────
+
+function getBotP3bResponse(
+  role: BotRole, tier: BotTier, _name: string, msgIdx: number,
+  ctx: { userName: string; userSolution: string; userSteps: string },
+): string {
+  const { userName, userSolution, userSteps } = ctx
+  const i = msgIdx % 6
+  const sol60 = userSolution.substring(0, 60)
+  const steps50 = userSteps.substring(0, 50)
+
+  if (role === 'leader') {
+    return tier === 'smart' ? [
+      `Right, let's get into it. ${userName}, your approach — "${sol60}..." — is a strong starting point. Can you tell us more about why you started there?`,
+      `Good thinking. What does everyone consider the single most critical step? Let's identify the core before we draft anything.`,
+      `Let's not lose sight of the real constraint — the student has 24 hours. We need something realistic, not just theoretically ideal.`,
+      `I'm seeing a common theme across our solutions. Scribe, are you capturing that? It should anchor the final draft.`,
+      `Angle Checker — have we stress-tested the plan? What if the student freezes on the day?`,
+      `We're close to consensus. Scribe, please start pulling the final solution together based on what we've discussed.`,
+    ][i] : [
+      `ok so ${userName} said "${sol60}..." that's not bad I guess`,
+      `we should probably pick the best bits? idk`,
+      `anyone have ideas we should decide`,
+      `ok scribe can you write it down`,
+      `yeah that seems fine`,
+      `ok lets go with that`,
+    ][i]
+  }
+
+  if (role === 'timer') {
+    return tier === 'smart' ? [
+      `Keeping us on track — we've been on the problem framing for a while. Let's make sure we leave time for the solution and delivery steps.`,
+      `Good discussion. I'd suggest 5 more minutes on solution structure, then we finalise the steps.`,
+      `We're in the middle stretch — Scribe, where's the draft at?`,
+      `Time check: we need to wrap up soon. Leader, are we close to consensus?`,
+      `Scribe needs to draft the final answer. Let's commit to a direction now.`,
+      `Last call — everyone raise any remaining concerns or we lock this in.`,
+    ][i] : [
+      `oh right I'm supposed to track time... we should probably hurry up`,
+      `how long have we been going? feels like a while`,
+      `we should wrap up soon I think`,
+      `ok we really need to finish`,
+      `seriously tho`,
+      `someone write it down already`,
+    ][i]
+  }
+
+  if (role === 'scribe') {
+    return tier === 'smart' ? [
+      `I'm capturing the key elements. So far: the solution centres on researching the audience first, then structuring content around their priorities. Does that reflect the group's thinking?`,
+      `Quick check — ${userName}, your steps mentioned "${steps50}..." — should I include that level of detail in the draft?`,
+      `Common thread noted: thorough preparation is the core of everyone's approach. I'll anchor the draft around that.`,
+      `I'm ready to draft when the group reaches consensus. Are we going with the research-first approach?`,
+      `Noted. I'll incorporate that — checking with Leader before I finalise.`,
+      `Draft submitted — structured as: research → outline → rehearsal → delivery. Adjust anything that needs changing.`,
+    ][i] : [
+      `ok I'll try to write this down`,
+      `got it... kind of`,
+      `I'm noting: "${sol60.substring(0, 30)}..." — is that right?`,
+      `ok noted`,
+      `sure I'll add that`,
+      `here's what I have so far, sorry if it's a bit messy`,
+    ][i]
+  }
+
+  // angle-checker
+  return tier === 'smart' ? [
+    `Before we commit — has anyone considered that the student might not have internet access to research the board's priorities? ${userName}'s solution assumes resource availability.`,
+    `Hold on — most solutions focus on preparation structure, but what about the anxiety problem? I don't see a specific step for managing performance nerves.`,
+    `I want to push back on the research step: what if the board's priorities aren't publicly available? Do we have a fallback?`,
+    `The plan looks solid overall — but is the rehearsal timeline realistic for a severely anxious student? Should we be more specific?`,
+    `Final check: does our plan address all three original problems — structure, board expectations, and anxiety?`,
+    `Satisfied with the direction. Last flag: make sure the draft mentions what to do if the student goes over time. Real risk.`,
+  ][i] : [
+    `hmm I guess I should check something... nope seems fine`,
+    `wait actually should we consider that she might forget everything?`,
+    `I think it looks ok`,
+    `yeah no issues from me`,
+    `all good I think`,
+    `looks fine to me`,
+  ][i]
+}
 
 const ROLE_DEFS: { role: Role; label: string; desc: string; icon: string }[] = [
   { role: 'leader', label: 'LEADER', desc: "Control question flow. Prompt your team. Maintain the group's pulse.", icon: '♚' },
@@ -394,11 +540,7 @@ const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled:
         const qAnswered = answers[q.id] !== undefined
 
         const selectAnswer = (origIdx: number) => {
-          setAnswers(p => {
-            const next = { ...p, [q.id]: origIdx }
-            if (!isLast) setTimeout(() => setCurrentQ(c => c + 1), 350)
-            return next
-          })
+          setAnswers(p => ({ ...p, [q.id]: origIdx }))
         }
 
         return (
@@ -565,7 +707,7 @@ const ChatPanel: React.FC<{
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '0.5rem' }}>
       <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.5, color: TEXT, margin: 0 }}>GROUP CHAT</p>
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', minHeight: '180px', maxHeight: '300px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', minHeight: '180px', maxHeight: '50vh' }}>
         {messages.map(msg => (
           <div key={msg.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
@@ -637,7 +779,7 @@ const PulseButton: React.FC<{ intervalSeconds: number; label: string; onPulse: (
 
 // ─── Leader Panel ─────────────────────────────────────────────────────────────
 
-const LeaderPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; currentQuestion: number; onNextQuestion: () => void }> = ({ chat, onSend, currentQuestion, onNextQuestion }) => {
+const LeaderPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; currentQuestion: number; onNextQuestion: () => void; allMembersDecided: boolean }> = ({ chat, onSend, currentQuestion, onNextQuestion, allMembersDecided }) => {
   const [distribution, setDistribution] = useState<Record<string, number>>(makeDistribution())
 
   const advance = () => { setDistribution(makeDistribution()); onNextQuestion() }
@@ -656,8 +798,22 @@ const LeaderPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; 
             <DistChart distribution={distribution} total={MOCK_TEAM.length} />
           </>
         )}
-        <button className="btn-9slice" onClick={advance} disabled={currentQuestion >= 20} style={{ fontSize: '1.05rem', letterSpacing: '2px', opacity: currentQuestion >= 20 ? 0.4 : 1 }}>
-          {currentQuestion === 0 ? 'START DISCUSSION ▶' : currentQuestion >= 20 ? 'ALL QUESTIONS DONE' : 'NEXT QUESTION ▶'}
+        {allMembersDecided && currentQuestion > 0 && currentQuestion < QUIZ_QUESTIONS.length && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+            style={{
+              fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px',
+              padding: '0.4rem 0.75rem', textAlign: 'center',
+              border: '1px solid rgba(100,220,100,0.6)',
+              background: 'rgba(100,220,100,0.08)',
+              color: 'rgba(100,220,100,0.9)',
+            }}
+          >
+            ✓ ALL MEMBERS DECIDED — ADVANCE
+          </motion.div>
+        )}
+        <button className="btn-9slice" onClick={advance} disabled={currentQuestion >= QUIZ_QUESTIONS.length} style={{ fontSize: '1.05rem', letterSpacing: '2px', opacity: currentQuestion >= QUIZ_QUESTIONS.length ? 0.4 : 1 }}>
+          {currentQuestion === 0 ? 'START DISCUSSION ▶' : currentQuestion >= QUIZ_QUESTIONS.length ? 'ALL QUESTIONS DONE' : 'NEXT QUESTION ▶'}
         </button>
         <PulseButton intervalSeconds={20} label="PARTICIPATION PULSE" onPulse={() => onSend('[System] Leader pulse confirmed — Active.')} warning="Click PULSE to maintain Active status!" />
         <div>
@@ -829,7 +985,767 @@ const AngleCheckerPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => 
 }
 
 
-// ─── Phase III: Quiz Review (shared across all roles) ────────────────────────
+// ─── Phase IIIa Intro Modal ───────────────────────────────────────────────────
+
+const Phase3aIntroModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 200,
+    background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+  }}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
+      className="frame-parchment"
+      style={{ maxWidth: '520px', width: '100%', padding: '2rem', gap: '1.25rem' }}
+    >
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>
+        PHASE IIIa · GROUP QUIZ REVIEW
+      </p>
+      <h2 style={{ fontFamily: FONT, fontSize: '1.7rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>
+        REVIEW YOUR ANSWERS AS A GROUP
+      </h2>
+      <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
+        You will now go through each quiz question together with your group. For every question you can see how each member answered.
+      </p>
+      <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
+        Compare the answers, then decide: keep your original answer, or change it. Once you decide the group moves on to the next question.
+      </p>
+      <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
+        After all questions are reviewed, your group will work together to build the best possible solution to the real-life challenge.
+      </p>
+      <button className="btn-9slice" onClick={onDismiss} style={{ alignSelf: 'center', fontSize: '1.2rem', letterSpacing: '2px', minWidth: '240px' }}>
+        START REVIEW →
+      </button>
+    </motion.div>
+  </div>
+)
+
+// ─── Phase IIIa: Unanimous Quiz Review (no roles) ────────────────────────────
+
+const Phase3a: React.FC<{
+  phase2Answers: Record<number, number>
+  botAnswers: Record<BotRole, Record<number, number>>
+  botTiers: Record<BotRole, BotTier>
+  userName: string
+  onComplete: (finalAnswers: Record<number, number>) => void
+}> = ({ phase2Answers, botAnswers, botTiers, userName, onComplete }) => {
+  // Group = user + leader bot + timer bot + angle-checker bot
+  const BOT_3 = ['leader', 'timer', 'angle-checker'] as const
+
+  const [introVisible, setIntroVisible] = useState(true)
+  const [qIdx, setQIdx]     = useState(0)
+  const [chat, setChat]     = useState<ChatMessage[]>([])
+  const [picking, setPicking]     = useState(false)
+  const [advancing, setAdvancing] = useState(false)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
+
+  // decisions in ref so timeouts always read current value
+  const decisionsRef = useRef<Record<number, { intent: 'keep' | 'change'; newIdx?: number }>>({})
+  const [, forceRender] = useState(0)
+
+  // Scroll only within the chat container — never touches page scroll
+  useEffect(() => {
+    const el = chatContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [chat])
+
+  const q        = QUIZ_QUESTIONS[qIdx]
+  const userAns  = phase2Answers[q?.id] ?? -1
+  const botAnsList  = BOT_3.map(r => botAnswers[r][q?.id] ?? -1)
+  const allAnsList  = [userAns, ...botAnsList]
+  const isUnanimous = q && allAnsList.every(a => a >= 0 && a === allAnsList[0])
+  const decision    = q ? decisionsRef.current[q.id] : undefined
+  const voteCounts  = q ? q.options.map((_, i) => allAnsList.filter(a => a === i).length) : []
+
+  const postBot = (author: string, body: string) =>
+    setChat(p => [...p, { id: Date.now() + Math.random(), author, body, time: nowTime() }])
+
+  const goNext = (fromIdx: number) => {
+    const nextIdx = fromIdx + 1
+    if (nextIdx >= QUIZ_QUESTIONS.length) {
+      const final = Object.fromEntries(
+        QUIZ_QUESTIONS.map(qq => {
+          const d = decisionsRef.current[qq.id]
+          return [qq.id, d?.intent === 'change' && d.newIdx !== undefined ? d.newIdx : (phase2Answers[qq.id] ?? 0)]
+        })
+      )
+      onComplete(final)
+    } else {
+      setQIdx(nextIdx)
+      setPicking(false)
+      setAdvancing(false)
+    }
+  }
+
+  const afterDecide = (qId: number, d: { intent: 'keep' | 'change'; newIdx?: number }) => {
+    decisionsRef.current[qId] = d
+    forceRender(n => n + 1)
+    setAdvancing(true)
+    setPicking(false)
+
+    const leaderName = BOT_NAMES.leader[botTiers.leader]
+    const timerName  = BOT_NAMES.timer[botTiers.timer]
+    const isSmartL   = botTiers.leader === 'smart'
+    const isSmartT   = botTiers.timer  === 'smart'
+
+    setTimeout(() => postBot(leaderName, d.intent === 'keep'
+      ? (isSmartL ? `Good call, ${userName}. I'll align with that.` : 'ok yeah')
+      : (isSmartL ? `Makes sense — ${d.newIdx !== undefined ? OPT_LABELS[d.newIdx] : 'that'} is the stronger answer.` : 'ok sure')
+    ), 600)
+    setTimeout(() => postBot(timerName, isSmartT ? 'Agreed — moving on.' : 'ok'), 1100)
+    setTimeout(() => goNext(qIdx), 1600)
+  }
+
+  if (!q) return null
+
+  const pct = Math.round((qIdx / QUIZ_QUESTIONS.length) * 100)
+
+  return (
+    <>
+    {introVisible && <Phase3aIntroModal onDismiss={() => setIntroVisible(false)} />}
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+      {/* Progress bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <span style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: ACCENT, opacity: 0.7, flexShrink: 0 }}>
+          Q {qIdx + 1} / {QUIZ_QUESTIONS.length}
+        </span>
+        <div style={{ flex: 1, height: '4px', background: 'rgba(255,215,0,0.1)' }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: ACCENT, transition: 'width 0.4s' }} />
+        </div>
+        <span style={{ fontFamily: FONT, fontSize: '1rem', color: ACCENT, opacity: 0.45, flexShrink: 0 }}>{pct}%</span>
+      </div>
+
+      {/* Two-column body — fixed height so the page never jumps */}
+      <div style={{ display: 'flex', gap: '1rem', width: '100%', alignItems: 'flex-start' }}>
+
+        {/* Left — question + options (scrollable) + decision (pinned bottom) */}
+        <div className="frame-parchment" style={{
+          flex: '1 1 0', minWidth: 0, padding: '1rem',
+          height: '420px', display: 'flex', flexDirection: 'column', gap: 0,
+        }}>
+          {/* Scrollable upper section */}
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '2px' }}>
+            <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.5, margin: 0 }}>
+              GROUP REVIEW — QUESTION {qIdx + 1}
+            </p>
+            <p style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.6, margin: 0 }}>{q.text}</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {q.options.map((opt, optIdx) => {
+                const count     = voteCounts[optIdx] ?? 0
+                const barPct    = (count / 4) * 100
+                const isUserAns = optIdx === userAns
+                const isNewPick = decision?.intent === 'change' && decision.newIdx === optIdx
+                const highlight = isNewPick || (isUserAns && decision?.intent !== 'change')
+
+                return (
+                  <div key={optIdx}
+                    onClick={picking && !decision ? () => afterDecide(q.id, { intent: 'change', newIdx: optIdx }) : undefined}
+                    style={{
+                      padding: '0.45rem 0.7rem', cursor: picking && !decision ? 'pointer' : 'default',
+                      border: `1px solid ${highlight ? ACCENT : 'rgba(255,215,0,0.14)'}`,
+                      background: highlight ? 'rgba(255,215,0,0.07)' : 'transparent',
+                      transition: 'border-color 0.12s, background 0.12s',
+                    }}
+                    onMouseEnter={e => { if (picking && !decision) e.currentTarget.style.borderColor = 'rgba(255,215,0,0.55)' }}
+                    onMouseLeave={e => { if (picking && !decision) e.currentTarget.style.borderColor = highlight ? ACCENT : 'rgba(255,215,0,0.14)' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontFamily: FONT, fontSize: '1rem', color: highlight ? ACCENT : 'rgba(255,215,0,0.4)', minWidth: '14px' }}>
+                        {OPT_LABELS[optIdx]}
+                      </span>
+                      <span style={{ fontFamily: FONT, fontSize: '1rem', color: highlight ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)', flex: 1, lineHeight: 1.4 }}>
+                        {opt}
+                      </span>
+                      {isUserAns && !picking && (
+                        <span style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '1px', color: ACCENT, opacity: 0.7, flexShrink: 0 }}>
+                          {decision?.intent === 'change' ? 'ORIGINAL' : 'YOUR ANSWER'}
+                        </span>
+                      )}
+                      {isNewPick && <span style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '1px', color: ACCENT, flexShrink: 0 }}>NEW CHOICE</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '4px' }}>
+                      <div style={{ flex: 1, height: '4px', background: 'rgba(255,215,0,0.08)', borderRadius: '2px' }}>
+                        <div style={{ width: `${barPct}%`, height: '100%', background: 'rgba(255,215,0,0.4)', borderRadius: '2px', transition: 'width 0.35s' }} />
+                      </div>
+                      <span style={{ fontFamily: FONT, fontSize: '0.8rem', color: ACCENT, opacity: count > 0 ? 0.7 : 0.25, minWidth: '28px', textAlign: 'right' }}>
+                        {count}/4
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Decision area — pinned to bottom, fixed height */}
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem', minHeight: '46px', flexShrink: 0 }}>
+            {decision ? (
+              <div style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: FONT, fontSize: '1rem', letterSpacing: '1px',
+                border: `1px solid ${decision.intent === 'keep' ? 'rgba(100,220,100,0.4)' : ACCENT}`,
+                background: decision.intent === 'keep' ? 'rgba(100,220,100,0.05)' : 'rgba(255,215,0,0.05)',
+                color: decision.intent === 'keep' ? 'rgba(100,220,100,0.85)' : ACCENT,
+              }}>
+                {decision.intent === 'keep' ? '✓ ANSWER KEPT' : `↻ CHANGED TO ${decision.newIdx !== undefined ? OPT_LABELS[decision.newIdx] : '?'}`}
+              </div>
+            ) : picking ? (
+              <div style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: FONT, fontSize: '1rem', letterSpacing: '1px',
+                color: ACCENT, opacity: 0.65,
+              }}>
+                ↑ CLICK AN OPTION ABOVE TO SELECT YOUR NEW ANSWER
+              </div>
+            ) : (
+              <>
+                <button onClick={() => afterDecide(q.id, { intent: 'keep' })} style={{
+                  flex: 1, fontFamily: FONT, fontSize: '1rem', letterSpacing: '1px', padding: '0.65rem',
+                  cursor: 'pointer', background: 'rgba(100,220,100,0.07)',
+                  border: '2px solid rgba(100,220,100,0.5)', color: 'rgba(100,220,100,0.85)',
+                }}>✓ KEEP MY ANSWER</button>
+                <button onClick={() => setPicking(true)} style={{
+                  flex: 1, fontFamily: FONT, fontSize: '1rem', letterSpacing: '1px', padding: '0.65rem',
+                  cursor: 'pointer', background: 'rgba(255,180,0,0.06)',
+                  border: '2px solid rgba(255,180,0,0.5)', color: 'rgba(255,180,0,0.85)',
+                }}>↻ CHANGE MY ANSWER</button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Right — persistent group chat, same fixed height */}
+        <div className="frame-parchment" style={{
+          flex: '1 1 0', padding: '0.75rem',
+          height: '420px', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+        }}>
+          <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '2px', opacity: 0.45, color: TEXT, margin: 0, flexShrink: 0 }}>GROUP DISCUSSION</p>
+          <div ref={chatContainerRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.4rem', background: 'rgba(0,0,0,0.15)' }}>
+            {chat.length === 0 && (
+              <p style={{ fontFamily: FONT, fontSize: '1.05rem', opacity: 0.3, color: TEXT, margin: 'auto', textAlign: 'center' }}>
+                Discuss with your group here.
+              </p>
+            )}
+            {chat.map(msg => (
+              <div key={msg.id}>
+                <span style={{ fontFamily: FONT, fontSize: '0.95rem', fontWeight: 700, color: ACCENT }}>{msg.author} </span>
+                <span style={{ fontFamily: FONT, fontSize: '0.9rem', opacity: 0.45, color: TEXT }}>{msg.time}</span>
+                <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.4 }}>{msg.body}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+            <input
+              placeholder="Type a message..."
+              onKeyDown={e => {
+                if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                  setChat(p => [...p, { id: Date.now(), author: userName, body: e.currentTarget.value.trim(), time: nowTime() }])
+                  e.currentTarget.value = ''
+                }
+              }}
+              style={{ flex: 1, fontFamily: FONT, fontSize: '0.95rem', padding: '0.35rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.2)', color: 'rgba(255,255,255,0.85)', outline: 'none' }}
+            />
+            <button
+              className="btn-9slice"
+              onClick={e => {
+                const inp = (e.currentTarget.previousSibling as HTMLInputElement)
+                if (inp.value.trim()) {
+                  setChat(p => [...p, { id: Date.now(), author: userName, body: inp.value.trim(), time: nowTime() }])
+                  inp.value = ''
+                }
+              }}
+              style={{ fontSize: '0.9rem', padding: '4px 10px' }}
+            >SEND</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    </>
+  )
+}
+
+// ─── Phase IIIb: Cooperative Solution Synthesis ───────────────────────────────
+
+// ─── Phase IIIb Intro Modal ───────────────────────────────────────────────────
+
+const Phase3bIntroModal: React.FC<{
+  isBotMode: boolean
+  onRoleSelected: (r: Role) => void
+}> = ({ isBotMode, onRoleSelected }) => {
+  const [step, setStep] = useState<1 | 2>(1)
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+    }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
+        className="frame-parchment"
+        style={{ maxWidth: '520px', width: '100%', padding: '2rem', gap: '1.25rem' }}
+      >
+        {step === 1 ? (
+          <>
+            <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>PHASE IIIb · COOPERATIVE SOLUTION</p>
+            <h2 style={{ fontFamily: FONT, fontSize: '1.7rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>BUILD THE BEST SOLUTION</h2>
+            <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
+              Your group has reviewed the content and completed the quiz together. Now you will collaborate to build the best possible solution to the real-life challenge.
+            </p>
+            <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
+              Every member has already submitted their initial approach. Discuss, challenge each other's ideas, and help the Scribe craft the group's final answer.
+            </p>
+            <button className="btn-9slice" onClick={() => setStep(2)} style={{ alignSelf: 'center', fontSize: '1.2rem', letterSpacing: '2px', minWidth: '200px' }}>CONTINUE →</button>
+          </>
+        ) : isBotMode ? (
+          <>
+            <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>SELECT YOUR ROLE</p>
+            <h2 style={{ fontFamily: FONT, fontSize: '1.5rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>CHOOSE YOUR ROLE FOR THIS SESSION</h2>
+            <p style={{ fontFamily: FONT, fontSize: '1.05rem', lineHeight: 1.55, color: TEXT, opacity: 0.75, margin: 0 }}>
+              The AI bots will fill the remaining three roles.
+            </p>
+            {ROLE_DEFS.map(({ role, label, desc, icon }) => (
+              <button key={role} onClick={() => onRoleSelected(role)} style={{
+                display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.9rem 1rem',
+                textAlign: 'left', width: '100%', fontFamily: FONT, background: 'transparent',
+                border: '1px solid rgba(255,215,0,0.25)', cursor: 'pointer',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.7)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.25)' }}
+              >
+                <span style={{ fontSize: '2rem', color: ACCENT, minWidth: '2.5rem', textAlign: 'center' }}>{icon}</span>
+                <div>
+                  <div style={{ fontSize: '1.1rem', color: ACCENT, letterSpacing: '2px' }}>{label}</div>
+                  <div style={{ fontSize: '1rem', color: TEXT, opacity: 0.7, marginTop: '2px' }}>{desc}</div>
+                </div>
+              </button>
+            ))}
+          </>
+        ) : (
+          // Facilitated mode — role assigned by teacher (allocation from DB to be wired in future)
+          <>
+            <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>YOUR ROLE</p>
+            <h2 style={{ fontFamily: FONT, fontSize: '1.5rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>ROLE ASSIGNED BY YOUR TEACHER</h2>
+            <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
+              Your teacher has assigned your role for this session. Please wait for further instructions from your group before proceeding.
+            </p>
+          </>
+        )}
+      </motion.div>
+    </div>
+  )
+}
+
+// ─── Phase IIIb Compact Role Panels ──────────────────────────────────────────
+
+const LeaderCompact: React.FC<{
+  onSend: (t: string) => void
+  memberNames: string[]
+  chat: ChatMessage[]
+}> = ({ onSend, memberNames, chat }) => {
+  const [started, setStarted] = useState(false)
+
+  const startSession = () => {
+    setStarted(true)
+    onSend(
+      '♚ [Leader] Starting the cooperative group chat. ' +
+      'Everyone — please click your PARTICIPATION PULSE button to confirm you are ready. ' +
+      'Timer — are you set up and ready to start timing?'
+    )
+  }
+
+  // How many messages ago did this member last contribute? Infinity = never.
+  const sinceLastMsg = (name: string): number => {
+    for (let i = chat.length - 1; i >= 0; i--) {
+      if (chat[i].author === name) return chat.length - 1 - i
+    }
+    return Infinity
+  }
+
+  const participationColor = (name: string): string => {
+    const n = sinceLastMsg(name)
+    if (n <= 2)           return 'rgba(100,220,100,0.75)'   // green  — recent
+    if (n <= 5)           return 'rgba(255,200,0,0.8)'      // yellow — a few turns ago
+    return                       'rgba(220,80,80,0.85)'     // red    — hasn't spoken in a while
+  }
+
+  const participationBg = (name: string): string => {
+    const n = sinceLastMsg(name)
+    if (n <= 2)  return 'rgba(100,220,100,0.06)'
+    if (n <= 5)  return 'rgba(255,200,0,0.06)'
+    return              'rgba(220,80,80,0.06)'
+  }
+
+  return (
+    <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>♚ LEADER</p>
+      <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.5, flexShrink: 0 }}>
+        Guide the discussion. Ensure every perspective is considered before the Scribe commits to the draft.
+      </p>
+
+      {!started ? (
+        <button className="btn-9slice" onClick={startSession} style={{ fontSize: '1rem', letterSpacing: '2px', flexShrink: 0 }}>
+          ♚ START COOPERATIVE GROUP CHAT
+        </button>
+      ) : (
+        <div style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '1px', color: 'rgba(100,220,100,0.75)', padding: '0.4rem 0.6rem', border: '1px solid rgba(100,220,100,0.25)', background: 'rgba(100,220,100,0.05)', flexShrink: 0 }}>
+          ✓ Session started — waiting for readiness confirmations
+        </div>
+      )}
+
+      <div style={{ flexShrink: 0 }}>
+        <p style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '2px', color: ACCENT, opacity: 0.55, margin: '0 0 0.4rem' }}>PROMPT A MEMBER</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+          {memberNames.map(name => {
+            const col = participationColor(name)
+            const bg  = participationBg(name)
+            return (
+              <button key={name} onClick={() => onSend(`${name}, give some input.`)} style={{
+                fontFamily: FONT, fontSize: '1rem', padding: '3px 10px',
+                background: bg, border: `1px solid ${col}`, color: col, cursor: 'pointer',
+                transition: 'border-color 0.4s, color 0.4s, background 0.4s',
+              }}>{name}</button>
+            )
+          })}
+        </div>
+        <p style={{ fontFamily: FONT, fontSize: '0.8rem', opacity: 0.4, color: TEXT, margin: '0.35rem 0 0', letterSpacing: '1px' }}>
+          ■ green = recent &nbsp;■ yellow = a few turns ago &nbsp;■ red = hasn't spoken
+        </p>
+      </div>
+      <PulseButton intervalSeconds={20} label="PARTICIPATION PULSE" onPulse={() => onSend('[Leader] Participation check — is everyone engaged with the draft?')} warning="Send your Participation Pulse!" />
+    </div>
+  )
+}
+
+const TimerCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => {
+  const [totalMins, setTotalMins] = useState('')
+  const [timePerPhase, setTimePerPhase] = useState<number | null>(null)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const [running, setRunning] = useState(false)
+  const [moveOnFired, setMoveOnFired] = useState(false)
+  const divide = () => {
+    const m = parseFloat(totalMins)
+    if (isNaN(m) || m <= 0) return
+    const perPhase = Math.floor((m * 60) / 3)
+    setTimePerPhase(perPhase); setSecondsLeft(perPhase)
+  }
+  useEffect(() => {
+    if (!running || secondsLeft <= 0) return
+    const id = setInterval(() => setSecondsLeft(s => { if (s <= 1) { setRunning(false); return 0 } return s - 1 }), 1000)
+    return () => clearInterval(id)
+  }, [running, secondsLeft])
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  return (
+    <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>◷ TIMER</p>
+      {timePerPhase !== null && (
+        <div style={{ fontFamily: FONT, fontSize: '3.5rem', color: secondsLeft < 60 ? '#ff6666' : ACCENT, textAlign: 'center', letterSpacing: '4px', lineHeight: 1, flexShrink: 0 }}>
+          {fmt(secondsLeft)}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+        <input value={totalMins} onChange={e => setTotalMins(e.target.value)} placeholder="Total mins"
+          style={{ flex: 1, fontFamily: FONT, fontSize: '1rem', padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.25)', color: 'rgba(255,255,255,0.9)', outline: 'none' }} />
+        <button className="btn-9slice" onClick={divide} style={{ fontSize: '1rem' }}>DIVIDE</button>
+      </div>
+      {timePerPhase !== null && (
+        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+          <button className="btn-9slice" onClick={() => setRunning(true)} style={{ flex: 1 }}>{running ? 'RUNNING...' : 'START'}</button>
+          <button className="btn-9slice" onClick={() => { setSecondsLeft(timePerPhase!); setRunning(false) }} style={{ flex: 1 }}>RESET</button>
+        </div>
+      )}
+      <PulseButton intervalSeconds={30} label="TIME STATUS" onPulse={() => onSend(`[Timer] Time Status — ${timePerPhase !== null ? fmt(secondsLeft) + ' remaining.' : 'Timer not started.'}`)} warning="Send Time Status!" />
+      <button onClick={() => { setMoveOnFired(true); onSend('⚠ [TIMER ALERT] The group is stalling — time to MOVE ON!') }} style={{
+        fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', padding: '0.5rem', flexShrink: 0,
+        background: moveOnFired ? 'rgba(220,60,60,0.35)' : 'rgba(220,60,60,0.12)',
+        border: '2px solid rgba(220,60,60,0.8)', color: '#ff8888', cursor: 'pointer',
+      }}>⚠ MOVE ON</button>
+    </div>
+  )
+}
+
+const ScribeCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => (
+  <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+    <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>✎ SCRIBE</p>
+    <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.55, flexShrink: 0 }}>
+      Your job is to capture the group's best thinking and build it into the final solution. Use the Solution Workspace below — add individual solutions to the draft, then refine the combined answer.
+    </p>
+    <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.55, flexShrink: 0 }}>
+      Use the chat to discuss with your group before committing a direction.
+    </p>
+    <PulseButton intervalSeconds={30} label="SCRIBE CHECK-IN" onPulse={() => onSend("[Scribe] Checking in — does the current draft direction reflect everyone's thinking?")} warning="Check in with your group!" />
+  </div>
+)
+
+const AngleCheckerCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => {
+  const [used, setUsed] = useState<Set<string>>(new Set())
+  const BUTTONS = [
+    { key: 'sure',    label: '"Are we sure about this?"',                   msg: "[Angle Checker] ◈ Are we sure about this? Let's verify before the Scribe commits." },
+    { key: 'another', label: '"Is there another way of thinking about this?"', msg: '[Angle Checker] ◈ Is there another way of thinking about this? We may be missing an angle.' },
+    { key: 'missing', label: '"Are we missing something?"',                  msg: '[Angle Checker] ◈ Are we missing something? Checking for blind spots in the draft.' },
+  ]
+  const use = (key: string, msg: string) => { setUsed(p => new Set([...p, key])); onSend(msg) }
+  return (
+    <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>◈ ANGLE CHECKER</p>
+      <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.5, flexShrink: 0 }}>
+        Challenge assumptions and prevent groupthink. Use all three prompts at least once. ({used.size}/3 used)
+      </p>
+      {BUTTONS.map(({ key, label, msg }) => (
+        <button key={key} onClick={() => use(key, msg)} style={{
+          fontFamily: FONT, fontSize: '1rem', letterSpacing: '1px', padding: '0.65rem', textAlign: 'left', flexShrink: 0,
+          background: used.has(key) ? 'rgba(255,215,0,0.1)' : 'transparent',
+          border: `2px solid ${used.has(key) ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.3)'}`,
+          color: used.has(key) ? ACCENT : 'rgba(255,215,0,0.6)', cursor: 'pointer',
+        }}>
+          {used.has(key) ? '✓ ' : ''}{label}
+        </button>
+      ))}
+      <PulseButton intervalSeconds={30} label="PERSPECTIVE PULSE" onPulse={() => onSend('[Angle Checker] ◈ Perspective Pulse — actively monitoring for logic gaps.')} warning="Send your Perspective Pulse!" />
+    </div>
+  )
+}
+
+// ─── Phase IIIb Scribe Draft Panel (full-width, below two columns) ────────────
+
+const ScribeDraftPanel: React.FC<{
+  userRole: Role
+  scribeDraft: string
+  setScribeDraft: (d: string) => void
+  finalPhaseActive: boolean
+  onTriggerFinal: (draft: string) => void
+}> = ({ userRole, scribeDraft, setScribeDraft, finalPhaseActive, onTriggerFinal }) => {
+  const isScribe = userRole === 'scribe'
+  return (
+    <div className="frame-parchment" style={{ padding: '1.25rem', gap: '0.75rem', maxWidth: 'none' }}>
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>
+        ✎ GROUP DRAFT SOLUTION{isScribe ? ' · YOU ARE THE SCRIBE — BUILD THE FINAL ANSWER' : ' · SCRIBE IS BUILDING THE GROUP\'S FINAL ANSWER'}
+      </p>
+      {finalPhaseActive ? (
+        <div style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: '1rem', background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.25)' }}>
+          {scribeDraft || '[No draft was submitted]'}
+        </div>
+      ) : isScribe ? (
+        <textarea value={scribeDraft} onChange={e => setScribeDraft(e.target.value)}
+          placeholder="Draft the group's final solution here. Use the ADD TO DRAFT buttons above to pull in individual solutions, then edit and refine..."
+          rows={7}
+          style={{ width: '100%', resize: 'vertical', fontFamily: FONT, fontSize: '1rem', padding: '0.75rem', lineHeight: 1.6, boxSizing: 'border-box', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,255,255,0.9)', outline: 'none' }}
+        />
+      ) : (
+        <div style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: '1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,215,0,0.12)', minHeight: '80px', opacity: scribeDraft ? 0.9 : 0.4 }}>
+          {scribeDraft || '[Scribe is drafting the solution...]'}
+        </div>
+      )}
+      {isScribe && !finalPhaseActive && (
+        <button className="btn-9slice" onClick={() => onTriggerFinal(scribeDraft)} disabled={scribeDraft.trim().length < 20}
+          style={{ alignSelf: 'center', fontSize: '1.1rem', letterSpacing: '2px', minWidth: '260px', opacity: scribeDraft.trim().length < 20 ? 0.4 : 1, cursor: scribeDraft.trim().length < 20 ? 'not-allowed' : 'pointer' }}>
+          ▶ SUBMIT FINAL SOLUTION
+        </button>
+      )}
+      {finalPhaseActive && (
+        <div style={{ textAlign: 'center', fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: 'rgba(100,220,100,0.85)', padding: '0.5rem', border: '1px solid rgba(100,220,100,0.3)', background: 'rgba(100,220,100,0.05)' }}>
+          ✓ FINAL SOLUTION SUBMITTED — GROUP IS REVIEWING
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Phase IIIb: Cooperative Solution Synthesis ───────────────────────────────
+
+const Phase3b: React.FC<{
+  metacogAnswers: MetacogState
+  botMetacog: Record<BotRole, MetacogState>
+  botTiers: Record<BotRole, BotTier>
+  userName: string
+  isBotMode: boolean
+  chat: ChatMessage[]
+  onUserSend: (text: string) => void
+  addBotMsg: (author: string, body: string, isTeacher?: boolean) => void
+  role: Role | null
+  setRole: (r: Role) => void
+  finalPhaseActive: boolean
+  setFinalPhaseActive: (v: boolean) => void
+  scribeDraft: string
+  setScribeDraft: (d: string) => void
+  onProceed: () => void
+}> = ({ metacogAnswers, botMetacog, botTiers, userName, isBotMode, chat, onUserSend, addBotMsg,
+        role, setRole, finalPhaseActive, setFinalPhaseActive, scribeDraft, setScribeDraft, onProceed }) => {
+  const [msgCount, setMsgCount] = useState(0)
+  const [chatInput, setChatInput] = useState('')
+  const chatContainerRef = useRef<HTMLDivElement>(null)
+  const welcomeSent = useRef(false)
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+    }
+  }, [chat])
+
+  // Teacher welcome fires once, when role is first selected
+  useEffect(() => {
+    if (!isBotMode || !role || welcomeSent.current) return
+    welcomeSent.current = true
+    setTimeout(() => addBotMsg('Mr. van der Berg',
+      "Welcome to the cooperative solution phase. Review everyone's initial approach, discuss as a group, and help the Scribe craft the final answer.",
+      true,
+    ), 600)
+  }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSend = (text: string) => {
+    onUserSend(text)
+    if (!isBotMode || !role) return
+    const ctx = { userName, userSolution: metacogAnswers.solution, userSteps: metacogAnswers.audit }
+    const mc = msgCount
+    setMsgCount(c => c + 1)
+    const botRoles = (BOT_ROLE_ORDER as BotRole[]).filter(r => r !== (role as BotRole))
+    const primary  = botRoles[mc % botRoles.length]
+    const primName = BOT_NAMES[primary][botTiers[primary]]
+    setTimeout(() => addBotMsg(primName, getBotP3bResponse(primary, botTiers[primary], primName, mc, ctx)), 1800)
+    if (Math.random() < 0.45 && botRoles.length > 1) {
+      const secondary = botRoles[(mc + 1) % botRoles.length]
+      const secName   = BOT_NAMES[secondary][botTiers[secondary]]
+      setTimeout(() => addBotMsg(secName, getBotP3bResponse(secondary, botTiers[secondary], secName, mc + 3, ctx)), 3600)
+    }
+  }
+
+  const sendFromInput = () => {
+    if (chatInput.trim()) { handleSend(chatInput.trim()); setChatInput('') }
+  }
+
+  // Build member list once (role is non-null here)
+  const botRoles3b = (BOT_ROLE_ORDER as BotRole[]).filter(r => r !== (role as BotRole)).slice(0, 3)
+  const members3b = [
+    { name: userName, metacog: metacogAnswers, isUser: true },
+    ...botRoles3b.map(r => ({ name: BOT_NAMES[r][botTiers[r]], metacog: botMetacog[r], isUser: false })),
+  ]
+  const addToDraft = (member: typeof members3b[0]) => {
+    const block = `— ${member.name}${member.isUser ? ' (you)' : ''} —\n${member.metacog.solution}\n\nSteps:\n${member.metacog.audit}`
+    setScribeDraft(scribeDraft ? `${scribeDraft}\n\n${block}` : block)
+  }
+
+  // Show intro modal until role is selected
+  if (!role) return <Phase3bIntroModal isBotMode={isBotMode} onRoleSelected={r => setRole(r)} />
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+
+      {/* ── 1. Two columns: role panel (left) | chat (right) ── */}
+      <div style={{ display: 'flex', gap: '1rem', width: '100%', alignItems: 'flex-start' }}>
+        <div style={{ flex: '1 1 0' }}>
+          {role === 'leader'        && <LeaderCompact onSend={handleSend} memberNames={members3b.filter(m => !m.isUser).map(m => m.name)} chat={chat} />}
+          {role === 'timer'         && <TimerCompact        onSend={handleSend} />}
+          {role === 'scribe'        && <ScribeCompact       onSend={handleSend} />}
+          {role === 'angle-checker' && <AngleCheckerCompact onSend={handleSend} />}
+        </div>
+        <div className="frame-parchment" style={{ flex: '1 1 0', height: '360px', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '2px', opacity: 0.45, color: TEXT, margin: 0, flexShrink: 0 }}>GROUP DISCUSSION</p>
+          <div ref={chatContainerRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.4rem', background: 'rgba(0,0,0,0.15)' }}>
+            {chat.length === 0 && (
+              <p style={{ fontFamily: FONT, fontSize: '1.05rem', opacity: 0.3, color: TEXT, margin: 'auto', textAlign: 'center' }}>Discuss with your group here.</p>
+            )}
+            {chat.map(msg => (
+              <div key={msg.id}>
+                <span style={{ fontFamily: FONT, fontSize: '0.95rem', fontWeight: 700, color: msg.isTeacher ? '#88aaff' : ACCENT }}>{msg.author} </span>
+                <span style={{ fontFamily: FONT, fontSize: '0.9rem', opacity: 0.45, color: TEXT }}>{msg.time}</span>
+                <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.4 }}>{msg.body}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+            <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendFromInput()}
+              placeholder="Type a message..."
+              style={{ flex: 1, fontFamily: FONT, fontSize: '0.95rem', padding: '0.35rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.2)', color: 'rgba(255,255,255,0.85)', outline: 'none' }}
+            />
+            <button className="btn-9slice" onClick={sendFromInput} style={{ fontSize: '0.9rem', padding: '4px 10px' }}>SEND</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2. Scribe draft — full width, scribe only ── */}
+      {finalPhaseActive ? (
+        <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1rem', maxWidth: 'none' }}>
+          <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', color: ACCENT, margin: 0 }}>
+            ▶ FINAL SOLUTION — ALL MEMBERS REVIEWING
+          </p>
+          <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+            {scribeDraft || '[No draft was submitted]'}
+          </div>
+          <button className="btn-9slice" onClick={onProceed} style={{ alignSelf: 'center', fontSize: '1.2rem', letterSpacing: '2px', minWidth: '260px' }}>
+            PROCEED TO RECALIBRATION →
+          </button>
+        </div>
+      ) : (
+        <ScribeDraftPanel
+          userRole={role}
+          scribeDraft={scribeDraft} setScribeDraft={setScribeDraft}
+          finalPhaseActive={finalPhaseActive}
+          onTriggerFinal={draft => { setScribeDraft(draft); setFinalPhaseActive(true) }}
+        />
+      )}
+
+      {/* ── 3. Challenge — full width, scrollable ── */}
+      <div className="frame-parchment" style={{ padding: '1.25rem', gap: '0.6rem', maxWidth: 'none', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>THE CHALLENGE</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '1px', color: ACCENT, opacity: 0.75 }}>
+              {ROLE_DEFS.find(d => d.role === role)?.icon} {ROLE_DEFS.find(d => d.role === role)?.label}
+            </span>
+            <button onClick={() => setRole(null as unknown as Role)} style={{ fontFamily: FONT, fontSize: '0.9rem', padding: '2px 10px', background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.55)', cursor: 'pointer' }}>
+              CHANGE ROLE
+            </button>
+          </div>
+        </div>
+        <div style={{ height: '100px', overflowY: 'auto', paddingRight: '4px' }}>
+          <p style={{ fontFamily: FONT, fontSize: '1rem', lineHeight: 1.75, color: TEXT, whiteSpace: 'pre-line', opacity: 0.9, margin: 0 }}>
+            {CHALLENGE_SCENARIO}
+          </p>
+        </div>
+      </div>
+
+      {/* ── 4. Member solutions — full width, all 4 cards ── */}
+      <div className="frame-parchment" style={{ padding: '1.25rem', gap: '1rem', maxWidth: 'none' }}>
+        <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>
+          MEMBER SOLUTIONS{role === 'scribe' && !finalPhaseActive ? ' · CLICK + ADD TO DRAFT TO INCLUDE A SOLUTION' : ''}
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {members3b.map(member => (
+            <div key={member.name} className="frame-parchment" style={{ flex: '1 1 180px', minWidth: '180px', padding: '0.85rem', gap: '0.6rem' }}>
+              <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '2px', color: member.isUser ? ACCENT : 'rgba(255,215,0,0.6)', margin: 0 }}>
+                {member.name}{member.isUser ? ' · YOU' : ''}
+              </p>
+              <div>
+                <span style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '2px', color: ACCENT, opacity: 0.45 }}>SOLUTION</span>
+                <p style={{ fontFamily: FONT, fontSize: '0.9rem', color: TEXT, opacity: 0.85, margin: '3px 0 0', lineHeight: 1.55 }}>
+                  {member.metacog.solution}
+                </p>
+              </div>
+              <div>
+                <span style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '2px', color: ACCENT, opacity: 0.45 }}>STEPS</span>
+                <p style={{ fontFamily: FONT, fontSize: '0.9rem', color: TEXT, opacity: 0.85, margin: '3px 0 0', lineHeight: 1.55, whiteSpace: 'pre-line' }}>
+                  {member.metacog.audit}
+                </p>
+              </div>
+              {role === 'scribe' && !finalPhaseActive && (
+                <button onClick={() => addToDraft(member)} style={{
+                  fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '1px', padding: '0.35rem 0.75rem', marginTop: '0.25rem',
+                  background: 'rgba(255,215,0,0.07)', border: '1px solid rgba(255,215,0,0.4)', color: ACCENT, cursor: 'pointer',
+                }}>+ ADD TO DRAFT</button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+// ─── Phase III: Quiz Review (legacy — kept for reference, replaced by Phase3a) ─
 
 const QuizReview: React.FC<{
   phase2Answers: Record<number, number>
@@ -838,7 +1754,8 @@ const QuizReview: React.FC<{
   currentQuestion: number
   onIntent: (qId: number, intent: 'keep' | 'change') => void
   onChangeAnswer: (qId: number, origIdx: number) => void
-}> = ({ phase2Answers, p3Intents, p3ChangedAnswers, currentQuestion, onIntent, onChangeAnswer }) => {
+  groupVotes?: { answerIdx: number }[]
+}> = ({ phase2Answers, p3Intents, p3ChangedAnswers, currentQuestion, onIntent, onChangeAnswer, groupVotes = [] }) => {
   const [open, setOpen] = useState(true)
 
   const idx = Math.max(0, Math.min(currentQuestion - 1, QUIZ_QUESTIONS.length - 1))
@@ -946,6 +1863,32 @@ const QuizReview: React.FC<{
                           )
                         })}
                       </div>
+
+                      {/* Group vote distribution */}
+                      {groupVotes.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                          <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>
+                            GROUP VOTES
+                          </p>
+                          {q.options.map((_, optIdx) => {
+                            const voters = groupVotes.filter(v => v.answerIdx === optIdx)
+                            const pct = groupVotes.length ? (voters.length / groupVotes.length) * 100 : 0
+                            return (
+                              <div key={optIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ fontFamily: FONT, fontSize: '1rem', color: ACCENT, opacity: 0.6, minWidth: '14px' }}>
+                                  {OPT_LABELS[optIdx]}
+                                </span>
+                                <div style={{ flex: 1, height: '6px', background: 'rgba(255,215,0,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                                  <div style={{ width: `${pct}%`, height: '100%', background: 'rgba(255,215,0,0.55)', borderRadius: '3px', transition: 'width 0.3s' }} />
+                                </div>
+                                <span style={{ fontFamily: FONT, fontSize: '0.95rem', color: ACCENT, opacity: voters.length ? 0.9 : 0.3, minWidth: '32px', textAlign: 'right' }}>
+                                  {voters.length}/{groupVotes.length}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Right — decision panel, fills same column as chat below */}
@@ -1021,6 +1964,7 @@ const QuizReview: React.FC<{
                       )}
                     </div>
                   </div>
+
                 </>
               )}
             </div>
@@ -1056,9 +2000,8 @@ const FinalPhaseView: React.FC<{ scribeDraft: string; chat: ChatMessage[]; onSen
 
 const Phase4: React.FC<{
   phase2Answers: Record<number, number>
-  p3Intents: Record<number, 'keep' | 'change'>
   onComplete: () => void
-}> = ({ phase2Answers, p3Intents, onComplete }) => {
+}> = ({ phase2Answers, onComplete }) => {
   const [shuffledOrder] = useState<number[]>(() => shuffle(QUIZ_QUESTIONS.map(q => q.id)))
   const [shuffledOpts] = useState<Record<number, number[]>>(() => {
     const r: Record<number, number[]> = {}
@@ -1073,25 +2016,23 @@ const Phase4: React.FC<{
   return (
     <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1.5rem' }}>
       <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>
-        PHASE IV · RECALIBRATION — Questions and options reshuffled. Phase III intents pre-loaded.
+        PHASE IV · RECALIBRATION — Questions and options reshuffled. Your Phase III answers pre-loaded.
       </p>
       {!submitted ? (
         <>
           {shuffledOrder.map((qId, displayIdx) => {
             const q = QUIZ_QUESTIONS.find(x => x.id === qId)!
             const opts = shuffledOpts[qId]
-            const intent = p3Intents[displayIdx + 1]
             const p2OrigIdx = phase2Answers[qId]
 
             return (
               <div key={qId} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, margin: 0, lineHeight: 1.5 }}>
                   <span style={{ color: ACCENT }}>Q{displayIdx + 1}. </span>{q.text}
-                  {intent && <span style={{ fontSize: '1.05rem', opacity: 0.55, marginLeft: '0.5rem' }}>[{intent === 'keep' ? 'INTENT: KEEP' : 'INTENT: CHANGE'}]</span>}
                 </p>
                 {opts.map((origIdx, displayOptIdx) => {
                   const isSelected = answers[qId] === origIdx
-                  const isPreloaded = intent !== 'change' && p2OrigIdx === origIdx && !isSelected
+                  const isPreloaded = p2OrigIdx === origIdx && !isSelected
                   return (
                     <button key={origIdx} onClick={() => setAnswers(p => ({ ...p, [qId]: origIdx }))} style={{
                       display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.55rem 0.75rem', textAlign: 'left',
@@ -1210,17 +2151,21 @@ export const LearningTaskUI: React.FC = () => {
   const taskClassId = searchParams.get('classId') ?? 'default'
   const taskStep    = searchParams.get('step') ?? '1'
   const { advance } = useQuestStore()
+  const isDevMode = taskClassId === 'default'
 
   // Fetch real group assignment for this learner + class
-  const { data: groupData } = useQuery<{
+  const { data: groupData, refetch: refetchGroup } = useQuery<{
     myTaskGroup: { id: string; conversationId: string; members: { learnerId: string; displayName: string; role: string }[] } | null
   }>(MY_TASK_GROUP, {
     variables: { academicClassId: taskClassId },
-    skip: taskClassId === 'default',
+    skip: isDevMode,
     fetchPolicy: 'cache-and-network',
   })
 
-  const conversationId = groupData?.myTaskGroup?.conversationId ?? null
+  const realGroup = groupData?.myTaskGroup
+  // Bot mode: dev mode, or no real group, or solo in group (bots fill the other seats)
+  const isBotMode = isDevMode || !realGroup || realGroup.members.length <= 1
+  const conversationId = !isBotMode ? (realGroup?.conversationId ?? null) : null
 
   const { data: groupMsgsData } = useQuery<{
     conversationMessages: { id: string; senderName: string; body: string; time: string }[]
@@ -1231,60 +2176,59 @@ export const LearningTaskUI: React.FC = () => {
   })
 
   const [sendGroupMessage] = useMutation(SEND_GROUP_MESSAGE)
+  const [joinSession] = useMutation(JOIN_ACTIVE_TASK_SESSION, {
+    onCompleted: () => { refetchGroup() },
+  })
+  const joinAttempted = useRef(false)
 
-  const [phase, setPhase] = useState<Phase>(1)
-  const [role, setRole] = useState<Role | null>(null)
+  // Bot tiers + pre-seeded answers — both computed once on mount and held stable
+  const [{ botTiers, botAnswers }] = useState(() => {
+    const tiers = randomTiers()
+    const answers = {} as Record<BotRole, Record<number, number>>
+    for (const r of BOT_ROLE_ORDER as BotRole[]) {
+      const acc = BOT_ACCURACY[r][tiers[r]]
+      const qAnswers: Record<number, number> = {}
+      for (const q of QUIZ_QUESTIONS) {
+        const correctIdx = OPT_LABELS.indexOf(q.correct)
+        if (Math.random() < acc) {
+          qAnswers[q.id] = correctIdx
+        } else {
+          const wrongs = q.options.map((_, i) => i).filter(i => i !== correctIdx)
+          qAnswers[q.id] = wrongs.length ? wrongs[Math.floor(Math.random() * wrongs.length)] : correctIdx
+        }
+      }
+      answers[r] = qAnswers
+    }
+    return { botTiers: tiers, botAnswers: answers }
+  })
+
+  const [phase, setPhase]           = useState<Phase>(1)
+  const [subPhase, setSubPhase]     = useState<'review' | 'cooperative'>('review')
+  const [metacogAnswers, setMetacogAnswers] = useState<MetacogState | null>(null)
+
+  // Stable bot metacog — seeded once, aligned with botTiers
+  const [botMetacog] = useState<Record<BotRole, MetacogState>>(() =>
+    Object.fromEntries(
+      BOT_ROLE_ORDER.map(r => [r, BOT_METACOG[r as BotRole][randomTiers()[r as BotRole]]])
+    ) as Record<BotRole, MetacogState>
+  )
 
   const [phase2Answers, setPhase2Answers] = useState<Record<number, number>>({})
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [chat, setChat] = useState<ChatMessage[]>(INITIAL_CHAT)
-  const [finalPhaseActive, setFinalPhaseActive] = useState(false)
-  const [scribeDraft, setScribeDraft] = useState('')
-  const [p3Intents, setP3Intents] = useState<Record<number, 'keep' | 'change'>>({})
-  const [p3ChangedAnswers, setP3ChangedAnswers] = useState<Record<number, number>>({})
+  const [role,  setRole]  = useState<Role | null>(null)
+  const [chat,  setChat]  = useState<ChatMessage[]>([])
+  const [finalPhaseActive,  setFinalPhaseActive]  = useState(false)
+  const [scribeDraft,       setScribeDraft]       = useState('')
 
-  const handleP3Intent = useCallback((qId: number, intent: 'keep' | 'change') =>
-    setP3Intents(p => ({ ...p, [qId]: intent })), [])
-
-  const handleP3ChangeAnswer = useCallback((qId: number, origIdx: number) => {
-    if (origIdx < 0) setP3ChangedAnswers(p => { const n = { ...p }; delete n[qId]; return n })
-    else setP3ChangedAnswers(p => ({ ...p, [qId]: origIdx }))
+  const addBotMsg = useCallback((author: string, body: string, isTeacher?: boolean) => {
+    setChat(p => [...p, { id: Date.now() + Math.random(), author, body, time: nowTime(), isTeacher }])
   }, [])
 
-  // Map DB role strings → frontend Role type
-  function dbRoleToRole(dbRole: string): Role {
-    const map: Record<string, Role> = {
-      Leader: 'leader', Timer: 'timer', Scribe: 'scribe',
-      AngleChecker: 'angle-checker',
-    }
-    return map[dbRole] ?? 'angle-checker'
-  }
-
-  // Resolve active group: real data first, DEV_GROUP as fallback
-  const realGroup = groupData?.myTaskGroup
-  const activeGroup: { learnerId: string; name: string; role: Role }[] = realGroup
-    ? realGroup.members.map(m => ({ learnerId: m.learnerId, name: m.displayName, role: dbRoleToRole(m.role) }))
-    : DEV_GROUP.map(m => ({ learnerId: '', name: m.name, role: m.role }))
-
-  // Auto-assign role when entering Phase III
-  useEffect(() => {
-    if (phase === 3 && !role && user) {
-      // Try real group first (match by learnerId)
-      if (realGroup) {
-        const mine = realGroup.members.find(m => m.learnerId === user.id)
-        if (mine) { setRole(dbRoleToRole(mine.role)); return }
-      }
-      // Fallback: dev group matched by email
-      const devRole = DEV_GROUP_ROLE_MAP[user.email ?? '']
-      if (devRole) setRole(devRole)
-    }
-  }, [phase, user, realGroup])
 
   const advancePhase = useCallback((next: Phase) => {
     setPhase(next)
   }, [])
 
-  // Live messages from the group's conversation; fall back to local state (DEV mode)
+  // Messages: DB conversation when in multi-learner mode, local chat otherwise
   const activeMessages: ChatMessage[] = conversationId && groupMsgsData
     ? groupMsgsData.conversationMessages.map((m, i) => ({
         id: i + 1,
@@ -1295,7 +2239,7 @@ export const LearningTaskUI: React.FC = () => {
     : chat
 
   const sendChat = useCallback(async (text: string) => {
-    if (conversationId) {
+    if (!isBotMode && conversationId) {
       await sendGroupMessage({ variables: { conversationId, body: text } })
     } else {
       setChat(prev => [...prev, {
@@ -1305,7 +2249,7 @@ export const LearningTaskUI: React.FC = () => {
         time: nowTime(),
       }])
     }
-  }, [conversationId, sendGroupMessage, user])
+  }, [isBotMode, conversationId, sendGroupMessage, user])
 
   return (
     <div className="theatrical-container" style={{ alignItems: 'flex-start', overflowY: 'auto' }}>
@@ -1335,7 +2279,7 @@ export const LearningTaskUI: React.FC = () => {
         <AnimatePresence mode="wait">
           {phase === 1 && (
             <motion.div key="p1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: '100%' }}>
-              <Phase1 onComplete={() => advancePhase(2)} />
+              <Phase1 onComplete={(a) => { setMetacogAnswers(a); advancePhase(2) }} />
             </motion.div>
           )}
 
@@ -1346,71 +2290,43 @@ export const LearningTaskUI: React.FC = () => {
           )}
 
           {phase === 3 && (
-            <motion.div key="p3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-              {!role ? (
-                <RoleSelection onSelect={setRole} />
-              ) : finalPhaseActive ? (
-                <FinalPhaseView scribeDraft={scribeDraft} chat={activeMessages} onSend={sendChat} onProceed={() => { advancePhase(4); setRole(null); setFinalPhaseActive(false) }} />
+            <motion.div key="p3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: '100%' }}>
+              {subPhase === 'review' ? (
+                <Phase3a
+                  phase2Answers={phase2Answers}
+                  botAnswers={botAnswers}
+                  botTiers={botTiers}
+                  userName={user?.displayName ?? ''}
+                  onComplete={(finalAnswers) => {
+                    setPhase2Answers(finalAnswers)
+                    setSubPhase('cooperative')
+                  }}
+                />
               ) : (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: ACCENT, opacity: 0.85 }}>
-                      {ROLE_DEFS.find(r => r.role === role)?.icon} {ROLE_DEFS.find(r => r.role === role)?.label}
-                    </span>
-                    <button onClick={() => setRole(null)} style={{ fontFamily: FONT, fontSize: '1.1rem', padding: '2px 10px', background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,215,0,0.6)', cursor: 'pointer' }}>
-                      CHANGE ROLE
-                    </button>
-                  </div>
-
-                  {/* Group member strip */}
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', width: '100%' }}>
-                    {activeGroup.map((m, i) => {
-                      const isSelf = realGroup
-                        ? m.learnerId === user?.id
-                        : m.name === (user?.displayName ?? '')
-                      const def = ROLE_DEFS.find(r => r.role === m.role)
-                      return (
-                        <div key={m.learnerId || i} style={{
-                          fontFamily: FONT, fontSize: '1.05rem', letterSpacing: '1px',
-                          padding: '3px 10px', display: 'flex', alignItems: 'center', gap: '5px',
-                          border: `1px solid ${isSelf ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.2)'}`,
-                          background: isSelf ? 'rgba(255,215,0,0.1)' : 'transparent',
-                          color: isSelf ? ACCENT : 'rgba(255,255,255,0.5)',
-                        }}>
-                          <span>{def?.icon}</span>
-                          <span>{m.name}</span>
-                          <span style={{ opacity: 0.5 }}>· {def?.label}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Quiz review — open by default, collapsible */}
-                  <QuizReview
-                    phase2Answers={phase2Answers}
-                    p3Intents={p3Intents}
-                    p3ChangedAnswers={p3ChangedAnswers}
-                    currentQuestion={currentQuestion}
-                    onIntent={handleP3Intent}
-                    onChangeAnswer={handleP3ChangeAnswer}
-                  />
-
-                  {role === 'leader' && (
-                    <LeaderPanel chat={activeMessages} onSend={sendChat} currentQuestion={currentQuestion} onNextQuestion={() => setCurrentQuestion(p => Math.min(p + 1, 20))} />
-                  )}
-                  {role === 'timer' && <TimerPanel chat={activeMessages} onSend={sendChat} />}
-                  {role === 'scribe' && (
-                    <ScribePanel chat={activeMessages} onSend={sendChat} onTriggerFinalPhase={(draft) => { setScribeDraft(draft); setFinalPhaseActive(true) }} />
-                  )}
-                  {role === 'angle-checker' && <AngleCheckerPanel chat={activeMessages} onSend={sendChat} />}
-                </>
+                <Phase3b
+                  metacogAnswers={metacogAnswers ?? { problem: '', criteria: '', solution: '', audit: '' }}
+                  botMetacog={botMetacog}
+                  botTiers={botTiers}
+                  userName={user?.displayName ?? ''}
+                  isBotMode={isBotMode}
+                  chat={activeMessages}
+                  onUserSend={sendChat}
+                  addBotMsg={addBotMsg}
+                  role={role}
+                  setRole={r => setRole(r)}
+                  finalPhaseActive={finalPhaseActive}
+                  setFinalPhaseActive={setFinalPhaseActive}
+                  scribeDraft={scribeDraft}
+                  setScribeDraft={setScribeDraft}
+                  onProceed={() => { advancePhase(4); setRole(null); setFinalPhaseActive(false); setSubPhase('review') }}
+                />
               )}
             </motion.div>
           )}
 
           {phase === 4 && (
             <motion.div key="p4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Phase4 phase2Answers={phase2Answers} p3Intents={p3Intents} onComplete={() => advancePhase(5)} />
+              <Phase4 phase2Answers={phase2Answers} onComplete={() => advancePhase(5)} />
             </motion.div>
           )}
 
@@ -1437,15 +2353,17 @@ export const LearningTaskUI: React.FC = () => {
             </span>
             <button
               onClick={() => {
-                if (phase === 1) advancePhase(2)
-                else if (phase === 2) {
+                if (phase === 1) {
+                  setMetacogAnswers({ problem: '[dev]', criteria: '[dev]', solution: '[dev] skip solution', audit: '[dev] skip steps' })
+                  advancePhase(2)
+                } else if (phase === 2) {
                   const rand: Record<number, number> = {}
                   QUIZ_QUESTIONS.forEach(q => { rand[q.id] = Math.floor(Math.random() * q.options.length) })
                   setPhase2Answers(rand)
                   advancePhase(3)
-                }
-                else if (phase === 3) { setRole(null); setFinalPhaseActive(false); advancePhase(4) }
-                else if (phase === 4) advancePhase(5)
+                } else if (phase === 3) {
+                  setRole(null); setFinalPhaseActive(false); setSubPhase('review'); advancePhase(4)
+                } else if (phase === 4) advancePhase(5)
               }}
               style={{
                 fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px',

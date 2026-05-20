@@ -38,8 +38,8 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  username: '',
-  password: '',
+  username: 'learner@stellalogos.dev',
+  password: 'learner1234',
   isLoading: false,
   error: null,
   user: null,
