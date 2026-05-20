@@ -35,11 +35,11 @@ Three bot systems serve different moments in the learner journey:
 These rules apply to every bot message in the system — scripted dialogue, API responses, and register chat.
 
 1. **On-topic only.** Bot messages must relate to the LMS, the current learning task, or school life. No pop culture references, no politics, no social commentary beyond what's in the curriculum.
-2. **No bad language.** Zero tolerance. Scripts are pre-written and reviewed. API calls use a strict system prompt that instructs Mr. van der Berg to refuse any off-topic or inappropriate response.
+2. **No bad language.** Zero tolerance. Scripts are pre-written and reviewed. API calls use a strict system prompt that instructs Mr. Bot to refuse any off-topic or inappropriate response.
 3. **Age-appropriate tone.** Write for a 13–16 year old school context. Friendly, direct, occasionally light-hearted (e.g. Daan's dry humour), but always school-appropriate.
 4. **No personal opinions on non-academic topics.** Bots may express academic opinions ("I think the answer is B because...") but must not comment on social issues, religion, politics, or personal lifestyle.
 5. **Constructive framing.** "Stupid" tier bots are characterised by academic confusion, forgetfulness, and lack of rigor — never meanness, bullying, or discouraging language toward the user.
-6. **API safety net.** The system prompt sent to the Anthropic API for all teacher bot calls includes a hard refusal instruction: if the user's message is off-topic, Mr. van der Berg redirects gently back to the task without elaborating on the off-topic content.
+6. **API safety net.** The system prompt sent to the Anthropic API for all teacher bot calls includes a hard refusal instruction: if the user's message is off-topic, Mr. Bot redirects gently back to the task without elaborating on the off-topic content.
 
 ---
 
@@ -71,11 +71,11 @@ These rules apply to every bot message in the system — scripted dialogue, API 
 
 | Name | Appears in | Function |
 |---|---|---|
-| Mr. van der Berg | **Every page** — global help widget (top of screen) | Always-on help responder; inactivity monitor; Phase III coach; **voice-capable (TTS)** |
+| Mr. Bot | **Every page** — global help widget (top of screen) | Always-on help responder; inactivity monitor; Phase III coach; **voice-capable (TTS)** |
 
-The teacher bot widget is a **persistent collapsible chat panel** rendered in `App.tsx` (or `ProtectedLayout`), visible on all routes when the user is logged in. It is separate from the 1:1 `TeacherChatBar` (which is the real teacher's lesson channel). The widget is powered exclusively by the Anthropic API (`claude-sonnet-4-6`) — no scripted responses. Mr. van der Berg's API responses can optionally be read aloud via the Web Speech API (`SpeechSynthesis`) — learner can toggle voice on/off. The widget shows an unread badge when the bot proactively posts a nudge.
+The teacher bot widget is a **persistent collapsible chat panel** rendered in `App.tsx` (or `ProtectedLayout`), visible on all routes when the user is logged in. It is separate from the 1:1 `TeacherChatBar` (which is the real teacher's lesson channel). The widget is powered exclusively by the Anthropic API (`claude-sonnet-4-6`) — no scripted responses. Mr. Bot's API responses can optionally be read aloud via the Web Speech API (`SpeechSynthesis`) — learner can toggle voice on/off. The widget shows an unread badge when the bot proactively posts a nudge.
 
-**Voice implementation:** Use the browser-native `window.speechSynthesis.speak()` (no cost, no server round-trip). Choose a voice with `lang: 'en-ZA'` or `lang: 'en-GB'` for a South African / British accent closest to "Mr. van der Berg". Voice is opt-in — a small 🔊 toggle button inside the widget header.
+**Voice implementation:** Use the browser-native `window.speechSynthesis.speak()` (no cost, no server round-trip). Choose a voice with `lang: 'en-ZA'` or `lang: 'en-GB'` for a South African / British accent closest to "Mr. Bot". Voice is opt-in — a small 🔊 toggle button inside the widget header.
 
 ---
 
@@ -92,7 +92,7 @@ relative to page mount (`t+` = seconds after mount). The teacher bot posts first
 
 ---
 
-## Register Class — Teacher Bot Script (Mr. van der Berg)
+## Register Class — Teacher Bot Script (Mr. Bot)
 
 These messages appear in the **Class Chat** section of `AttendenceUI`.
 
@@ -172,7 +172,7 @@ a contextually appropriate reply from this pool:
 "check the timetable for that"
 ```
 
-If the user's message contains a question mark, the teacher bot (`Mr. van der Berg`) also has a 40%
+If the user's message contains a question mark, the teacher bot (`Mr. Bot`) also has a 40%
 chance of responding with a subject-relevant nudge after a 8–15 s delay:
 
 > "Good question, [displayName]. Check your timetable for the details, or tap GO TO LESSON when
@@ -332,7 +332,7 @@ Messages inject via `sendChat(text)` (learner bots) or `teacherSend(text)` (teac
 
 ---
 
-### Teacher Bot — Mr. van der Berg (Phase III)
+### Teacher Bot — Mr. Bot (Phase III)
 
 | Trigger | Message |
 |---|---|
@@ -356,7 +356,7 @@ Messages inject via `sendChat(text)` (learner bots) or `teacherSend(text)` (teac
 
 ## Overview
 
-When a user types `help me`, `help`, or `?` in **any** chat input surface, Mr. van der Berg intercepts
+When a user types `help me`, `help`, or `?` in **any** chat input surface, Mr. Bot intercepts
 the message before it posts and instead injects a targeted help response. The user's "help" message
 is still shown in the chat as normal; the teacher's response arrives 2–4 seconds later.
 
@@ -390,7 +390,7 @@ The detection logic reads `window.location.pathname` + a shared `currentPhase` r
 
 ## Help Scripts
 
-> All scripts are posted by `Mr. van der Berg` via `teacherSend(text)`, 2–4 s after the user's message.
+> All scripts are posted by `Mr. Bot` via `teacherSend(text)`, 2–4 s after the user's message.
 
 ---
 
@@ -716,7 +716,7 @@ audit: "I'm not totally sure of the steps but I think you just code it and test 
 - Wire Leader bot answer sheets into the distribution chart.
 
 ### Step 3 — `teacherSend` helper
-- `sendTeacherChat(text)` injects messages with `{ isTeacher: true }` under `"Mr. van der Berg"`.
+- `sendTeacherChat(text)` injects messages with `{ isTeacher: true }` under `"Mr. Bot"`.
 
 ### Step 4 — Inactivity tracker
 - Add `userLastActionAt` ref; update on every `sendChat` call and role-panel button press.
@@ -775,13 +775,13 @@ No backend changes. No new DB tables. No GraphQL changes.
 The bot **dialogue is fully scripted** (hardcoded strings — see scripts in this document).
 Do **NOT** call the Anthropic API for scripted bot chat messages.
 
-The Anthropic API (`claude-sonnet-4-6`) is used **only** in the global Teacher Help Widget (`TeacherHelpWidget.tsx`). Every message the learner types to Mr. van der Berg goes through the API with a strict safety system prompt — not a hardcoded reply. This allows natural, contextual responses to whatever the learner actually types.
+The Anthropic API (`claude-sonnet-4-6`) is used **only** in the global Teacher Help Widget (`TeacherHelpWidget.tsx`). Every message the learner types to Mr. Bot goes through the API with a strict safety system prompt — not a hardcoded reply. This allows natural, contextual responses to whatever the learner actually types.
 
 ```typescript
 // src/lib/teacherHelpApi.ts
 
 const SAFETY_SYSTEM = `
-You are Mr. van der Berg, a warm, patient, and encouraging high school IT teacher
+You are Mr. Bot, a warm, patient, and encouraging high school IT teacher
 in a South African digital Learning Management System called Stella Logos.
 Your students are school learners aged 13–16.
 
@@ -819,7 +819,7 @@ export async function callTeacherHelpApi(
 }
 ```
 
-**API key storage:** The key is stored in `import.meta.env.VITE_ANTHROPIC_API_KEY` (`.env.local`, never committed). The `TeacherHelpWidget` reads it from the env at runtime. If the key is absent or the call fails, Mr. van der Berg posts a fallback: *"I'm having trouble connecting right now — check the help scripts in your task description, or ask your teacher directly."*
+**API key storage:** The key is stored in `import.meta.env.VITE_ANTHROPIC_API_KEY` (`.env.local`, never committed). The `TeacherHelpWidget` reads it from the env at runtime. If the key is absent or the call fails, Mr. Bot posts a fallback: *"I'm having trouble connecting right now — check the help scripts in your task description, or ask your teacher directly."*
 
 **Cost note:** Sonnet 4.6 costs ~$0.003 per response at 300 tokens. A typical session = 2–5 help queries = < $0.02/session. Voice (Web Speech API) is free — browser-native, no billing.
 
@@ -827,7 +827,7 @@ export async function callTeacherHelpApi(
 
 ## Voice (Teacher Bot Only)
 
-Mr. van der Berg's responses can be read aloud using the browser-native Web Speech API — no cost, no external service. Learner opts in via a 🔊 toggle inside the widget header.
+Mr. Bot's responses can be read aloud using the browser-native Web Speech API — no cost, no external service. Learner opts in via a 🔊 toggle inside the widget header.
 
 ```typescript
 function speakTeacherReply(text: string) {
@@ -841,7 +841,7 @@ function speakTeacherReply(text: string) {
 }
 ```
 
-Only Mr. van der Berg's messages trigger TTS. Scripted learner bot messages are **text only**.
+Only Mr. Bot's messages trigger TTS. Scripted learner bot messages are **text only**.
 
 ---
 Data Structures
@@ -961,7 +961,7 @@ Register Class Scripts
 All timings are milliseconds after page mount.
 Use `setTimeout` chains stored in a handles array for clean `stop()`.
 `ctx.sendRegisterChat(botName, message)` posts as that bot.
-`ctx.teacherSend(message)` posts as Mr. van der Berg.
+`ctx.teacherSend(message)` posts as Mr. Bot.
 Teacher Bot (Register)
 ```typescript
 t(5000,  () => ctx.teacherSend("Good morning, class. Please check in using the check-in button at the top when you're ready. Have a great day."))
@@ -1197,7 +1197,7 @@ setInterval(() => {
   }
 }, 3000)
 ```
-Teacher Bot — Mr. van der Berg (Phase III)
+Teacher Bot — Mr. Bot (Phase III)
 ```typescript
 t(0, () => ctx.teacherSend('Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.'))
 
@@ -1299,7 +1299,7 @@ useEffect(() => {
   session.start({
     displayName: user.displayName,
     sendRegisterChat: (botName, text) => addChatMessage({ sender: botName, text, isBot: true }),
-    teacherSend: (text) => addChatMessage({ sender: 'Mr. van der Berg', text, isTeacher: true }),
+    teacherSend: (text) => addChatMessage({ sender: 'Mr. Bot', text, isTeacher: true }),
     getCheckedIn: () => checkedIn,
   })
   return () => session.stop()
@@ -1315,7 +1315,7 @@ useEffect(() => {
     userRole,
     userName: user.displayName,
     sendChat: (text) => addChatMessage({ text, isBot: true, sender: botName }),
-    teacherSend: (text) => addChatMessage({ text, isTeacher: true, sender: 'Mr. van der Berg' }),
+    teacherSend: (text) => addChatMessage({ text, isTeacher: true, sender: 'Mr. Bot' }),
     onNextQuestion: () => dispatch({ type: 'ADVANCE_QUESTION' }),
     onTriggerFinalPhase: (draft) => dispatch({ type: 'TRIGGER_FINAL', payload: draft }),
     getState: () => ({
@@ -1359,9 +1359,9 @@ function handleSubmit(input: string) {
 
 5. **Anthropic API for teacher help widget only.** All scripted bot messages use hardcoded strings. Only `callTeacherHelpApi` in `teacherHelpApi.ts` calls the Anthropic API.
 
-6. **Voice is teacher only.** Only Mr. van der Berg's responses trigger `window.speechSynthesis.speak()`. All student/learner bot messages are text only.
+6. **Voice is teacher only.** Only Mr. Bot's responses trigger `window.speechSynthesis.speak()`. All student/learner bot messages are text only.
 
 7. **Content safety always applies.** No scripted bot message may contain language or references outside the school/task context. The Anthropic API system prompt includes a hard safety instruction that overrides the model's default behaviour. If the API returns an off-topic or inappropriate response (detectable by tone-checking the start of the reply), fall back to the generic redirect: *"Let's keep focused on your learning task, [name]. What would you like help with?"*
 
-8. **`aiBotsEnabled` gates the teacher help widget API calls.** When the `devStore.aiBotsEnabled` flag is `false`, the widget still renders and Mr. van der Berg can receive messages, but instead of calling the API it posts a scripted placeholder: *"[Dev mode — AI bots disabled. Enable via the DEV toggle bottom-left to activate live responses.]"*
+8. **`aiBotsEnabled` gates the teacher help widget API calls.** When the `devStore.aiBotsEnabled` flag is `false`, the widget still renders and Mr. Bot can receive messages, but instead of calling the API it posts a scripted placeholder: *"[Dev mode — AI bots disabled. Enable via the DEV toggle bottom-left to activate live responses.]"*
 

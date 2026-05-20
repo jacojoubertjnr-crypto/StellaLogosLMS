@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useDevStore } from '@/stores/devStore'
 import { callTeacherHelpApi, getPageContext, speakTeacherReply } from '@/lib/teacherHelpApi'
+import { useTaskContextStore } from '@/stores/taskContextStore'
 
 const FONT = "'VT323', monospace"
 
@@ -15,13 +16,14 @@ interface Message {
 const WELCOME: Message = {
   id: 0,
   from: 'teacher',
-  text: "Good day! I'm Mr. van der Berg. Type any question about what you're working on and I'll help you out.",
+  text: "Good day! I'm Mr. Bot. Type any question about what you're working on and I'll help you out.",
 }
 
 export const TeacherHelpWidget: React.FC = () => {
   const user = useAuthStore(s => s.user)
   const { aiBotsEnabled } = useDevStore()
   const { pathname } = useLocation()
+  const { phase, tab, role } = useTaskContextStore()
 
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([WELCOME])
@@ -68,7 +70,7 @@ export const TeacherHelpWidget: React.FC = () => {
     }
 
     const token = sessionStorage.getItem('sl_token') ?? ''
-    const ctx = getPageContext(pathname)
+    const ctx = getPageContext(pathname, phase || undefined, tab || undefined, role || undefined)
     try {
       const reply = await callTeacherHelpApi(ctx, text, user.displayName, token)
       addMsg({ from: 'teacher', text: reply })
@@ -93,7 +95,7 @@ export const TeacherHelpWidget: React.FC = () => {
       {/* Toggle button — fixed top-right below header */}
       <button
         onClick={open ? () => setOpen(false) : handleOpen}
-        title="Chat with Mr. van der Berg"
+        title="Chat with Mr. Bot"
         style={{
           position: 'fixed',
           top: '56px',
@@ -153,7 +155,7 @@ export const TeacherHelpWidget: React.FC = () => {
             background: 'rgba(30,80,160,0.25)',
           }}>
             <span style={{ fontSize: '1.1rem', letterSpacing: '1.5px', color: 'rgba(160,210,255,0.9)' }}>
-              MR. VAN DER BERG
+              MR. BOT
             </span>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button
@@ -213,7 +215,7 @@ export const TeacherHelpWidget: React.FC = () => {
                   color: msg.from === 'teacher' ? 'rgba(100,180,255,0.6)' : 'rgba(255,215,0,0.5)',
                   marginBottom: '2px',
                 }}>
-                  {msg.from === 'teacher' ? 'MR. VDB' : 'YOU'}
+                  {msg.from === 'teacher' ? 'MR. BOT' : 'YOU'}
                 </span>
                 <div style={{
                   maxWidth: '90%',
@@ -241,7 +243,7 @@ export const TeacherHelpWidget: React.FC = () => {
                 letterSpacing: '1px',
                 padding: '4px 0',
               }}>
-                MR. VDB is typing...
+                MR. BOT is typing...
               </div>
             )}
           </div>

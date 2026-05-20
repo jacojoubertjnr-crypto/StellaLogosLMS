@@ -5,6 +5,7 @@ import { useQuery, useMutation, gql } from '@apollo/client'
 import { useAuthStore } from '@/stores/authStore'
 import { usePageBackground } from '@/hooks/usePageBackground'
 import { useQuestStore } from '@/stores/questStore'
+import { useTaskContextStore } from '@/stores/taskContextStore'
 import { randomTiers, BOT_NAMES, BOT_ACCURACY, ROLE_ORDER as BOT_ROLE_ORDER, type BotRole, type BotTier } from '@/lib/botEngine'
 
 const MY_TASK_GROUP = gql`
@@ -119,7 +120,7 @@ const RESOURCES: { type: string; title: string; desc: string; href: string }[] =
 const MOCK_TEAM = ['Aria', 'Conrad', 'Petra', 'Rex']
 
 const INITIAL_CHAT: ChatMessage[] = [
-  { id: 1, author: 'Mr. van der Berg', body: 'Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.', time: '09:00', isTeacher: true },
+  { id: 1, author: 'Mr. Bot', body: 'Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.', time: '09:00', isTeacher: true },
   { id: 2, author: 'Conrad BOT', body: 'Ready on my end.', time: '09:01' },
   { id: 3, author: 'Petra BOT',  body: 'Ready here too.', time: '09:01' },
   { id: 4, author: 'Rex BOT',    body: "Let's go — I found the content video really useful for structuring my answers.", time: '09:02' },
@@ -479,6 +480,8 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
 
 const Phase2: React.FC<{ onComplete: (answers: Record<number, number>, shuffled: Record<number, number[]>) => void }> = ({ onComplete }) => {
   const [tab, setTab] = useState<'resources' | 'quiz'>('resources')
+  const { setTaskContext } = useTaskContextStore()
+  useEffect(() => { setTaskContext(2, tab) }, [tab])
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [shuffledIndices] = useState<Record<number, number[]>>(() => {
     const r: Record<number, number[]> = {}
@@ -1588,7 +1591,7 @@ const Phase3b: React.FC<{
   useEffect(() => {
     if (!isBotMode || !role || welcomeSent.current) return
     welcomeSent.current = true
-    setTimeout(() => addBotMsg('Mr. van der Berg',
+    setTimeout(() => addBotMsg('Mr. Bot',
       "Welcome to the cooperative solution phase. Review everyone's initial approach, discuss as a group, and help the Scribe craft the final answer.",
       true,
     ), 600)
@@ -2204,6 +2207,10 @@ export const LearningTaskUI: React.FC = () => {
 
   const [phase, setPhase]           = useState<Phase>(1)
   const [subPhase, setSubPhase]     = useState<'review' | 'cooperative'>('review')
+  const { setTaskContext, setRole: setStoreRole, clearTaskContext } = useTaskContextStore()
+  useEffect(() => { setTaskContext(phase) }, [phase])
+  useEffect(() => { setStoreRole(role ?? '') }, [role])
+  useEffect(() => () => clearTaskContext(), [])
   const [metacogAnswers, setMetacogAnswers] = useState<MetacogState | null>(null)
 
   // Stable bot metacog — seeded once, aligned with botTiers

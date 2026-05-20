@@ -826,12 +826,12 @@ Iterative improvements to the Phase III cooperative layout in `LearningTaskUI.ts
 - [ ] Conrad / Ollie — Timer (smart / stupid)
 - [ ] Petra / Mila — Scribe (smart / stupid)
 - [ ] Rex / Bea — Angle Checker (smart / stupid)
-- [ ] Mr. van der Berg — Teacher bot (always active)
+- [ ] Mr. Bot — Teacher bot (always active)
 
 ### Implementation tasks
 - [x] `src/lib/botEngine.ts` created — bot roster scaffold, answer-sheet structure, session start/stop hooks; `aiBotsEnabled` flag from `devStore` gates all API calls
 - [ ] Wire bot engine fully into Phase III — replace `DEV_GROUP` with bot assignment; wire distribution chart to bot answer sheets
-- [ ] Add `teacherSend` helper (injects `isTeacher: true` messages as Mr. van der Berg)
+- [ ] Add `teacherSend` helper (injects `isTeacher: true` messages as Mr. Bot)
 - [ ] Add `userLastActionAt` inactivity tracker (updated on every user chat send and role-panel button press)
 
 ---

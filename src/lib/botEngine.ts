@@ -49,7 +49,7 @@ export function startBotSession(cfg: BotSessionConfig): () => void {
   const remMin = () => Math.ceil(remaining() / 60000)
 
   // Teacher bot — always fires regardless of real roles
-  postMessage('Mr. van der Berg',
+  postMessage('Mr. Bot',
     'Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.',
     true,
   )

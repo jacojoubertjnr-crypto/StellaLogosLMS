@@ -119,7 +119,7 @@ export const DevBotToggle: React.FC = () => {
           maxWidth: '280px',
           lineHeight: '1.4',
         }}>
-          {testStatus === 'testing' && '⏳ Testing connection to Mr. van der Berg...'}
+          {testStatus === 'testing' && '⏳ Testing connection to Mr. Bot...'}
           {testStatus === 'ok' && (
             <>
               <div>✓ CONNECTION OK</div>

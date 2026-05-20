@@ -28,7 +28,7 @@ async function seed() {
       {
         email: 'vanderberg@stellalogos.dev',
         password: 'teacher1234',
-        displayName: 'Mr. van der Berg BOT',
+        displayName: 'Mr. Bot BOT',
         role: 'Teacher',
         paidStatus: true,
       },
@@ -236,7 +236,7 @@ async function seed() {
     await client.query(
       `INSERT INTO register_chat_messages (register_class_id, sender_id, body) VALUES
          ($1, $2, 'Good morning everyone!'),
-         ($1, $3, 'Morning Mr. van der Berg!'),
+         ($1, $3, 'Morning Mr. Bot!'),
          ($1, $2, 'Please remember to submit your assignment by Friday.')`,
       [regClass.id, teacherBot.id, learner1chat.id],
     );
@@ -268,7 +268,7 @@ async function seed() {
     const { rows: [learner4] } = await client.query(`SELECT id FROM users WHERE email = 'learner4@stellalogos.dev'`);
     const { rows: [testLearner] } = await client.query(`SELECT id FROM users WHERE email = 'testlearner@stellalogos.dev'`);
 
-    // 1:1: Mr. van der Berg BOT ↔ Aria BOT
+    // 1:1: Mr. Bot BOT ↔ Aria BOT
     const { rows: [conv1] } = await client.query(
       `INSERT INTO conversations (type) VALUES ('individual') RETURNING id`,
     );
@@ -279,12 +279,12 @@ async function seed() {
     await client.query(
       `INSERT INTO messages (conversation_id, sender_id, content) VALUES
          ($1, $2, 'Welcome to the quest! Let me know if you get stuck.'),
-         ($1, $3, 'Thanks Mr. van der Berg! Step 1 looks intense.'),
+         ($1, $3, 'Thanks Mr. Bot! Step 1 looks intense.'),
          ($1, $2, 'That''s the challenge — structure your thinking first.')`,
       [conv1.id, teacherBot.id, learner1.id],
     );
 
-    // 1:1: Mr. van der Berg BOT ↔ Conrad BOT
+    // 1:1: Mr. Bot BOT ↔ Conrad BOT
     const { rows: [conv2] } = await client.query(
       `INSERT INTO conversations (type) VALUES ('individual') RETURNING id`,
     );
