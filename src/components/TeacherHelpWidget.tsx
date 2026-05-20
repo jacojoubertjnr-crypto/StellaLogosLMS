@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useDevStore } from '@/stores/devStore'
-import { callTeacherHelpApi, getPageContext, speakTeacherReply } from '@/lib/teacherHelpApi'
+import { callTeacherHelpApi, getPageContext } from '@/lib/teacherHelpApi'
 import { useTaskContextStore } from '@/stores/taskContextStore'
 
 const FONT = "'VT323', monospace"
@@ -29,7 +29,6 @@ export const TeacherHelpWidget: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([WELCOME])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [voiceOn, setVoiceOn] = useState(false)
   const [unread, setUnread] = useState(0)
   const nextId = useRef(1)
   const listRef = useRef<HTMLDivElement>(null)
@@ -74,7 +73,6 @@ export const TeacherHelpWidget: React.FC = () => {
     try {
       const reply = await callTeacherHelpApi(ctx, text, user.displayName, token)
       addMsg({ from: 'teacher', text: reply })
-      if (voiceOn) speakTeacherReply(reply)
       if (!open) setUnread(u => u + 1)
     } catch {
       addMsg({
@@ -158,22 +156,6 @@ export const TeacherHelpWidget: React.FC = () => {
               MR. BOT
             </span>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button
-                onClick={() => {
-                  const next = !voiceOn
-                  setVoiceOn(next)
-                  if (!next) window.speechSynthesis?.cancel()
-                }}
-                title={voiceOn ? 'Voice on — click to mute' : 'Voice off — click to enable'}
-                style={{
-                  fontFamily: FONT, fontSize: '1rem',
-                  background: 'none', border: 'none',
-                  color: voiceOn ? 'rgba(100,220,180,0.9)' : 'rgba(255,255,255,0.35)',
-                  cursor: 'pointer', padding: '0 2px',
-                }}
-              >
-                {voiceOn ? '🔊' : '🔇'}
-              </button>
               <button
                 onClick={() => setOpen(false)}
                 style={{

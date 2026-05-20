@@ -157,12 +157,3 @@ export async function callTeacherHelpApi(
   return data.reply || "I'm not sure about that — could you try rephrasing your question?"
 }
 
-export function speakTeacherReply(text: string): void {
-  if (!window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'en-ZA'
-  utterance.rate = 0.95
-  utterance.pitch = 0.9
-  window.speechSynthesis.speak(utterance)
-}
