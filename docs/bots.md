@@ -56,16 +56,16 @@ These rules apply to every bot message in the system — scripted dialogue, API 
 
 ### Phase III Cooperative Discussion Bots
 
-| # | Name | Role | Tier | Quiz Accuracy | Personality |
-|---|---|---|---|---|---|
-| 1 | AriaBOT | Leader | Smart | 82% | Decisive, organised, keeps discussion on track |
-| 2 | FinnBOT | Leader | Stupid | 33% | Well-meaning but uncertain, advances questions too fast |
-| 3 | ConradBOT | Timer | Smart | 78% | Punctual, clear alerts, good pace management |
-| 4 | OllieBOT | Timer | Stupid | 30% | Forgetful, late warnings, misses pulses |
-| 5 | PetraBOT | Scribe | Smart | 80% | Accurate captures, clear draft, triggers Final Solution well |
-| 6 | MilaBOT | Scribe | Stupid | 28% | Disorganised, captures wrong things, slow to finalise |
-| 7 | RexBOT | Angle Checker | Smart | 85% | Genuine contrarian, raises real alternative perspectives |
-| 8 | BeaBOT | Angle Checker | Stupid | 25% | Superficial, agrees with group, trivial challenges |
+| # | Name | Role (display) | Internal key | Tier | Quiz Accuracy | Personality |
+|---|---|---|---|---|---|---|
+| 1 | AriaBOT | Participation Checker | `leader` | Smart | 82% | Decisive, organised, holds the floor accountable |
+| 2 | FinnBOT | Participation Checker | `leader` | Stupid | 33% | Well-meaning but disorganised, advances questions too fast |
+| 3 | ConradBOT | Timer | `timer` | Smart | 78% | Punctual, clear alerts, good pace management |
+| 4 | OllieBOT | Timer | `timer` | Stupid | 30% | Forgetful, late warnings, misses pulses |
+| 5 | PetraBOT | Scribe | `scribe` | Smart | 80% | Captures real chat messages, cycles categories, builds coherent notes |
+| 6 | MilaBOT | Scribe | `scribe` | Stupid | 28% | Captures random messages slowly, always marks as suggestion |
+| 7 | RexBOT | Discussion Checker | `angle-checker` | Smart | 85% | Deploys all 3 structural vector prompts; monitors solution, steps, quality |
+| 8 | BeaBOT | Discussion Checker | `angle-checker` | Stupid | 25% | Agrees with everything, perfunctory checks, rarely useful |
 
 ### Teacher Bot
 
@@ -238,99 +238,77 @@ Messages inject via `sendChat(text)` (learner bots) or `teacherSend(text)` (teac
 
 ---
 
-### Leader Bot — Aria (Smart)
+### Participation Checker Bot — Aria (Smart) / Finn (Stupid)
 
-| t+ | Trigger | Message |
+| t+ | Bot | Message |
 |---|---|---|
-| 30 s | Entry | "Right, let's keep this tight. I'll walk us through each question — speak up if you disagree with the majority answer." |
-| 60 s | Question 1 | Fires `onNextQuestion`; posts: "Question 1 — does anyone have a different answer to the majority here?" |
-| Every ~90 s | Advance | Fires `onNextQuestion`; posts: "Question [N] — any dissenting views?" |
-| Every 20 s | Participation Pulse | Fires pulse; posts: "[System] Leader pulse confirmed — Active." |
-| t+60 | Prompter | Posts: "@Scribe, have you captured the key point for Q[current]?" |
-| User silent 60 s | Stall | Posts: "I'm not hearing from everyone — [userRole], what's your take on this one?" |
+| 60 s | AriaBOT | "Let's go. Speak up if you disagree with anyone." |
+| 120 s | AriaBOT | Fires `advanceQuestion`; posts: "Q1 — any different answers?" |
+| Every 150 s | AriaBOT | Advance check — if user hasn't decided, posts `"[userName], Q[N] decision?"` then advances |
+| Every 120 s | AriaBOT | `[Participation Checker] active` *(pulse — no extra text)* |
+| 130 s | AriaBOT | `@Scribe, Q[N] captured?` |
+| Every 120 s | AriaBOT | If a participant hasn't spoken: `"[name] — haven't heard from you."` |
+| 45 s | FinnBOT | "ok let's start" |
+| 90 s | FinnBOT | Fires `advanceQuestion`; posts: "ok Q1" |
+| Every 90 s | FinnBOT | Advance check — if user hasn't decided, posts `"[userName]? still waiting"` then advances |
+| 150 s | FinnBOT | `[Participation Checker] active` |
+| 210 s | FinnBOT | "anyone here?" |
+| Every 150 s | FinnBOT | If a participant hasn't spoken: `"[name]? you good?"` |
+
+**Target Lock Hook** — When the human Participation Checker clicks a member name button in `LeaderCompact`, the system fires a hardcoded prompt message into chat, then locks the chat input for all other users until the targeted person responds. A 45 s auto-timeout releases the lock and logs a system message if no response arrives.
 
 ---
 
-### Leader Bot — Finn (Stupid)
+### Timer Bot — Conrad (Smart) / Ollie (Stupid)
 
-| t+ | Trigger | Message |
+| t+ | Bot | Message |
 |---|---|---|
-| 15 s | Entry | "ok everyone ready? let's start" |
-| 45 s | Question 1 | Fires `onNextQuestion`; posts: "next one" |
-| Every ~45 s | Advance (too fast) | Fires `onNextQuestion`; posts: "moving on" |
-| 80 s | Late pulse | Fires pulse; posts: "[System] Leader pulse confirmed — Active." |
-| t+120 | Prompter | Posts: "anyone? lol" |
-| User silent 90 s | Stall | Posts: "hello?" |
+| 5 s | ConradBOT | `[Timer] active` *(session-start pulse)* |
+| 45 s | ConradBOT | "Timer here. I'll keep you posted." |
+| 50% elapsed | ConradBOT | "Halfway through." |
+| 75% elapsed | ConradBOT | "⚠ 25% left. Scribe, start the draft." |
+| 90% elapsed | ConradBOT | "⚠ MOVE ON." |
+| Every 120 s | ConradBOT | `[Timer] N min left.` |
+| 90 s | OllieBOT | "oh wait, I'm the timer lol" |
+| 60% elapsed | OllieBOT | "are we halfway maybe?" |
+| 85% elapsed | OllieBOT | "wait how much time is left??" |
+| 95% elapsed | OllieBOT | "⚠ MOVE ON" |
+| 120 s, 300 s | OllieBOT | `[Timer] N min left.` |
 
 ---
 
-### Timer Bot — Conrad (Smart)
+### Scribe Bot — Petra (Smart) / Mila (Stupid)
 
-| t+ | Trigger | Message |
+The scribe bot reads the **live chat** via the `getChat` callback and calls `captureNote(category, author, body)` to actually populate the `scribeNotes` state in the UI — not just post a chat string.
+
+| t+ | Bot | Behaviour |
 |---|---|---|
-| 20 s | Entry | "Timer here. I'll divide the session evenly and keep you posted." |
-| 0 s | Session start | "[Timer] Time Status — Full session started." |
-| 50% elapsed | Midpoint | "Halfway through — good progress so far." |
-| 75% elapsed | Warning | "⚠ 25% time remaining — Scribe, please start drafting the final answer." |
-| 90% elapsed | Alert | "⚠ [TIMER ALERT] The group is stalling — time to MOVE ON!" |
-| Every 30 s | Time Status Pulse | Fires pulse; posts: "[Timer] Time Status — [X min] remaining." |
+| 50 s | PetraBOT | "Scribe ready. Capturing key points." |
+| Every 180 s | PetraBOT | Reads live chat; finds most recent uncaptured human message (non-bot, non-`[` prefix, length > 15); calls `captureNote(category, author, body)` cycling `suggestion → steps → questions`; posts `✎ Captured [category] from [author]: "[excerpt…]"` |
+| 70% elapsed | PetraBOT | "Draft coming together." |
+| 90% elapsed or q18 | PetraBOT | Fires `triggerFinalPhase(draft)`; posts `✎ Final draft ready — please review.` |
+| 120 s | MilaBOT | "I'll try to take notes" |
+| Every 300 s | MilaBOT | Reads live chat; finds random uncaptured human message; calls `captureNote('suggestion', author, body)`; posts `✎ noted` |
+| 95% elapsed | MilaBOT | Fires `triggerFinalPhase(draft)`; posts `"here's my notes, sorry if incomplete"` |
 
 ---
 
-### Timer Bot — Ollie (Stupid)
+### Discussion Checker Bot — Rex (Smart) / Bea (Stupid)
 
-| t+ | Trigger | Message |
+The bot sends the **exact** gate strings the UI checks in `dcVectorsComplete` so the Participation Checker's "TRIGGER FINAL COMPILATION" button unlocks when the bot plays this role.
+
+| t+ | Bot | Message |
 |---|---|---|
-| 45 s | Entry | "oh right, I'm the timer... let me start that now" |
-| 60% elapsed | Late midpoint | "wait are we halfway? I think so" |
-| 85% elapsed | Late warning | "wait how much time do we have left? I think it's running out" |
-| 95% elapsed | Alert | "⚠ [TIMER ALERT] The group is stalling — time to MOVE ON!" |
-| 60 s, 150 s | Two pulses only | "[Timer] Time Status — [X min] remaining." |
-
----
-
-### Scribe Bot — Petra (Smart)
-
-| t+ | Trigger | Message |
-|---|---|---|
-| 25 s | Entry | "Scribe ready. I'll capture key points as we go and draft the final solution." |
-| After q2, q4, q6... | Capture | "✎ Capturing: [brief summary of majority answer for that question]." |
-| 70% elapsed | Draft notice | "My draft is shaping up — I'll trigger the Final Solution on the Leader's signal." |
-| After q18 or 90% elapsed | Final Phase | Fires `onTriggerFinalPhase(draft)`; draft = "Based on our discussion: [compiled consensus answers]." |
-
----
-
-### Scribe Bot — Mila (Stupid)
-
-| t+ | Trigger | Message |
-|---|---|---|
-| 60 s | Entry | "I'll try to keep notes" |
-| q3, q9, q15 | Sporadic captures | "✎ Capturing: ok" / "✎ Adding: yeah I agree" / "✎ noted: I think so" |
-| 95% elapsed | Final Phase (very late) | Fires `onTriggerFinalPhase(draft)`; draft = "here's what I have: [incomplete, 3-question list only]." |
-
----
-
-### Angle Checker Bot — Rex (Smart)
-
-| t+ | Trigger | Message |
-|---|---|---|
-| 35 s | Entry | "Angle Checker in position. I'll flag it if I think we're all agreeing too fast." |
-| After q3, q7, q12, q17 | Counter-perspective | "Hold on — Q[N]: I answered [alt] not [majority]. The scenario specifies [X] which changes the interpretation." |
-| 60 s | Triad button 1 | "◈ ALTERNATIVE PERSPECTIVE: Have we considered the opposite conclusion?" |
-| 120 s | Triad button 2 | "◈ DEVIL'S ADVOCATE: If we're wrong, what would that look like?" |
-| 180 s | Triad button 3 | "◈ BLIND SPOT CHECK: What are we assuming that we haven't verified?" |
-| Every 30 s | Perspective Pulse | Fires pulse; posts: "[Angle Checker] ◈ Perspective Pulse — actively monitoring for logic gaps." |
-
----
-
-### Angle Checker Bot — Bea (Stupid)
-
-| t+ | Trigger | Message |
-|---|---|---|
-| 90 s | Entry | "angle checker here, all looks good to me!" |
-| After each question | Agreement | "yeah I agree with you all" / "same answer as everyone else!" / "makes sense to me" *(rotates)* |
-| 180 s | Triad button 1 only | "◈ hmm I guess I should check... nope, we're all good." |
-| 90 s | One pulse only | "[Angle Checker] ◈ Perspective Pulse — actively monitoring for logic gaps." |
+| 70 s | RexBOT | "Discussion Checker in. Watching for solution, steps, and quality check." |
+| 360 s | RexBOT | `💬 Discussion Checker: We need to talk about the solution first.` |
+| 780 s | RexBOT | `💬 Discussion Checker: We need to talk about the steps.` |
+| 1260 s | RexBOT | `💬 Discussion Checker: We need to talk about how we will know if this solution is the best.` |
+| 1680 s | RexBOT | "Solution, steps, quality check — all covered?" |
+| Every 120 s | RexBOT | `[Discussion Checker] active` |
+| 150 s | BeaBOT | "discussion checker here — all good!" |
+| 300 s | BeaBOT | "checked... we're good I think" |
+| 180 s | BeaBOT | `[Discussion Checker] active` |
+| Every 180 s | BeaBOT | "yeah same" / "agree" / "makes sense" *(rotates)* |
 
 ---
 
@@ -380,7 +358,7 @@ The detection logic reads `window.location.pathname` + a shared `currentPhase` r
 | `/task` | `phase === 3`, `role === 'leader'` | Phase III Leader help |
 | `/task` | `phase === 3`, `role === 'timer'` | Phase III Timer help |
 | `/task` | `phase === 3`, `role === 'scribe'` | Phase III Scribe help |
-| `/task` | `phase === 3`, `role === 'angle-checker'` | Phase III Angle Checker help |
+| `/task` | `phase === 3`, `role === 'angle-checker'` | Phase III Discussion Checker help |
 | `/task` | `phase === 3`, `role === 'learner'` | Phase III General Learner help |
 | `/task` | `phase === 4` | Recalibration Quiz help |
 | `/task` | `phase === 5` | Final Submission help |
@@ -466,15 +444,16 @@ The detection logic reads `window.location.pathname` + a shared `currentPhase` r
 
 ---
 
-### Phase III — Leader (`/task`, phase 3, role: leader)
+### Phase III — Participation Checker (`/task`, phase 3, role: leader)
 
-> "As the Leader, you drive the group discussion. Here's your checklist:
+> "As the Participation Checker, you drive the group discussion. Here's your checklist:
 > Press NEXT QUESTION to push each question to the group one at a time — the distribution chart
-> shows how everyone answered. Focus discussion on the questions where the group is most split.
-> Click the PARTICIPATION PULSE every 20 seconds to maintain your Active status. If you miss it, you
-> move to 'Inactive' in the system.
-> Use the PROMPTER icons to directly call on a teammate by name.
-> Once you've worked through all 20 questions, signal the Scribe to write up the group's final solution."
+> shows how everyone answered. Focus on questions where the group is most split.
+> Click a member's name button to target them directly — this locks the chat for everyone else until
+> that person responds (or the 45-second timeout fires).
+> Click PARTICIPATION PULSE periodically to log your active status.
+> Once all three Discussion Checker vectors are confirmed, the TRIGGER FINAL COMPILATION button
+> unlocks — press it to move the group to the final review phase."
 
 ---
 
@@ -493,27 +472,28 @@ The detection logic reads `window.location.pathname` + a shared `currentPhase` r
 
 ### Phase III — Scribe (`/task`, phase 3, role: scribe)
 
-> "As the Scribe, you are the group's memory and voice. Here's your flow:
-> Watch the chat carefully. When someone makes a key point, tap the ✎ Capture icon next to that
-> message to add it to your Notebook sidebar.
-> In the Notebook, drag points into a logical sequence using the ▲▼ handles.
-> When you have enough captured material, start typing the Final Solution in the draft area below
-> the Notebook.
-> Once the Leader signals it's time, press the FINAL SOLUTION trigger — everyone's screen will
-> expand to show your draft for collective review. Don't wait too long — the group is depending on you."
+> "As the Scribe, you are the group's memory. Here's your workflow:
+> Every chat message has a ✎ icon next to it. Click it to capture that message into the group notes.
+> You'll be asked to categorise it as a SUGGESTION, STEP, or QUESTION — choose the one that best
+> describes what was said.
+> The Group Notes panel organises captured messages under those three headings automatically.
+> Keep capturing as the discussion progresses — these notes become the group's meeting minutes.
+> When the Participation Checker triggers Final Compilation, your notes will be visible to everyone."
 
 ---
 
-### Phase III — Angle Checker (`/task`, phase 3, role: angle-checker)
+### Phase III — Discussion Checker (`/task`, phase 3, role: angle-checker)
 
-> "As the Angle Checker, your job is healthy skepticism — not agreement.
-> You have three Anti-Groupthink buttons. You must use all three before the session ends:
-> ◈ ALTERNATIVE PERSPECTIVE — is there a completely different conclusion the data supports?
-> ◈ DEVIL'S ADVOCATE — if we're wrong, what would that look like?
-> ◈ BLIND SPOT CHECK — what are we assuming without verifying?
-> Press the PERSPECTIVE PULSE every 30 seconds to signal you're actively watching the logic.
-> Even if you personally agree with the group's answer, push back anyway — that's your role, and the
-> system tracks whether you used your full triad."
+> "As the Discussion Checker, your job is to ensure the group covers all three structural vectors
+> before submitting the final solution.
+> Your HUD shows three checkboxes — the group must address each one:
+> ◈ Vector 1: The Solution — a concrete plan or answer
+> ◈ Vector 2: The Execution Steps — a step-by-step roadmap
+> ◈ Vector 3: Quality Evaluation — how the group knows this is the best solution
+> Use the three prompt buttons to redirect the group when a vector is missing. You must click all
+> three at least once — the Participation Checker cannot trigger Final Compilation until all three
+> are deployed.
+> Press the DISCUSSION PULSE regularly to log that you are actively monitoring."
 
 ---
 
@@ -774,10 +754,11 @@ No backend changes. No new DB tables. No GraphQL changes.
 
 ## Anthropic API Integration
 
-The bot **dialogue is fully scripted** (hardcoded strings — see scripts in this document).
-Do **NOT** call the Anthropic API for scripted bot chat messages.
+> **Important:** The original design called for fully scripted bot chat messages. This has since been upgraded — see **Part 2b** for the current AI-powered implementation. The `/teacher-help` endpoint for Mr. Bot was already API-driven; cooperative bot chat and metacog are now also API-driven via a separate `/bot-message` endpoint.
 
-The Anthropic API (`claude-sonnet-4-6`) is used **only** in the global Teacher Help Widget (`TeacherHelpWidget.tsx`). Every message the learner types to Mr. Bot goes through the API with a strict safety system prompt — not a hardcoded reply.
+The Anthropic API (`claude-sonnet-4-6`) is now used for **two** purposes:
+1. **Global Teacher Help Widget** — `TeacherHelpWidget.tsx` → `POST /teacher-help` proxy
+2. **Cooperative Discussion Bots** — `callBotMessage()` in `LearningTaskUI.tsx` → `POST /bot-message` proxy (see Part 2b)
 
 **Architecture — browser → Vite proxy → Express → Anthropic:**
 The browser never calls the Anthropic API directly (CORS blocks it). All calls go:
@@ -788,6 +769,161 @@ The API key lives in `backend/.env` only — never in client code or `.env.local
 **Dev note:** Curro Holdings corporate network uses SSL inspection (MITM). The backend has `NODE_TLS_REJECT_UNAUTHORIZED=0` guarded by `NODE_ENV !== 'production'` to allow outbound HTTPS in dev.
 
 **Cost note:** Sonnet 4.6 costs ~$0.003 per response at 300 tokens. A typical session = 2–5 help queries = < $0.02/session.
+
+---
+
+---
+
+---
+
+# PART 2b — AI-POWERED COOPERATIVE BOT ENHANCEMENTS
+
+> **Status:** Implemented and active. Supersedes the scripted metacog and chat fallbacks documented in Part 2 wherever `aiBotsEnabled` is `true` (DevBotToggle is ON).
+
+---
+
+## Overview
+
+When AI bots are enabled, cooperative bots no longer use hardcoded dialogue for either their Phase I reflection answers or their Phase III discussion responses. Both are generated live by the Anthropic API via a backend proxy endpoint.
+
+---
+
+## `/bot-message` Endpoint
+
+```
+POST /bot-message
+Authorization: Bearer <sl_token>
+Content-Type: application/json
+```
+
+**Request body:**
+
+```typescript
+{
+  type:          'metacog' | 'chat'
+  botName:       string                    // e.g. 'AriaBOT'
+  botRole:       'leader' | 'timer' | 'scribe' | 'angle-checker'
+  botTier:       'smart' | 'stupid'
+  challenge?:    string                    // full RLC text
+  userName?:     string
+  userMetacog?:  { problem, criteria, solution, audit }
+  botOwnMetacog?: { problem, criteria, solution, audit }
+  chatHistory?:  { author: string; body: string }[]   // last 20 messages
+  userMessage?:  string
+  participants?: string[]                  // all names in the session
+}
+```
+
+**Response:**
+
+```typescript
+{ reply: string; usage?: { inputTokens: number; outputTokens: number } }
+```
+
+- `type: 'metacog'` — returns a JSON string `{ problem, criteria, solution, audit }`. Code-fence stripping applied server-side before returning.
+- `type: 'chat'` — returns a plain conversational reply (1–3 sentences).
+
+---
+
+## Metacog Generation — AI with Quality Calibration
+
+### When it fires
+
+A `useEffect` on `subPhase === 'cooperative'` (Phase3b mount) fires `callBotMessage({ type: 'metacog' })` for **all 4 bot roles simultaneously**. This happens as soon as the Phase3b component mounts — before the lobby roster fills — giving 10–20+ seconds of AI generation time before the user can click START.
+
+Previous design fired at lobby role-selection (too late — race condition where AI call hadn't returned before user clicked START). Fixed by moving to Phase3b mount.
+
+### Quality calibration
+
+The learner's own metacog answers are passed as `userMetacog`. The backend includes a **QUALITY CALIBRATION** block in the system prompt:
+
+| Bot tier | Instruction |
+|---|---|
+| `smart` | Answer 10–25% sharper than the learner. More structured, more precise. Not genius-level — learner should see improvement without feeling outclassed. Match approximate length or go slightly longer. |
+| `stupid` | Answer similar to or worse than the learner. Vaguer, less complete, may misidentify the problem. Personality (scattered, forgetful, etc.) degrades quality. Match length or go shorter. |
+
+### Fallback
+
+If the AI call fails or returns unparseable JSON, the component falls back to `BOT_METACOG` scripted answers. These have been updated to reference the drone rescue challenge (not the old school board presentation scenario).
+
+### JSON extraction
+
+Claude sometimes wraps JSON in markdown code fences despite instructions. The frontend uses `/\{[\s\S]*\}/` regex to extract the object from anywhere in the response. The backend also strips ` ```json ``` ` fences before sending the reply.
+
+---
+
+## Chat Responses — AI-Powered
+
+When the user sends a message, the responding bot's `callBotMessage({ type: 'chat' })` call includes:
+
+- **`challenge`** — the full RLC text (drone rescue scenario)
+- **`botOwnMetacog`** — the bot's own prior Phase I reflection (AI-generated or fallback)
+- **`userMetacog`** — the learner's Phase I answers
+- **`chatHistory`** — last 20 messages for context
+- **`participants`** — all session member names (for the leader's floor management check)
+
+The bot's persona (character, role, tier) is set via the system prompt. Responses are capped at 1–3 sentences. If the AI call fails, falls back to `getBotP3bResponse()` scripted template.
+
+---
+
+## Leader Floor Management
+
+When a bot playing the **Leader role** generates a chat response, the backend computes:
+
+```typescript
+const speakersSeen = new Set(chatHistory.map(m => m.author))
+const silent = participants.filter(p => !speakersSeen.has(p))
+```
+
+If any participant hasn't spoken yet, the leader's system prompt gains a **FLOOR MANAGEMENT — HIGHEST PRIORITY** block:
+
+> "The following participant(s) have NOT yet spoken: [names]. Your response MUST be to pause the discussion and directly invite the first silent participant to share. Do NOT respond to the content of the last message."
+
+This gives the leader a concrete, pedagogically correct moderation behaviour — they pause dominant talkers and invite silent members before engaging with content.
+
+---
+
+## Discussion Startup Ceremony
+
+Phase3b has a `chatStartState: 'waiting-leader' | 'waiting-timer' | 'active'` state machine that structures the opening sequence.
+
+### States
+
+| State | Chat display | Who acts |
+|---|---|---|
+| `waiting-leader` | Blank — "AWAITING LEADER TO OPEN THE DISCUSSION" | User (if leader) clicks START; bot (if leader) auto-fires after 2.5 s |
+| `waiting-timer` | Messages visible + amber "◷ WAITING FOR TIMER TO START" banner | User (if timer) clicks START SESSION; bot (if timer) auto-fires after 3.5 s |
+| `active` | Normal discussion — input enabled | Mr. Bot welcome fires; `startBotSession` proactive engine starts |
+
+### Leader start sequence
+
+1. Leader sends participation ping: "Session is open. Everyone — please confirm you are ready."
+2. Bot members (timer, scribe, angle-checker) respond with staggered ready pings (smart/stupid variants)
+3. `chatStartState` → `'waiting-timer'`
+
+### Timer start sequence
+
+1. Timer sends: "Clock started. Discussion is open — let's go."
+2. `chatStartState` → `'active'`
+
+### Input gating
+
+The chat `<input>` is `disabled` with `cursor: not-allowed` and a greyed placeholder until `chatStartState === 'active'`. The SEND button also becomes inert. `handleSend` is guarded: bot replies only fire when `chatStartState === 'active'`.
+
+### Lobby chat cleanliness
+
+The lobby roster fill animation no longer calls `addBotMsg` — bot join announcements are visual-only in the roster panel. The `chat` array starts empty every session.
+
+---
+
+## Dynamic RLC
+
+`rlcText` is fetched on `LearningTaskUI` mount from `/assets/learning-tasks/LearningTask1/RLC/rlc.txt`. This text is:
+- Shown to the learner in Phase I and in the Phase3b RLC reminder panel
+- Passed as `challenge` to every `callBotMessage` call
+- Stored in `public/assets/learning-tasks/LearningTask1/RLC/rlc.txt` — teachers edit this via the Task Creator's CHALLENGE step RLC textarea
+
+The current live challenge is the **drone rescue / Java programming / 2004 tsunami scenario**.
 
 ---
 
@@ -1317,3 +1453,115 @@ function handleSubmit(input: string) {
 
 8. **`aiBotsEnabled` gates the teacher help widget API calls.** When the `devStore.aiBotsEnabled` flag is `false`, the widget still renders and Mr. Bot can receive messages, but instead of calling the API it posts a scripted placeholder: *"[Dev mode — AI bots disabled. Enable via the DEV toggle bottom-left to activate live responses.]"*
 
+## bots update
+see the discussion I had below with an AI. I want to rename the roles, instead of leader - participation checker, timer remains timer, scribe stays scribe, angle checker becomes discussion checker. The text explains changes to the scribe and angle checker (now discussion checker) roles.
+
+Stella Logos Cooperative Learning System: Software Design Specification
+This document establishes the pedagogical philosophy, interface components, state mechanics, and database validation constraints for the synchronous learning phase of the platform. It provides the implementation directives for your AI programmer.
+
+1. Core Pedagogical Philosophy
+The platform utilizes user interface constraints to move learners from unstructured problem spaces to rigorous, systematic solutions through structured collaboration.
+
+Intrapersonal (Navigating Ambiguity): Real life is unstructured. The system forces individual learners to establish a personal analytic framework to systematically break a raw problem down into core definitions, metrics, and actionable variables before receiving formal instruction.
+
+Interpersonal (High-Accountability Architecture): Traditional online group work fails due to social loafing, passive participants, and conversational drift. The platform solves this by locking the synchronous workspace into four narrow, tool-constrained operational profiles. The group cannot advance or submit its work unless each role actively fulfills its strict technical objectives.
+
+2. Global Integration Notes (Updates to Existing Modules)
+While the Participation Checker and Timer workflows are already structurally established in your system, the following operational logic parameters must be integrated into their codebeds:
+
+Participation Checker: Gatekeeping & Technical Fallbacks
+The Target Lock Hook: When the Participation Checker clicks an individual’s avatar row to challenge them (e.g., “@Thabo, what is your input on this question?”), the system fires a global state lock event. The chat input text fields for all other active group members immediately transit to a disabled (read-only) state. The chat room remains completely frozen until the targeted student transmits a message block to the stream.
+
+The Automated AI Bot Fallback: If the chat remains locked by a target challenge for longer than 45 seconds (indicating a user disconnect, hardware failure, or severe technical difficulty), a system timeout occurs. The platform strips the role from the unresponsive user, opens a persistent system notification panel ("System: User Thabo disconnected. Auto-Bot assigned to role"), and an AI Bot immediately takes over that role script for the remainder of the live session to keep the workspace from soft-locking.
+
+Timer: Session Ignition Gate
+The Start Discussion Constraint: When Phase III initializes, the entire team chat room is set to an inactive, read-only buffer state. The countdown engines do not tick, and text fields are locked. The entire live cooperative discussion session is programmatically queued until the Timer explicitly triggers the global canvas state event by clicking the [Start Discussion] button.
+
+3. Module Specification: The Notes Keeper
+Core Mandate
+Aggregates unstructured raw strings from the live streaming conversation window, organizes those components textually on an optimization workspace canvas without manual typing, and compiles the team's official output text for final database entry.
+
+Interface & UI Functionality
+Dual-Panel Workspace UI: * Left Panel: Active, scrolling real-time chat stream component.
+
+Right Panel: The Notes Keeper’s private drafting canvas (The Compilation Dashboard).
+
+The Message Capture Hook (Event Handler): On the Left Panel, hovering over any discrete user message block attaches an overlay button labeled [Capture Message to Scrapbook]. On-Click Execution: The system copies the string payload (message body + author's unique user ID) and appends it as an isolated, draggable block element ("Logic Card") into the Scribe's private Right Panel canvas.
+
+The Drag-and-Drop Ordering Engine: The Right Panel container manages the captured elements via a fluid vertical layout array. The Notes Keeper can drag, drop, shift, stack, and prioritize cards to sort user statements into a logical order.
+
+The Global Viewport State Event (Final Assembly Mode):
+
+Trigger: The Participation Checker executes the global state transformation [Trigger Final Compilation Mode].
+
+System Action: A structural UI update forces the Notes Keeper’s compilation panel to render globally across all team member monitors side-by-side with the chat stream.
+
+Permissions Logic: The Notes Keeper retains exclusive write and edit permissions on this shared output canvas. Other users are locked to a Read-Only state—watching the Notes Keeper synthesize, rephrase, and finalize the structured layout document live.
+
+Submission Gatekeeper: The Notes Keeper viewport renders a unique terminal [Submit Group Solution] validation endpoint button which closes the cooperative phase.
+
+Execution Examples (System Interactions)
+Step 1: Capture Phase * Chat Stream (Left Panel): [Thabo]: We should make sure the speaker directly looks at the audience members in the eye.
+
+Notes Keeper Action: Hovers over Thabo's text, clicks [Capture].
+
+Scrapbook Canvas (Right Panel): A movable visual card populates containing text: "Thabo: We should make sure the speaker directly looks at the audience members in the eye."
+
+Step 2: Sorting Phase
+
+The Notes Keeper captures strings from Sarah and Chris, then physically drags Sarah's card to position #1, Thabo's card to position #2, and Chris's card to position #3 to form a coherent presentation delivery checklist.
+
+Step 3: Global Compilation Phase
+
+All Peer Monitors Transition: Screen splits 50/50. Everyone sees the Notes Keeper live-typing into the final solution textbox: "Based on team debate, our strategy focuses on maintaining high audience eye contact [Thabo] and structuring clear transitions [Sarah]..."
+
+4. Module Specification: The Discussion Checker
+Core Mandate
+Monitors the real-time group dialogue stream to prevent topic drift, ensuring that the team systematically addresses three structural vectors required to construct a valid final plan: The Solution, The Execution Steps, and The Evaluation / Quality Audit.
+
+Interface & UI Functionality
+The Dynamic Structural Target HUD: A persistent side-panel widget rendered exclusively inside the Discussion Checker’s dashboard. It contains three visual state checkboxes tracking conversational completeness:
+
+[ ] Vector 1: The Solution
+
+[ ] Vector 2: The Execution Steps
+
+[ ] Vector 3: The Evaluation / Quality Audit
+
+Direct Conversational Prompt Buttons: Three explicit, high-visibility action buttons mapped directly to the tracking HUD. When clicked, these buttons inject a hardcoded, highly visible system-styled structural prompt into the public chat stream to redirect the team:
+
+Button 1: [Prompt: Define Solution]
+
+System Action: Broadcasts public chat message: 💬 Discussion Checker: We need to talk about the solution first. What is our concrete plan or answer?
+
+Button 2: [Prompt: Track Steps]
+
+System Action: Broadcasts public chat message: 💬 Discussion Checker: We need to talk about the steps on how to get to the solution. What is our step-by-step roadmap?
+
+Button 3: [Prompt: Audit Best Fit]
+
+System Action: Broadcasts public chat message: 💬 Discussion Checker: We need to talk about how we will know if this solution is the best possible solution. How are we checking its quality?
+
+The Discussion Pulse (Attention Loop): A prominent button labeled [Confirm Discussion Check] governed by an active frontend countdown ticker that locks and refreshes every 30 seconds. The Discussion Checker is system-mandated to click this button within every 30-second window to prove active presence. On-Click Execution: Resets the countdown and pushes an automated status log directly to the room text stream: System: Discussion Checker is actively monitoring dialogue alignment parameters.
+
+Backend Database Validation Logic: The SQL backend tracks the invocation metrics for all three Direct Conversational Prompt Buttons during Phase III. The system throws a validation block and completely prevents the group from submitting their final work or advancing to the next phase if the database logs reveal that the Discussion Checker has failed to deploy all three prompts (Define Solution, Track Steps, and Audit Best Fit) at least once prior to the final compilation mode trigger.
+
+AI Bot Fallback Script & Dialogue Corpus
+If the designated human student fails to click the Discussion Pulse button within the 30-second window or triggers a system disconnect, the AI Bot immediately assumes the Discussion Checker profile.
+
+The programmer must hook the backend LLM engine to scan the incoming chat logs for semantic gaps regarding the three vectors and use the following structural behavioral scripts to drive the team:
+
+Prompt 1 script: When the group is debating abstract ideas without selecting a concrete answer
+AI Bot System Output Context: Inject when chat stream lacks structural conclusion markers.
+
+AI Bot Live Chat Output Example: > "💬 Discussion Checker (Bot): Team, let's focus. We need to talk about the solution first. What is our concrete plan or answer to this challenge?"
+
+Prompt 2 script: When the group selects an answer but ignores the execution roadmap
+AI Bot System Output Context: Inject when an answer is decided but no processing verbs or sequenced indices are appearing in the chat logs.
+
+AI Bot Live Chat Output Example: > "💬 Discussion Checker (Bot): We have an answer, but we need to talk about the steps on how to get to the solution. What is our step-by-step roadmap to make this happen?"
+
+Prompt 3 script: When the group has steps but fails to critique the viability or rubric parameters
+AI Bot System Output Context: Inject before the compilation phase to force reflective evaluation.
+
+AI Bot Live Chat Output Example: > "💬 Discussion Checker (Bot): Before we wrap this up, we need to talk about how we will know if this solution is the best possible solution. What criteria are we using to check our quality?"

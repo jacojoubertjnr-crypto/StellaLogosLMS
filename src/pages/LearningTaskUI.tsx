@@ -6,7 +6,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePageBackground } from '@/hooks/usePageBackground'
 import { useQuestStore } from '@/stores/questStore'
 import { useTaskContextStore } from '@/stores/taskContextStore'
-import { randomTiers, BOT_NAMES, BOT_ACCURACY, ROLE_ORDER as BOT_ROLE_ORDER, startBotSession, type BotRole, type BotTier } from '@/lib/botEngine'
+import { useDevStore } from '@/stores/devStore'
+import { randomTiers, typingDelay, BOT_NAMES, BOT_ACCURACY, ROLE_ORDER as BOT_ROLE_ORDER, startBotSession, type BotRole, type BotTier } from '@/lib/botEngine'
 
 const MY_TASK_GROUP = gql`
   query MyTaskGroup($academicClassId: ID!) {
@@ -79,6 +80,13 @@ interface MetacogState {
   audit: string
 }
 
+interface ScribeNote {
+  id: number
+  category: 'suggestion' | 'steps' | 'questions'
+  author: string
+  body: string
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const FONT = "'VT323', monospace"
@@ -123,8 +131,8 @@ const INITIAL_CHAT: ChatMessage[] = [
   { id: 1, author: 'Mr. Bot', body: 'Welcome to the cooperative discussion phase. Each role player — please ensure you are prepared. Leader, you may begin when the group is ready.', time: '09:00', isTeacher: true },
   { id: 2, author: 'ConradBOT', body: 'Ready on my end.', time: '09:01' },
   { id: 3, author: 'PetraBOT',  body: 'Ready here too.', time: '09:01' },
-  { id: 4, author: 'RexBOT',    body: "Let's go — I found the content video really useful for structuring my answers.", time: '09:02' },
-  { id: 5, author: 'AriaBOT',   body: 'Same. Question 5 was tricky though — I second-guessed myself.', time: '09:03' },
+  { id: 4, author: 'RexBOT',    body: "Let's go — I went through the challenge a few times.", time: '09:02' },
+  { id: 5, author: 'AriaBOT',   body: 'Same. The ethical part of it really made me think.', time: '09:03' },
 ]
 
 // ─── Bot Phase-1 metacog answers (smart / stupid per role) ───────────────────
@@ -132,60 +140,85 @@ const INITIAL_CHAT: ChatMessage[] = [
 const BOT_METACOG: Record<BotRole, Record<BotTier, MetacogState>> = {
   leader: {
     smart: {
-      problem:  "The learner faces a high-stakes formal presentation with no preparation structure, no knowledge of the board's expectations, and severe performance anxiety — all within a 24-hour window.",
-      solution: "A structured three-stage approach: research and outline (evening), rehearsal and refinement (morning), confident delivery (presentation).",
-      criteria: "The board engages with the ideas, the learner stays within 5 minutes, and at least one recommendation is acknowledged.",
-      audit:    "1. Research the school board's recent decisions online.\n2. Draft a 5-point outline: problem, evidence, proposal, cost, benefit.\n3. Create one clear visual aid.\n4. Rehearse 3 times — solo, in mirror, to a friend.\n5. Prepare 3 likely questions and answers.\n6. Sleep 8 hours and arrive 10 minutes early.",
+      problem:  "The drone has limited power and can only rescue one of two groups — the closest group by total round-trip distance must be chosen to ensure a successful rescue.",
+      solution: "Fly to either group (both are 50 m from the starting point), pick them up, and return. Since all distances are equal, choose Group 2 (younger members — greater urgency).",
+      criteria: "The drone completes the mission without running out of power, the chosen group is safely retrieved, and the Java output contains valid drone commands.",
+      audit:    "1. Identify that all three distances are 50 m — equidistant.\n2. Decide on Group 2 (mother and young girl — highest vulnerability).\n3. Calculate the heading angle from start to Group 2.\n4. Write Java print statements: LIFT OFF, ROTATE DEGREES: X, FLY FORWARDS: 50, LAND.\n5. Test output in NetBeans.\n6. Confirm the drone returns or a second rescue is noted.",
     },
     stupid: {
-      problem:  "She has to give a big presentation and she's nervous and not prepared.",
-      solution: "Just practice as much as possible and write some notes to help.",
-      criteria: "If the board doesn't look bored and she gets through it.",
-      audit:    "1. Write some notes.\n2. Practice in front of a mirror.\n3. Go to the presentation and do it.",
+      problem:  "The drone needs to go save people but it can't go to both groups.",
+      solution: "Just fly to the nearest group and pick them up.",
+      criteria: "If the drone gets there and the people are saved.",
+      audit:    "1. Pick a group.\n2. Write the Java code.\n3. Run it and see what happens.",
     },
   },
   timer: {
     smart: {
-      problem:  "The core problem is time pressure combined with lack of focus — without a timed plan the learner will either over-prepare on irrelevant areas or rush the delivery.",
-      solution: "Divide the 24 hours into strict timed blocks: 2 h research, 3 h writing, 1 h visual, 3 h rehearsal, 8 h sleep, 1 h morning review.",
-      criteria: "All preparation blocks are completed on schedule and the learner delivers without exceeding 5 minutes.",
-      audit:    "1. Write a schedule with phone alarms for each block.\n2. Research for exactly 2 hours.\n3. Draft and structure for 3 hours.\n4. Create one simple visual.\n5. Use a stopwatch during rehearsal.\n6. Review notes at breakfast.",
+      problem:  "The drone's power is the critical constraint — any wasted distance means the mission fails. Every command must be precise to avoid unnecessary movement.",
+      solution: "Plan the exact sequence of commands before writing a single line of Java — calculate rotation angle, confirm 50 m forward, land immediately on arrival.",
+      criteria: "The printed commands form a complete, minimal-step flight path with no redundant moves and correct distance values.",
+      audit:    "1. Draw a rough map of the three points.\n2. Calculate the bearing angle from start to the chosen group.\n3. List the exact commands: LIFT OFF → ROTATE → FLY FORWARDS: 50 → LAND.\n4. Write the Java System.out.println statements.\n5. Run in NetBeans and read the output.\n6. Check that no step is repeated or out of order.",
     },
     stupid: {
-      problem:  "Not enough time to get ready for the presentation.",
-      solution: "Do everything as fast as possible and hope for the best.",
-      criteria: "If you don't run out of things to say.",
-      audit:    "1. Set a timer.\n2. Write notes quickly.\n3. Practice once.\n4. Go and do it.",
+      problem:  "The drone might not have enough power to get there and back.",
+      solution: "Write the code to go fast and not waste time.",
+      criteria: "If it gets there before the power runs out.",
+      audit:    "1. Figure out the distance.\n2. Write the code quickly.\n3. Run it.",
     },
   },
   scribe: {
     smart: {
-      problem:  "The learner must synthesise scattered notes and nervous energy into a coherent, evidence-based 5-minute argument that persuades a formal audience.",
-      solution: "Create a structured written outline first, then convert it to spoken cue cards — every point backed by evidence.",
-      criteria: "The outline covers 5 key points, fits 5 minutes when read aloud, and each claim has at least one piece of evidence.",
-      audit:    "1. Collect all ideas from the three exercise books.\n2. Sort into: problem, evidence, solution, impact, recommendation.\n3. Write one paragraph per category (max 3 sentences).\n4. Convert to bullet-point cue cards.\n5. Read aloud and time — cut anything that overruns.\n6. Review for clarity the morning of the presentation.",
+      problem:  "The Java output must communicate clear, unambiguous drone instructions — poorly formatted or misspelled commands will cause the drone to fail even if the logic is correct.",
+      solution: "Use exact command syntax from the specification in every println statement, with no extra text, spelling errors, or missing parameters.",
+      criteria: "Each printed line matches one of the four valid commands exactly, with correct placeholders replaced by real values.",
+      audit:    "1. Copy the four valid commands from the brief.\n2. Identify which placeholders need real values (degrees, distance).\n3. Write one System.out.println per command.\n4. Read the output aloud to check it makes sense as a flight plan.\n5. Verify spelling of LIFT OFF, ROTATE DEGREES, FLY FORWARDS, LAND.\n6. Check for missing colons or brackets in the format.",
     },
     stupid: {
-      problem:  "Her notes are all over the place and she doesn't know what to say.",
-      solution: "Write out what she wants to say and read it if she has to.",
-      criteria: "If she remembers most of what she planned to say.",
-      audit:    "1. Gather all the notes.\n2. Write out the main points.\n3. Read through a couple of times.\n4. Go do the presentation.",
+      problem:  "You have to write the right words for the drone to understand.",
+      solution: "Copy the commands from the sheet and fill in the numbers.",
+      criteria: "If the drone does what you told it to.",
+      audit:    "1. Write the four commands.\n2. Put the right numbers in.\n3. Print them out.",
     },
   },
   'angle-checker': {
     smart: {
-      problem:  "The real risk is not the lack of time but the lack of audience awareness — the learner doesn't know what the board actually wants, so even a well-prepared talk could miss the mark entirely.",
-      solution: "Before preparing content, spend 30 minutes researching the board's stated priorities, then build the presentation around those — not personal opinions.",
-      criteria: "Every point links directly to a known board priority. The board asks at least one follow-up question, indicating genuine engagement.",
-      audit:    "1. Search the school website and meeting minutes for the board's current priorities.\n2. Identify 2–3 priorities relevant to digital learning.\n3. Structure the presentation around those priorities.\n4. Check each point: 'Does this answer something the board cares about?'\n5. Rehearse with someone who will challenge your assumptions.\n6. Prepare for: 'What evidence do you have for this?'",
+      problem:  "The real issue is the ethical dimension — one group will be left behind. The solution must include a justification for the chosen group, not just the shortest path calculation.",
+      solution: "Choose based on vulnerability: the young girl and her mother face greater risk than the adult pair. Document the reasoning in a comment in the code.",
+      criteria: "The justification is explicit, the chosen group aligns with a defensible ethical principle, and the Java code reflects that choice.",
+      audit:    "1. Compare the two groups: elderly man + adult daughter vs. young girl + mother.\n2. Argue which group is more vulnerable (age, dependence, survival capacity).\n3. State the chosen group and the reason.\n4. Verify the Java path targets the correct group.\n5. Add a comment in the code explaining the ethical choice.\n6. Ask: would another reasonable person agree with this choice?",
     },
     stupid: {
-      problem:  "She doesn't really know what the board wants to hear.",
-      solution: "Just talk about what she thinks is important and hope they agree.",
-      criteria: "If they don't ask hard questions.",
-      audit:    "1. Think about what she knows.\n2. Talk about the most important stuff.\n3. Answer any questions as best she can.",
+      problem:  "You have to pick which people to save and hope you chose right.",
+      solution: "Just pick the group that seems more important.",
+      criteria: "If you can explain why you picked them.",
+      audit:    "1. Look at who is in each group.\n2. Pick the one that needs more help.\n3. Write the code for that group.",
     },
   },
+}
+
+// ─── Bot message API helper ──────────────────────────────────────────────────
+
+async function callBotMessage(params: {
+  type: 'metacog' | 'chat'
+  botName: string
+  botRole: BotRole
+  botTier: BotTier
+  challenge?: string
+  userName?: string
+  userMetacog?: MetacogState
+  botOwnMetacog?: MetacogState
+  chatHistory?: { author: string; body: string }[]
+  userMessage?: string
+  participants?: string[]
+}): Promise<{ reply: string; usage?: { inputTokens: number; outputTokens: number } }> {
+  const token = sessionStorage.getItem('sl_token') ?? ''
+  const res = await fetch('/bot-message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(params),
+  })
+  if (!res.ok) throw new Error(`/bot-message ${res.status}`)
+  return res.json() as Promise<{ reply: string; usage?: { inputTokens: number; outputTokens: number } }>
 }
 
 // ─── Phase 3b template bot responses ─────────────────────────────────────────
@@ -205,7 +238,7 @@ function getBotP3bResponse(
       `Good thinking. What does everyone consider the single most critical step? Let's identify the core before we draft anything.`,
       `Let's not lose sight of the real constraint — the student has 24 hours. We need something realistic, not just theoretically ideal.`,
       `I'm seeing a common theme across our solutions. Scribe, are you capturing that? It should anchor the final draft.`,
-      `Angle Checker — have we stress-tested the plan? What if the student freezes on the day?`,
+      `Discussion Checker — have we stress-tested the plan? What if the student freezes on the day?`,
       `We're close to consensus. Scribe, please start pulling the final solution together based on what we've discussed.`,
     ][i] : [
       `ok so ${userName} said "${sol60}..." that's not bad I guess`,
@@ -272,10 +305,10 @@ function getBotP3bResponse(
 }
 
 const ROLE_DEFS: { role: Role; label: string; desc: string; icon: string }[] = [
-  { role: 'leader', label: 'LEADER', desc: "Control question flow. Prompt your team. Maintain the group's pulse.", icon: '♚' },
+  { role: 'leader', label: 'PARTICIPATION CHECKER', desc: "Ensure every voice is heard. Target silent members. Trigger final compilation when ready.", icon: '♚' },
   { role: 'timer', label: 'TIMER', desc: 'Manage session time privately. Alert the group when needed.', icon: '◷' },
   { role: 'scribe', label: 'SCRIBE', desc: 'Capture insights from the chat. Draft the final team solution.', icon: '✎' },
-  { role: 'angle-checker', label: 'ANGLE CHECKER', desc: 'Challenge assumptions. Ensure no angle is missed.', icon: '◈' },
+  { role: 'angle-checker', label: 'DISCUSSION CHECKER', desc: 'Keep discussion on track. Ensure solution, steps, and quality audit are all addressed.', icon: '◈' },
 ]
 
 const PHASE_LABELS = ['STRUCTURE', 'MASTER', 'DISCUSS', 'RECALIBRATE', 'SUBMIT']
@@ -305,6 +338,17 @@ function makeDistribution(): Record<string, number> {
 
 function nowTime() {
   return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatScribeNotes(notes: ScribeNote[]): string {
+  if (notes.length === 0) return '[No notes captured]'
+  const groups: Partial<Record<ScribeNote['category'], ScribeNote[]>> = {}
+  for (const n of notes) { (groups[n.category] ??= []).push(n) }
+  const labels: Record<ScribeNote['category'], string> = { suggestion: 'SUGGESTIONS', steps: 'STEPS', questions: 'QUESTIONS' }
+  return (['suggestion', 'steps', 'questions'] as const)
+    .filter(cat => (groups[cat]?.length ?? 0) > 0)
+    .map(cat => `${labels[cat]}\n${groups[cat]!.map(n => `• [${n.author}] ${n.body}`).join('\n')}`)
+    .join('\n\n')
 }
 
 // ─── PhaseBar ─────────────────────────────────────────────────────────────────
@@ -342,7 +386,7 @@ const PhaseBar: React.FC<{ current: Phase }> = ({ current }) => (
 
 // ─── Phase I: Metacognitive Scaffold ──────────────────────────────────────────
 
-const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplete }) => {
+const Phase1: React.FC<{ onComplete: (a: MetacogState) => void; rlcText: string }> = ({ onComplete, rlcText }) => {
   const [answers, setAnswers] = useState<MetacogState>({ problem: '', criteria: '', solution: '', audit: '' })
   const [helpOpen, setHelpOpen] = useState<keyof MetacogState | null>(null)
 
@@ -392,7 +436,7 @@ const Phase1: React.FC<{ onComplete: (a: MetacogState) => void }> = ({ onComplet
         />
 
         <div style={{ fontFamily: FONT, fontSize: '1.05rem', lineHeight: 1.7, color: TEXT, whiteSpace: 'pre-line', opacity: 0.9 }}>
-          {CHALLENGE_SCENARIO}
+          {rlcText}
         </div>
       </div>
 
@@ -948,15 +992,15 @@ const ScribePanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void; 
   )
 }
 
-// ─── Angle Checker Panel ──────────────────────────────────────────────────────
+// ─── Discussion Checker Panel ─────────────────────────────────────────────────
 
 const AngleCheckerPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => void }> = ({ chat, onSend }) => {
   const [used, setUsed] = useState<Set<string>>(new Set())
 
   const BUTTONS = [
-    { key: 'sure', label: '"Are we sure about this?"', msg: "[Angle Checker] ◈ Are we sure about this? Let's verify before moving on." },
-    { key: 'another', label: '"Is there another way of thinking about this?"', msg: '[Angle Checker] ◈ Is there another way of thinking about this? We may be missing an alternative.' },
-    { key: 'missing', label: '"Are we missing something?"', msg: '[Angle Checker] ◈ Are we missing something? Checking for blind spots.' },
+    { key: 'sure', label: '"Are we sure about this?"', msg: "[Discussion Checker] ◈ Are we sure about this? Let's verify before moving on." },
+    { key: 'another', label: '"Is there another way of thinking about this?"', msg: '[Discussion Checker] ◈ Is there another way of thinking about this? We may be missing an alternative.' },
+    { key: 'missing', label: '"Are we missing something?"', msg: '[Discussion Checker] ◈ Are we missing something? Checking for blind spots.' },
   ]
 
   const use = (key: string, msg: string) => { setUsed(p => new Set([...p, key])); onSend(msg) }
@@ -964,7 +1008,7 @@ const AngleCheckerPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => 
   return (
     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
       <div className="frame-parchment" style={{ flex: '1 1 280px', padding: '1rem', gap: '1rem', minWidth: '260px' }}>
-        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>◈ ANGLE CHECKER · ANTI-GROUPTHINK TRIAD</p>
+        <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', opacity: 0.6, color: TEXT, margin: 0 }}>◈ DISCUSSION CHECKER · STRUCTURAL TRIAD</p>
         <p style={{ fontFamily: FONT, fontSize: '1.15rem', opacity: 0.75, color: TEXT, margin: 0 }}>
           You MUST use all three buttons at least once. ({used.size}/3 used)
         </p>
@@ -978,7 +1022,7 @@ const AngleCheckerPanel: React.FC<{ chat: ChatMessage[]; onSend: (t: string) => 
             {used.has(key) ? '✓ ' : ''}{label}
           </button>
         ))}
-        <PulseButton intervalSeconds={30} label="PERSPECTIVE PULSE" onPulse={() => onSend('[Angle Checker] ◈ Perspective Pulse — actively monitoring for logic gaps.')} warning="Send your Perspective Pulse!" />
+        <PulseButton intervalSeconds={30} label="DISCUSSION PULSE" onPulse={() => onSend('[Discussion Checker] ◈ Discussion check — actively monitoring dialogue alignment.')} warning="Send your Discussion Check!" />
       </div>
       <div className="frame-parchment" style={{ flex: '1 1 280px', padding: '1rem', minWidth: '260px' }}>
         <ChatPanel messages={chat} onSend={onSend} />
@@ -1301,92 +1345,29 @@ const Phase3a: React.FC<{
 
 // ─── Phase IIIb Intro Modal ───────────────────────────────────────────────────
 
-const Phase3bIntroModal: React.FC<{
-  isBotMode: boolean
-  onRoleSelected: (r: Role) => void
-}> = ({ isBotMode, onRoleSelected }) => {
-  const [step, setStep] = useState<1 | 2>(1)
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
-    }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
-        className="frame-parchment"
-        style={{ maxWidth: '520px', width: '100%', padding: '2rem', gap: '1.25rem' }}
-      >
-        {step === 1 ? (
-          <>
-            <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>PHASE IIIb · COOPERATIVE SOLUTION</p>
-            <h2 style={{ fontFamily: FONT, fontSize: '1.7rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>BUILD THE BEST SOLUTION</h2>
-            <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
-              Your group has reviewed the content and completed the quiz together. Now you will collaborate to build the best possible solution to the real-life challenge.
-            </p>
-            <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
-              Every member has already submitted their initial approach. Discuss, challenge each other's ideas, and help the Scribe craft the group's final answer.
-            </p>
-            <button className="btn-9slice" onClick={() => setStep(2)} style={{ alignSelf: 'center', fontSize: '1.2rem', letterSpacing: '2px', minWidth: '200px' }}>CONTINUE →</button>
-          </>
-        ) : isBotMode ? (
-          <>
-            <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>SELECT YOUR ROLE</p>
-            <h2 style={{ fontFamily: FONT, fontSize: '1.5rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>CHOOSE YOUR ROLE FOR THIS SESSION</h2>
-            <p style={{ fontFamily: FONT, fontSize: '1.05rem', lineHeight: 1.55, color: TEXT, opacity: 0.75, margin: 0 }}>
-              The AI bots will fill the remaining three roles.
-            </p>
-            {ROLE_DEFS.map(({ role, label, desc, icon }) => (
-              <button key={role} onClick={() => onRoleSelected(role)} style={{
-                display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.9rem 1rem',
-                textAlign: 'left', width: '100%', fontFamily: FONT, background: 'transparent',
-                border: '1px solid rgba(255,215,0,0.25)', cursor: 'pointer',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.7)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.25)' }}
-              >
-                <span style={{ fontSize: '2rem', color: ACCENT, minWidth: '2.5rem', textAlign: 'center' }}>{icon}</span>
-                <div>
-                  <div style={{ fontSize: '1.1rem', color: ACCENT, letterSpacing: '2px' }}>{label}</div>
-                  <div style={{ fontSize: '1rem', color: TEXT, opacity: 0.7, marginTop: '2px' }}>{desc}</div>
-                </div>
-              </button>
-            ))}
-          </>
-        ) : (
-          // Facilitated mode — role assigned by teacher (allocation from DB to be wired in future)
-          <>
-            <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>YOUR ROLE</p>
-            <h2 style={{ fontFamily: FONT, fontSize: '1.5rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>ROLE ASSIGNED BY YOUR TEACHER</h2>
-            <p style={{ fontFamily: FONT, fontSize: '1.1rem', lineHeight: 1.65, color: TEXT, opacity: 0.85, margin: 0 }}>
-              Your teacher has assigned your role for this session. Please wait for further instructions from your group before proceeding.
-            </p>
-          </>
-        )}
-      </motion.div>
-    </div>
-  )
-}
+// Phase3bIntroModal removed — replaced by the lobby view inside Phase3b
 
 // ─── Phase IIIb Compact Role Panels ──────────────────────────────────────────
 
 const LeaderCompact: React.FC<{
   onSend: (t: string) => void
+  onTargetPrompt: (name: string, msg: string) => void
   memberNames: string[]
   chat: ChatMessage[]
-}> = ({ onSend, memberNames, chat }) => {
+  onStart?: () => void
+  lockedTarget: string | null
+  onTriggerFinal: () => void
+  finalPhaseActive: boolean
+  dcVectorsComplete: boolean
+}> = ({ onSend, onTargetPrompt, memberNames, chat, onStart, lockedTarget, onTriggerFinal, finalPhaseActive, dcVectorsComplete }) => {
   const [started, setStarted] = useState(false)
 
   const startSession = () => {
     setStarted(true)
-    onSend(
-      '♚ [Leader] Starting the cooperative group chat. ' +
-      'Everyone — please click your PARTICIPATION PULSE button to confirm you are ready. ' +
-      'Timer — are you set up and ready to start timing?'
-    )
+    onSend('♚ [Participation Checker] Session is open. Everyone — please confirm you are ready. Timer, set up when you are ready to start the clock.')
+    onStart?.()
   }
 
-  // How many messages ago did this member last contribute? Infinity = never.
   const sinceLastMsg = (name: string): number => {
     for (let i = chat.length - 1; i >= 0; i--) {
       if (chat[i].author === name) return chat.length - 1 - i
@@ -1396,23 +1377,23 @@ const LeaderCompact: React.FC<{
 
   const participationColor = (name: string): string => {
     const n = sinceLastMsg(name)
-    if (n <= 2)           return 'rgba(100,220,100,0.75)'   // green  — recent
-    if (n <= 5)           return 'rgba(255,200,0,0.8)'      // yellow — a few turns ago
-    return                       'rgba(220,80,80,0.85)'     // red    — hasn't spoken in a while
+    if (n <= 2) return 'rgba(100,220,100,0.75)'
+    if (n <= 5) return 'rgba(255,200,0,0.8)'
+    return             'rgba(220,80,80,0.85)'
   }
 
   const participationBg = (name: string): string => {
     const n = sinceLastMsg(name)
-    if (n <= 2)  return 'rgba(100,220,100,0.06)'
-    if (n <= 5)  return 'rgba(255,200,0,0.06)'
-    return              'rgba(220,80,80,0.06)'
+    if (n <= 2) return 'rgba(100,220,100,0.06)'
+    if (n <= 5) return 'rgba(255,200,0,0.06)'
+    return             'rgba(220,80,80,0.06)'
   }
 
   return (
     <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>♚ LEADER</p>
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>♚ PARTICIPATION CHECKER</p>
       <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.5, flexShrink: 0 }}>
-        Guide the discussion. Ensure every perspective is considered before the Scribe commits to the draft.
+        Ensure every voice is heard. Target silent members directly. Trigger final compilation when the group is ready.
       </p>
 
       {!started ? (
@@ -1425,41 +1406,85 @@ const LeaderCompact: React.FC<{
         </div>
       )}
 
+      {lockedTarget && (
+        <div style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '1.5px', color: 'rgba(255,200,80,0.9)', padding: '0.35rem 0.6rem', border: '1px solid rgba(255,200,80,0.3)', background: 'rgba(255,200,80,0.06)', flexShrink: 0 }}>
+          🔒 TARGET LOCK — waiting for {lockedTarget} to respond...
+        </div>
+      )}
+
       <div style={{ flexShrink: 0 }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '2px', color: ACCENT, opacity: 0.55, margin: '0 0 0.4rem' }}>PROMPT A MEMBER</p>
+        <p style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '2px', color: ACCENT, opacity: 0.55, margin: '0 0 0.4rem' }}>TARGET A MEMBER</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
           {memberNames.map(name => {
             const col = participationColor(name)
             const bg  = participationBg(name)
+            const isLocked = lockedTarget === name
             return (
-              <button key={name} onClick={() => onSend(`${name}, give some input.`)} style={{
+              <button key={name} onClick={() => {
+                if (lockedTarget) return
+                onTargetPrompt(name, `♚ [Participation Checker] ${name} — we need your input. What is your take on this?`)
+              }} style={{
                 fontFamily: FONT, fontSize: '1rem', padding: '3px 10px',
-                background: bg, border: `1px solid ${col}`, color: col, cursor: 'pointer',
+                background: isLocked ? 'rgba(255,200,80,0.12)' : bg,
+                border: `1px solid ${isLocked ? 'rgba(255,200,80,0.7)' : col}`,
+                color: isLocked ? 'rgba(255,200,80,0.9)' : col,
+                cursor: lockedTarget ? 'not-allowed' : 'pointer',
+                opacity: lockedTarget && !isLocked ? 0.5 : 1,
                 transition: 'border-color 0.4s, color 0.4s, background 0.4s',
-              }}>{name}</button>
+              }}>{isLocked ? `🔒 ${name}` : name}</button>
             )
           })}
         </div>
         <p style={{ fontFamily: FONT, fontSize: '0.8rem', opacity: 0.4, color: TEXT, margin: '0.35rem 0 0', letterSpacing: '1px' }}>
-          ■ green = recent &nbsp;■ yellow = a few turns ago &nbsp;■ red = hasn't spoken
+          ■ green = recent &nbsp;■ yellow = a few turns ago &nbsp;■ red = hasn't spoken &nbsp;· click to lock floor
         </p>
       </div>
-      <PulseButton intervalSeconds={20} label="PARTICIPATION PULSE" onPulse={() => onSend('[Leader] Participation check — is everyone engaged with the draft?')} warning="Send your Participation Pulse!" />
+
+      <PulseButton intervalSeconds={20} label="PARTICIPATION PULSE" onPulse={() => onSend('[Participation Checker] Participation check — is everyone engaged?')} warning="Send your Participation Pulse!" />
+
+      {!finalPhaseActive && (
+        <div style={{ flexShrink: 0, marginTop: 'auto' }}>
+          {!dcVectorsComplete && (
+            <p style={{ fontFamily: FONT, fontSize: '0.78rem', letterSpacing: '1px', color: 'rgba(255,150,80,0.75)', margin: '0 0 0.35rem', opacity: 0.9 }}>
+              ⚠ Discussion Checker must cover all 3 vectors before final compilation
+            </p>
+          )}
+          <button className="btn-9slice" onClick={dcVectorsComplete ? onTriggerFinal : undefined}
+            disabled={!dcVectorsComplete}
+            style={{ width: '100%', fontSize: '1rem', letterSpacing: '1.5px', opacity: dcVectorsComplete ? 1 : 0.4, cursor: dcVectorsComplete ? 'pointer' : 'not-allowed' }}>
+            ▶ TRIGGER FINAL COMPILATION
+          </button>
+        </div>
+      )}
+      {finalPhaseActive && (
+        <div style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '1.5px', color: 'rgba(100,220,100,0.8)', padding: '0.35rem 0.6rem', border: '1px solid rgba(100,220,100,0.25)', background: 'rgba(100,220,100,0.05)', flexShrink: 0, marginTop: 'auto' }}>
+          ✓ FINAL COMPILATION TRIGGERED
+        </div>
+      )}
     </div>
   )
 }
 
-const TimerCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => {
+const TimerCompact: React.FC<{ onSend: (t: string) => void; onSessionStart?: () => void }> = ({ onSend, onSessionStart }) => {
   const [totalMins, setTotalMins] = useState('')
   const [timePerPhase, setTimePerPhase] = useState<number | null>(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [running, setRunning] = useState(false)
+  const [sessionStarted, setSessionStarted] = useState(false)
   const [moveOnFired, setMoveOnFired] = useState(false)
   const divide = () => {
     const m = parseFloat(totalMins)
     if (isNaN(m) || m <= 0) return
     const perPhase = Math.floor((m * 60) / 3)
     setTimePerPhase(perPhase); setSecondsLeft(perPhase)
+  }
+  const startSession = () => {
+    if (sessionStarted) return
+    setSessionStarted(true)
+    if (timePerPhase !== null) setRunning(true)
+    const timeMsg = timePerPhase !== null ? ` ${fmt(timePerPhase)} on the clock.` : ''
+    onSend(`[Timer] Clock started.${timeMsg} Discussion is open — let's go.`)
+    onSessionStart?.()
   }
   useEffect(() => {
     if (!running || secondsLeft <= 0) return
@@ -1476,15 +1501,26 @@ const TimerCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => 
         </div>
       )}
       <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-        <input value={totalMins} onChange={e => setTotalMins(e.target.value)} placeholder="Total mins"
+        <input value={totalMins} onChange={e => setTotalMins(e.target.value)} placeholder="Total mins (optional)"
           style={{ flex: 1, fontFamily: FONT, fontSize: '1rem', padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.25)', color: 'rgba(255,255,255,0.9)', outline: 'none' }} />
         <button className="btn-9slice" onClick={divide} style={{ fontSize: '1rem' }}>DIVIDE</button>
       </div>
-      {timePerPhase !== null && (
-        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-          <button className="btn-9slice" onClick={() => setRunning(true)} style={{ flex: 1 }}>{running ? 'RUNNING...' : 'START'}</button>
-          <button className="btn-9slice" onClick={() => { setSecondsLeft(timePerPhase!); setRunning(false) }} style={{ flex: 1 }}>RESET</button>
-        </div>
+      {!sessionStarted ? (
+        <button className="btn-9slice" onClick={startSession} style={{ fontSize: '1rem', letterSpacing: '2px', flexShrink: 0 }}>
+          ◷ START SESSION{timePerPhase !== null ? ` + TIMER` : ''}
+        </button>
+      ) : (
+        <>
+          <div style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '1px', color: 'rgba(100,220,100,0.75)', padding: '0.4rem 0.6rem', border: '1px solid rgba(100,220,100,0.25)', background: 'rgba(100,220,100,0.05)', flexShrink: 0 }}>
+            ✓ Session started
+          </div>
+          {timePerPhase !== null && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+              <button className="btn-9slice" onClick={() => setRunning(r => !r)} style={{ flex: 1 }}>{running ? 'PAUSE' : 'RESUME'}</button>
+              <button className="btn-9slice" onClick={() => { setSecondsLeft(timePerPhase!); setRunning(false) }} style={{ flex: 1 }}>RESET</button>
+            </div>
+          )}
+        </>
       )}
       <PulseButton intervalSeconds={30} label="TIME STATUS" onPulse={() => onSend(`[Timer] Time Status — ${timePerPhase !== null ? fmt(secondsLeft) + ' remaining.' : 'Timer not started.'}`)} warning="Send Time Status!" />
       <button onClick={() => { setMoveOnFired(true); onSend('⚠ [TIMER ALERT] The group is stalling — time to MOVE ON!') }} style={{
@@ -1496,87 +1532,150 @@ const TimerCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => 
   )
 }
 
-const ScribeCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => (
+const ScribeCompact: React.FC<{ onSend: (t: string) => void; noteCount: number }> = ({ onSend, noteCount }) => (
   <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
     <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>✎ SCRIBE</p>
     <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.55, flexShrink: 0 }}>
-      Your job is to capture the group's best thinking and build it into the final solution. Use the Solution Workspace below — add individual solutions to the draft, then refine the combined answer.
+      Your job is to capture the group's best thinking as it happens. Click the <span style={{ color: ACCENT }}>✎</span> icon next to any chat message to capture it.
     </p>
     <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.55, flexShrink: 0 }}>
-      Use the chat to discuss with your group before committing a direction.
+      Choose a category — <strong style={{ color: ACCENT }}>Suggestion</strong>, <strong style={{ color: ACCENT }}>Steps</strong>, or <strong style={{ color: ACCENT }}>Questions</strong> — and the message will appear in the group notes below under the right heading.
     </p>
-    <PulseButton intervalSeconds={30} label="SCRIBE CHECK-IN" onPulse={() => onSend("[Scribe] Checking in — does the current draft direction reflect everyone's thinking?")} warning="Check in with your group!" />
+    <div style={{ fontFamily: FONT, fontSize: '0.95rem', letterSpacing: '1px', color: noteCount > 0 ? 'rgba(100,220,100,0.85)' : 'rgba(255,215,0,0.45)', padding: '0.4rem 0.6rem', border: `1px solid ${noteCount > 0 ? 'rgba(100,220,100,0.3)' : 'rgba(255,215,0,0.2)'}`, background: noteCount > 0 ? 'rgba(100,220,100,0.05)' : 'transparent', flexShrink: 0 }}>
+      {noteCount > 0 ? `✎ ${noteCount} note${noteCount === 1 ? '' : 's'} captured` : '✎ No notes captured yet'}
+    </div>
+    <PulseButton intervalSeconds={30} label="SCRIBE CHECK-IN" onPulse={() => onSend("[Scribe] Checking in — does everyone agree with what I've captured so far?")} warning="Check in with your group!" />
   </div>
 )
 
-const AngleCheckerCompact: React.FC<{ onSend: (t: string) => void }> = ({ onSend }) => {
-  const [used, setUsed] = useState<Set<string>>(new Set())
-  const BUTTONS = [
-    { key: 'sure',    label: '"Are we sure about this?"',                   msg: "[Angle Checker] ◈ Are we sure about this? Let's verify before the Scribe commits." },
-    { key: 'another', label: '"Is there another way of thinking about this?"', msg: '[Angle Checker] ◈ Is there another way of thinking about this? We may be missing an angle.' },
-    { key: 'missing', label: '"Are we missing something?"',                  msg: '[Angle Checker] ◈ Are we missing something? Checking for blind spots in the draft.' },
+const DiscussionCheckerCompact: React.FC<{
+  onSend: (t: string) => void
+  onPromptUsed: (key: string) => void
+  promptsUsed: Set<string>
+}> = ({ onSend, onPromptUsed, promptsUsed }) => {
+  const VECTORS = [
+    {
+      key: 'solution',
+      label: '[Prompt: Define Solution]',
+      desc: 'Vector 1 — The Solution',
+      msg: '💬 Discussion Checker: We need to talk about the solution first. What is our concrete plan or answer?',
+    },
+    {
+      key: 'steps',
+      label: '[Prompt: Track Steps]',
+      desc: 'Vector 2 — The Execution Steps',
+      msg: '💬 Discussion Checker: We need to talk about the steps on how to get to the solution. What is our step-by-step roadmap?',
+    },
+    {
+      key: 'audit',
+      label: '[Prompt: Audit Best Fit]',
+      desc: 'Vector 3 — Quality Evaluation',
+      msg: '💬 Discussion Checker: We need to talk about how we will know if this solution is the best possible solution. How are we checking its quality?',
+    },
   ]
-  const use = (key: string, msg: string) => { setUsed(p => new Set([...p, key])); onSend(msg) }
+  const use = (key: string, msg: string) => { onPromptUsed(key); onSend(msg) }
+  const allDone = promptsUsed.size >= 3
   return (
-    <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.75rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>◈ ANGLE CHECKER</p>
-      <p style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.7, margin: 0, lineHeight: 1.5, flexShrink: 0 }}>
-        Challenge assumptions and prevent groupthink. Use all three prompts at least once. ({used.size}/3 used)
+    <div className="frame-parchment" style={{ height: '360px', padding: '1rem', gap: '0.65rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0, flexShrink: 0 }}>◈ DISCUSSION CHECKER</p>
+
+      {/* HUD — vector tracking */}
+      <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+        {VECTORS.map(v => (
+          <div key={v.key} style={{
+            flex: 1, padding: '0.3rem 0.4rem', fontFamily: FONT, fontSize: '0.7rem', letterSpacing: '1px', textAlign: 'center',
+            border: `1px solid ${promptsUsed.has(v.key) ? 'rgba(100,220,100,0.5)' : 'rgba(255,215,0,0.2)'}`,
+            background: promptsUsed.has(v.key) ? 'rgba(100,220,100,0.07)' : 'rgba(0,0,0,0.2)',
+            color: promptsUsed.has(v.key) ? 'rgba(100,220,100,0.85)' : 'rgba(255,215,0,0.4)',
+            transition: 'all 0.3s',
+          }}>
+            {promptsUsed.has(v.key) ? '✓' : '○'}<br />{v.key.toUpperCase()}
+          </div>
+        ))}
+      </div>
+      <p style={{ fontFamily: FONT, fontSize: '0.9rem', color: TEXT, opacity: 0.65, margin: 0, lineHeight: 1.45, flexShrink: 0 }}>
+        Redirect the group to cover all three structural vectors. ({promptsUsed.size}/3 covered)
+        {allDone && <span style={{ color: 'rgba(100,220,100,0.85)', marginLeft: '0.5rem' }}>✓ All vectors covered</span>}
       </p>
-      {BUTTONS.map(({ key, label, msg }) => (
+
+      {VECTORS.map(({ key, label, desc, msg }) => (
         <button key={key} onClick={() => use(key, msg)} style={{
-          fontFamily: FONT, fontSize: '1rem', letterSpacing: '1px', padding: '0.65rem', textAlign: 'left', flexShrink: 0,
-          background: used.has(key) ? 'rgba(255,215,0,0.1)' : 'transparent',
-          border: `2px solid ${used.has(key) ? 'rgba(255,215,0,0.7)' : 'rgba(255,215,0,0.3)'}`,
-          color: used.has(key) ? ACCENT : 'rgba(255,215,0,0.6)', cursor: 'pointer',
+          fontFamily: FONT, fontSize: '0.95rem', letterSpacing: '1px', padding: '0.55rem 0.7rem', textAlign: 'left', flexShrink: 0,
+          background: promptsUsed.has(key) ? 'rgba(100,220,100,0.06)' : 'transparent',
+          border: `2px solid ${promptsUsed.has(key) ? 'rgba(100,220,100,0.5)' : 'rgba(255,215,0,0.3)'}`,
+          color: promptsUsed.has(key) ? 'rgba(100,220,100,0.85)' : 'rgba(255,215,0,0.65)', cursor: 'pointer',
+          transition: 'all 0.25s',
         }}>
-          {used.has(key) ? '✓ ' : ''}{label}
+          <span style={{ fontSize: '0.72rem', opacity: 0.6, display: 'block', letterSpacing: '1.5px', marginBottom: '2px' }}>{desc}</span>
+          {promptsUsed.has(key) ? '✓ ' : ''}{label}
         </button>
       ))}
-      <PulseButton intervalSeconds={30} label="PERSPECTIVE PULSE" onPulse={() => onSend('[Angle Checker] ◈ Perspective Pulse — actively monitoring for logic gaps.')} warning="Send your Perspective Pulse!" />
+
+      <PulseButton intervalSeconds={30} label="CONFIRM DISCUSSION CHECK" onPulse={() => onSend('[Discussion Checker] ◈ Discussion check — actively monitoring dialogue alignment.')} warning="Send your Discussion Check!" />
     </div>
   )
 }
 
 // ─── Phase IIIb Scribe Draft Panel (full-width, below two columns) ────────────
 
+const NOTE_CATEGORIES: { key: ScribeNote['category']; label: string; icon: string; color: string }[] = [
+  { key: 'suggestion', label: 'SUGGESTIONS',  icon: '💡', color: 'rgba(255,215,0,0.85)' },
+  { key: 'steps',      label: 'STEPS',         icon: '📋', color: 'rgba(100,200,255,0.85)' },
+  { key: 'questions',  label: 'QUESTIONS',     icon: '❓', color: 'rgba(200,150,255,0.85)' },
+]
+
 const ScribeDraftPanel: React.FC<{
   userRole: Role
-  scribeDraft: string
-  setScribeDraft: (d: string) => void
+  scribeNotes: ScribeNote[]
+  onRemoveNote: (id: number) => void
   finalPhaseActive: boolean
-  onTriggerFinal: (draft: string) => void
-}> = ({ userRole, scribeDraft, setScribeDraft, finalPhaseActive, onTriggerFinal }) => {
+}> = ({ userRole, scribeNotes, onRemoveNote, finalPhaseActive }) => {
   const isScribe = userRole === 'scribe'
+  const isEmpty = scribeNotes.length === 0
+
   return (
-    <div className="frame-parchment" style={{ padding: '1.25rem', gap: '0.75rem', maxWidth: 'none' }}>
+    <div className="frame-parchment" style={{ padding: '1.25rem', gap: '0.85rem', maxWidth: 'none' }}>
       <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>
-        ✎ GROUP DRAFT SOLUTION{isScribe ? ' · YOU ARE THE SCRIBE — BUILD THE FINAL ANSWER' : ' · SCRIBE IS BUILDING THE GROUP\'S FINAL ANSWER'}
+        ✎ GROUP NOTES{isScribe ? ' · YOU ARE THE SCRIBE' : ' · SCRIBE\'S MEETING NOTES'}
+        {!finalPhaseActive && <span style={{ marginLeft: '1rem', opacity: 0.55 }}>{scribeNotes.length} note{scribeNotes.length !== 1 ? 's' : ''} captured</span>}
       </p>
-      {finalPhaseActive ? (
-        <div style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: '1rem', background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.25)' }}>
-          {scribeDraft || '[No draft was submitted]'}
-        </div>
-      ) : isScribe ? (
-        <textarea value={scribeDraft} onChange={e => setScribeDraft(e.target.value)}
-          placeholder="Draft the group's final solution here. Use the ADD TO DRAFT buttons above to pull in individual solutions, then edit and refine..."
-          rows={7}
-          style={{ width: '100%', resize: 'vertical', fontFamily: FONT, fontSize: '1rem', padding: '0.75rem', lineHeight: 1.6, boxSizing: 'border-box', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.3)', color: 'rgba(255,255,255,0.9)', outline: 'none' }}
-        />
-      ) : (
-        <div style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: '1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,215,0,0.12)', minHeight: '80px', opacity: scribeDraft ? 0.9 : 0.4 }}>
-          {scribeDraft || '[Scribe is drafting the solution...]'}
-        </div>
-      )}
-      {isScribe && !finalPhaseActive && (
-        <button className="btn-9slice" onClick={() => onTriggerFinal(scribeDraft)} disabled={scribeDraft.trim().length < 20}
-          style={{ alignSelf: 'center', fontSize: '1.1rem', letterSpacing: '2px', minWidth: '260px', opacity: scribeDraft.trim().length < 20 ? 0.4 : 1, cursor: scribeDraft.trim().length < 20 ? 'not-allowed' : 'pointer' }}>
-          ▶ SUBMIT FINAL SOLUTION
-        </button>
-      )}
+
       {finalPhaseActive && (
-        <div style={{ textAlign: 'center', fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: 'rgba(100,220,100,0.85)', padding: '0.5rem', border: '1px solid rgba(100,220,100,0.3)', background: 'rgba(100,220,100,0.05)' }}>
-          ✓ FINAL SOLUTION SUBMITTED — GROUP IS REVIEWING
+        <div style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '2px', color: 'rgba(100,220,100,0.85)', padding: '0.35rem 0.6rem', border: '1px solid rgba(100,220,100,0.3)', background: 'rgba(100,220,100,0.05)' }}>
+          ✓ FINAL COMPILATION ACTIVE — NOTES LOCKED
+        </div>
+      )}
+
+      {isEmpty ? (
+        <div style={{ fontFamily: FONT, fontSize: '1rem', color: TEXT, opacity: 0.35, padding: '0.75rem', textAlign: 'center', border: '1px solid rgba(255,215,0,0.1)' }}>
+          {isScribe ? 'Click ✎ on any chat message to capture it here.' : 'Scribe has not captured any notes yet.'}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          {NOTE_CATEGORIES.map(({ key, label, icon, color }) => {
+            const catNotes = scribeNotes.filter(n => n.category === key)
+            if (catNotes.length === 0 && !isScribe) return null
+            return (
+              <div key={key} style={{ flex: '1 1 200px', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <p style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '2.5px', color, margin: 0, opacity: 0.9 }}>
+                  {icon} {label} ({catNotes.length})
+                </p>
+                {catNotes.length === 0 ? (
+                  <div style={{ fontFamily: FONT, fontSize: '0.85rem', color: TEXT, opacity: 0.25, padding: '0.35rem', border: '1px dashed rgba(255,215,0,0.1)' }}>empty</div>
+                ) : catNotes.map(note => (
+                  <div key={note.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', padding: '0.45rem 0.55rem', background: 'rgba(0,0,0,0.2)', border: `1px solid ${color.replace('0.85', '0.2')}` }}>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '1.5px', color, opacity: 0.75 }}>{note.author} </span>
+                      <span style={{ fontFamily: FONT, fontSize: '0.9rem', color: TEXT, lineHeight: 1.45, display: 'block', marginTop: '2px' }}>{note.body}</span>
+                    </div>
+                    {isScribe && !finalPhaseActive && (
+                      <button onClick={() => onRemoveNote(note.id)} style={{ fontFamily: FONT, fontSize: '0.85rem', background: 'transparent', border: 'none', color: 'rgba(220,80,80,0.6)', cursor: 'pointer', padding: '0 2px', lineHeight: 1, flexShrink: 0 }} title="Remove note">✕</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -1601,32 +1700,190 @@ const Phase3b: React.FC<{
   scribeDraft: string
   setScribeDraft: (d: string) => void
   onProceed: () => void
+  rlcText: string
 }> = ({ metacogAnswers, botMetacog, botTiers, userName, isBotMode, chat, onUserSend, addBotMsg,
-        role, setRole, finalPhaseActive, setFinalPhaseActive, scribeDraft, setScribeDraft, onProceed }) => {
+        role, setRole, finalPhaseActive, setFinalPhaseActive, scribeDraft, setScribeDraft, onProceed,
+        rlcText }) => {
+  const { aiBotsEnabled, addTokens } = useDevStore()
   const [msgCount, setMsgCount] = useState(0)
   const [chatInput, setChatInput] = useState('')
+  const [chatStartState, setChatStartState] = useState<'waiting-leader' | 'waiting-timer' | 'active'>('waiting-leader')
+  const [lockedTarget, setLockedTarget] = useState<string | null>(null)
+  const [dcPromptsUsed, setDcPromptsUsed] = useState<Set<string>>(new Set())
+  const [scribeNotes, setScribeNotes] = useState<ScribeNote[]>([])
+  const [capturePopup, setCapturePopup] = useState<number | null>(null)
+  const lockedTargetRef = useRef<string | null>(null)
+  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const chatRef = useRef<ChatMessage[]>(chat)
   const chatContainerRef = useRef<HTMLDivElement>(null)
-  const welcomeSent = useRef(false)
+  const welcomeSent  = useRef(false)
+  const rosterStarted = useRef(false)
+
+  // Local lobby state — selectedRole is the user's pick before they click START
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [rosterFilled, setRosterFilled] = useState<Set<BotRole>>(new Set())
 
   useEffect(() => {
+    chatRef.current = chat
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [chat])
 
-  // Teacher welcome fires once, when role is first selected
+  // Lobby roster: when user picks a role, fill their slot immediately then stagger bot slots
   useEffect(() => {
-    if (!isBotMode || !role || welcomeSent.current) return
-    welcomeSent.current = true
-    setTimeout(() => addBotMsg('Mr. Bot',
-      "Welcome to the cooperative solution phase. Review everyone's initial approach, discuss as a group, and help the Scribe craft the final answer.",
-      true,
-    ), 600)
-  }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!isBotMode || !selectedRole || rosterStarted.current) return
+    rosterStarted.current = true
 
-  // Proactive bot session — timed messages from Timer, Scribe, Angle Checker, Leader bots
+    const ROLE_ANNOUNCE: Record<BotRole, Record<BotTier, string>> = {
+      timer:           { smart: `ConradBOT — Timer. Clock is running.`,                              stupid: `OllieBOT here — I'm on timer! Ready!` },
+      scribe:          { smart: `PetraBOT — Scribe. I'll capture the key points.`,                  stupid: `MilaBOT here — I'll try to take notes!` },
+      'angle-checker': { smart: `RexBOT — Discussion Checker. Tracking the three vectors.`,         stupid: `BeaBOT — discussion checker! Looks fine to me already lol` },
+      leader:          { smart: `AriaBOT — Participation Checker. I'll make sure everyone's heard.`, stupid: `FinnBOT — participation checker! Let's get going!` },
+    }
+
+    // User's own slot fills immediately
+    setRosterFilled(new Set([selectedRole as BotRole]))
+
+    const botRoles = (BOT_ROLE_ORDER as BotRole[]).filter(r => r !== (selectedRole as BotRole))
+    let delay = 600
+    for (const r of botRoles) {
+      const msg = ROLE_ANNOUNCE[r][botTiers[r]]
+      const d = delay
+      setTimeout(() => setRosterFilled(prev => new Set([...prev, r])), d)
+      delay += typingDelay(msg, botTiers[r])
+    }
+  }, [selectedRole]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Startup sequence helpers ────────────────────────────────────────────────
+
+  const READY_PINGS: Partial<Record<BotRole, Record<BotTier, string>>> = {
+    timer:           { smart: 'Timer ready. Say the word and I\'ll start the clock.', stupid: 'I\'m here — ready I think!' },
+    scribe:          { smart: 'Scribe ready.', stupid: 'Here! I\'ll do my best to keep up.' },
+    'angle-checker': { smart: 'Discussion Checker ready. I\'ve been through the challenge.', stupid: 'Ready! Well — mostly.' },
+    leader:          { smart: 'Participation Checker ready.', stupid: 'I\'m here! Let\'s do this.' },
+  }
+
+  const triggerLeaderStart = (leaderName: string) => {
+    addBotMsg(leaderName, '♚ [Participation Checker] Session is open. Everyone — please confirm you are ready. Timer, set up when you are ready to start the clock.')
+    const otherBots = (BOT_ROLE_ORDER as BotRole[]).filter(r => r !== 'leader' && r !== (role as BotRole))
+    let delay = 1000
+    for (const r of otherBots) {
+      const name = BOT_NAMES[r][botTiers[r]]
+      const ping = READY_PINGS[r]?.[botTiers[r]] ?? 'Ready.'
+      setTimeout(() => addBotMsg(name, ping), delay)
+      delay += 700 + Math.random() * 400
+    }
+    setTimeout(() => setChatStartState('waiting-timer'), delay + 400)
+  }
+
+  const triggerTimerStart = (timerName: string) => {
+    addBotMsg(timerName, '[Timer] Clock started. Discussion is open — let\'s go.')
+    setTimeout(() => setChatStartState('active'), 400)
+  }
+
+  // Startup callbacks for user-held roles
+  const handleUserLeaderStart = () => {
+    const otherBots = (BOT_ROLE_ORDER as BotRole[]).filter(r => r !== 'leader' && r !== (role as BotRole))
+    let delay = 900
+    for (const r of otherBots) {
+      const name = BOT_NAMES[r][botTiers[r]]
+      const ping = READY_PINGS[r]?.[botTiers[r]] ?? 'Ready.'
+      setTimeout(() => addBotMsg(name, ping), delay)
+      delay += 600 + Math.random() * 400
+    }
+    setTimeout(() => setChatStartState('waiting-timer'), delay + 400)
+  }
+
+  const handleUserTimerStart = () => {
+    setTimeout(() => setChatStartState('active'), 400)
+  }
+
+  // Target Lock: Participation Checker locks the floor to one member
+  const handleTargetLock = useCallback((name: string, promptMsg: string) => {
+    onUserSend(promptMsg)
+    if (!isBotMode) return
+
+    setLockedTarget(name)
+    lockedTargetRef.current = name
+
+    if (lockTimerRef.current) clearTimeout(lockTimerRef.current)
+    lockTimerRef.current = setTimeout(() => {
+      if (lockedTargetRef.current === name) {
+        setLockedTarget(null)
+        lockedTargetRef.current = null
+        addBotMsg('System', `${name} disconnected. Auto-Bot assigned for remainder of session.`, true)
+      }
+    }, 45000)
+
+    const targetRole = (BOT_ROLE_ORDER as BotRole[]).find(r => BOT_NAMES[r][botTiers[r]] === name)
+    if (!targetRole) return
+
+    const tier = botTiers[targetRole]
+    const delay = 2200 + Math.random() * 1500
+    const idx = msgCount
+    setMsgCount(c => c + 1)
+
+    setTimeout(async () => {
+      if (lockedTargetRef.current !== name) return
+      const ctx = { userName, userSolution: metacogAnswers.solution, userSteps: metacogAnswers.audit }
+      const fallback = getBotP3bResponse(targetRole, tier, name, idx, ctx)
+
+      if (aiBotsEnabled) {
+        try {
+          const result = await callBotMessage({
+            type: 'chat', botName: name, botRole: targetRole, botTier: tier,
+            challenge: rlcText, userName,
+            userMetacog: metacogAnswers, botOwnMetacog: botMetacog[targetRole],
+            chatHistory: chat.slice(-10).map(m => ({ author: m.author, body: m.body })),
+            userMessage: 'The Participation Checker directly asked for your input.',
+          })
+          if (result.usage) addTokens(result.usage.inputTokens, result.usage.outputTokens)
+          addBotMsg(name, result.reply || fallback)
+        } catch {
+          addBotMsg(name, fallback)
+        }
+      } else {
+        await new Promise<void>(r => setTimeout(r, typingDelay(fallback, tier)))
+        addBotMsg(name, fallback)
+      }
+
+      if (lockTimerRef.current) clearTimeout(lockTimerRef.current)
+      setLockedTarget(null)
+      lockedTargetRef.current = null
+    }, delay)
+  }, [isBotMode, botTiers, msgCount, chat, metacogAnswers, botMetacog, rlcText, userName, aiBotsEnabled, addTokens, addBotMsg, onUserSend]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-start: bot holds the leader role
   useEffect(() => {
-    if (!isBotMode || !role) return
+    if (chatStartState !== 'waiting-leader' || !isBotMode || !role || role === 'leader') return
+    const leaderName = BOT_NAMES['leader'][botTiers['leader']]
+    const id = setTimeout(() => triggerLeaderStart(leaderName), 2500)
+    return () => clearTimeout(id)
+  }, [chatStartState, role]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-start: bot holds the timer role
+  useEffect(() => {
+    if (chatStartState !== 'waiting-timer' || !isBotMode || !role || role === 'timer') return
+    const timerName = BOT_NAMES['timer'][botTiers['timer']]
+    const id = setTimeout(() => triggerTimerStart(timerName), 3500)
+    return () => clearTimeout(id)
+  }, [chatStartState, role]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mr. Bot welcome fires once when discussion becomes active
+  useEffect(() => {
+    if (chatStartState !== 'active' || welcomeSent.current) return
+    welcomeSent.current = true
+    setTimeout(() => addBotMsg('Mr. Bot', 'Session is live. Discuss the challenge and help the Scribe build the final answer.', true), 300)
+  }, [chatStartState]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Proactive bot session — timed messages from Timer, Scribe, Discussion Checker, Participation Checker bots
+  useEffect(() => {
+    if (!isBotMode || !role || chatStartState !== 'active') return
+
+    // Capture allParticipants at session start; closure over botTiers is stable here
+    const allParticipantsCopy = [userName, ...(BOT_ROLE_ORDER as BotRole[]).filter(r => r !== (role as BotRole)).map(r => BOT_NAMES[r][botTiers[r]])]
+
     const stop = startBotSession({
       userRole:         role as BotRole,
       realRoles:        new Set([role as BotRole]),
@@ -1638,29 +1895,87 @@ const Phase3b: React.FC<{
       getUserIntent:    () => undefined,
       getCurrentQuestion: () => 0,
       userName,
+      getSilentParticipants: () => {
+        return allParticipantsCopy.filter(name => !chatRef.current.some(m => m.author === name))
+      },
+      getChat: () => chatRef.current,
+      captureNote: (category, author, body) => setScribeNotes(prev => [...prev, { id: Date.now(), category, author, body }]),
+      generateMessage: aiBotsEnabled
+        ? async (botName, botRole, context, fallback) => {
+            const result = await callBotMessage({
+              type: 'chat',
+              botName,
+              botRole,
+              botTier: botTiers[botRole],
+              challenge: rlcText,
+              userName,
+              userMetacog: metacogAnswers,
+              botOwnMetacog: botMetacog[botRole],
+              userMessage: context,
+            })
+            if (result.usage) addTokens(result.usage.inputTokens, result.usage.outputTokens)
+            return result.reply || fallback
+          }
+        : undefined,
     })
     return stop
-  }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [role, chatStartState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = (text: string) => {
     onUserSend(text)
-    if (!isBotMode || !role) return
+    if (!isBotMode || !role || chatStartState !== 'active') return
     const ctx = { userName, userSolution: metacogAnswers.solution, userSteps: metacogAnswers.audit }
     const mc = msgCount
     setMsgCount(c => c + 1)
     const botRoles = (BOT_ROLE_ORDER as BotRole[]).filter(r => r !== (role as BotRole))
     const primary  = botRoles[mc % botRoles.length]
     const primName = BOT_NAMES[primary][botTiers[primary]]
-    setTimeout(() => addBotMsg(primName, getBotP3bResponse(primary, botTiers[primary], primName, mc, ctx)), 1800)
+
+    const allParticipants = [userName, ...botRoles.map(r => BOT_NAMES[r][botTiers[r]])]
+
+    const sendBotReply = async (bRole: BotRole, bName: string, idx: number, initialDelayMs = 0) => {
+      if (initialDelayMs > 0) await new Promise<void>(r => setTimeout(r, initialDelayMs))
+      const tier = botTiers[bRole]
+      const fallbackText = getBotP3bResponse(bRole, tier, bName, idx, ctx)
+      if (aiBotsEnabled) {
+        const t0 = Date.now()
+        try {
+          const result = await callBotMessage({
+            type: 'chat',
+            botName: bName,
+            botRole: bRole,
+            botTier: tier,
+            challenge: rlcText,
+            userName,
+            userMetacog: metacogAnswers,
+            botOwnMetacog: botMetacog[bRole],
+            chatHistory: chat.slice(-20).map(m => ({ author: m.author, body: m.body })),
+            userMessage: text,
+            participants: allParticipants,
+          })
+          const reply = result.reply || fallbackText
+          const elapsed = Date.now() - t0
+          await new Promise<void>(r => setTimeout(r, Math.max(0, typingDelay(reply, tier) - elapsed)))
+          if (result.usage) addTokens(result.usage.inputTokens, result.usage.outputTokens)
+          addBotMsg(bName, reply)
+          return
+        } catch { /* fall through to scripted */ }
+      }
+      await new Promise<void>(r => setTimeout(r, typingDelay(fallbackText, tier)))
+      addBotMsg(bName, fallbackText)
+    }
+
+    void sendBotReply(primary, primName, mc)
     if (Math.random() < 0.45 && botRoles.length > 1) {
       const secondary = botRoles[(mc + 1) % botRoles.length]
       const secName   = BOT_NAMES[secondary][botTiers[secondary]]
-      setTimeout(() => addBotMsg(secName, getBotP3bResponse(secondary, botTiers[secondary], secName, mc + 3, ctx)), 3600)
+      // Secondary starts after primary's think time so they feel like different people
+      void sendBotReply(secondary, secName, mc + 3, typingDelay('', botTiers[secondary]))
     }
   }
 
   const sendFromInput = () => {
-    if (chatInput.trim()) { handleSend(chatInput.trim()); setChatInput('') }
+    if (chatInput.trim() && chatStartState === 'active' && !lockedTarget) { handleSend(chatInput.trim()); setChatInput('') }
   }
 
   // Build member list once (role is non-null here)
@@ -1669,70 +1984,238 @@ const Phase3b: React.FC<{
     { name: userName, metacog: metacogAnswers, isUser: true },
     ...botRoles3b.map(r => ({ name: BOT_NAMES[r][botTiers[r]], metacog: botMetacog[r], isUser: false })),
   ]
-  const addToDraft = (member: typeof members3b[0]) => {
-    const block = `— ${member.name}${member.isUser ? ' (you)' : ''} —\n${member.metacog.solution}\n\nSteps:\n${member.metacog.audit}`
-    setScribeDraft(scribeDraft ? `${scribeDraft}\n\n${block}` : block)
-  }
+  // ── Lobby ────────────────────────────────────────────────────────────────────
+  if (!role) {
+    const selDef = ROLE_DEFS.find(d => d.role === selectedRole)
+    return (
+      <div style={{ display: 'flex', gap: '1rem', width: '100%', alignItems: 'flex-start' }}>
 
-  // Show intro modal until role is selected
-  if (!role) return <Phase3bIntroModal isBotMode={isBotMode} onRoleSelected={r => setRole(r)} />
+        {/* Left panel: role selection OR confirmation */}
+        <div className="frame-parchment" style={{ flex: '0 0 260px', padding: '1.25rem', gap: '0.85rem', display: 'flex', flexDirection: 'column' }}>
+          <p style={{ fontFamily: FONT, fontSize: '0.8rem', letterSpacing: '3px', color: ACCENT, opacity: 0.5, margin: 0 }}>
+            PHASE IIIb · COOPERATIVE SOLUTION
+          </p>
+
+          {!selectedRole ? (
+            <>
+              <h2 style={{ fontFamily: FONT, fontSize: '1.3rem', color: ACCENT, margin: 0, letterSpacing: '2px' }}>SELECT YOUR ROLE</h2>
+              <p style={{ fontFamily: FONT, fontSize: '0.95rem', lineHeight: 1.55, color: TEXT, opacity: 0.65, margin: 0 }}>
+                Pick a role. The bots fill the remaining three seats.
+              </p>
+              {ROLE_DEFS.map(({ role: r, label, desc, icon }) => (
+                <button key={r} onClick={() => { setSelectedRole(r) }} style={{
+                  display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.75rem 0.9rem',
+                  textAlign: 'left', width: '100%', fontFamily: FONT, background: 'transparent',
+                  border: '1px solid rgba(255,215,0,0.22)', cursor: 'pointer', transition: 'all 0.15s',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.65)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.22)' }}
+                >
+                  <span style={{ fontSize: '1.6rem', color: ACCENT, minWidth: '2rem', textAlign: 'center' }}>{icon}</span>
+                  <div>
+                    <div style={{ fontSize: '1rem', color: ACCENT, letterSpacing: '2px' }}>{label}</div>
+                    <div style={{ fontSize: '0.88rem', color: TEXT, opacity: 0.6, marginTop: '2px', lineHeight: 1.4 }}>{desc}</div>
+                  </div>
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              <p style={{ fontFamily: FONT, fontSize: '0.8rem', letterSpacing: '2px', color: ACCENT, opacity: 0.5, margin: 0 }}>YOUR ROLE</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.9rem 1rem', border: '1px solid rgba(255,215,0,0.5)', background: 'rgba(255,215,0,0.06)' }}>
+                <span style={{ fontFamily: FONT, fontSize: '2rem', color: ACCENT }}>{selDef?.icon}</span>
+                <div style={{ fontFamily: FONT }}>
+                  <div style={{ fontSize: '1.1rem', color: ACCENT, letterSpacing: '2px' }}>{selDef?.label}</div>
+                  <div style={{ fontSize: '0.9rem', color: TEXT, opacity: 0.7, marginTop: '2px' }}>{userName}</div>
+                </div>
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: '0.9rem', color: TEXT, opacity: 0.6, margin: 0, lineHeight: 1.5 }}>{selDef?.desc}</p>
+              <p style={{ fontFamily: FONT, fontSize: '0.85rem', color: TEXT, opacity: 0.4, margin: 0 }}>
+                {rosterFilled.size < 4 ? `${rosterFilled.size}/4 seats filled — bots joining...` : '✓ All seats filled'}
+              </p>
+              {rosterFilled.size === 4 && (
+                <button className="btn-9slice" onClick={() => setRole(selectedRole!)} style={{ fontSize: '1rem', letterSpacing: '2px', marginTop: '0.5rem' }}>
+                  ♚ START COOPERATIVE GROUP CHAT
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Right panel: game lobby roster */}
+        <div className="frame-parchment" style={{ flex: '1 1 0', padding: '1.25rem', gap: '0.65rem', display: 'flex', flexDirection: 'column' }}>
+          <p style={{ fontFamily: FONT, fontSize: '0.8rem', letterSpacing: '3px', color: ACCENT, opacity: 0.5, margin: 0 }}>GROUP ROSTER</p>
+
+          {ROLE_DEFS.map(({ role: r, label, icon }) => {
+            const isUser  = r === selectedRole
+            const filled  = rosterFilled.has(r as BotRole)
+            const name    = isUser ? userName : BOT_NAMES[r as BotRole][botTiers[r as BotRole]]
+            const borderC = filled ? (isUser ? 'rgba(255,215,0,0.55)' : 'rgba(100,220,100,0.4)') : 'rgba(255,255,255,0.08)'
+            const bgC     = filled ? (isUser ? 'rgba(255,215,0,0.05)' : 'rgba(100,220,100,0.04)') : 'transparent'
+            const nameC   = filled ? (isUser ? ACCENT : 'rgba(100,220,100,0.9)') : 'rgba(255,255,255,0.2)'
+            const iconC   = filled ? (isUser ? ACCENT : 'rgba(100,220,100,0.75)') : 'rgba(255,255,255,0.15)'
+            return (
+              <div key={r} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.9rem 1rem', border: `1px solid ${borderC}`, background: bgC, transition: 'all 0.4s' }}>
+                <span style={{ fontFamily: FONT, fontSize: '1.8rem', color: iconC, minWidth: '2.2rem', textAlign: 'center', transition: 'color 0.4s' }}>{icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: FONT, fontSize: '0.78rem', letterSpacing: '2.5px', color: TEXT, opacity: 0.45 }}>{label}</div>
+                  <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: nameC, marginTop: '2px', transition: 'color 0.4s' }}>
+                    {filled ? name : (selectedRole ? '···' : '—')}
+                  </div>
+                </div>
+                {filled && (
+                  <span style={{ fontFamily: FONT, fontSize: '0.75rem', letterSpacing: '1.5px', padding: '2px 9px', border: `1px solid ${isUser ? 'rgba(255,215,0,0.45)' : 'rgba(100,220,100,0.35)'}`, color: isUser ? 'rgba(255,215,0,0.8)' : 'rgba(100,220,100,0.75)' }}>
+                    {isUser ? 'YOU' : 'BOT'}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
 
       {/* ── 1. Two columns: role panel (left) | chat (right) ── */}
-      <div style={{ display: 'flex', gap: '1rem', width: '100%', alignItems: 'flex-start' }}>
-        <div style={{ flex: '1 1 0' }}>
-          {role === 'leader'        && <LeaderCompact onSend={handleSend} memberNames={members3b.filter(m => !m.isUser).map(m => m.name)} chat={chat} />}
-          {role === 'timer'         && <TimerCompact        onSend={handleSend} />}
-          {role === 'scribe'        && <ScribeCompact       onSend={handleSend} />}
-          {role === 'angle-checker' && <AngleCheckerCompact onSend={handleSend} />}
-        </div>
-        <div className="frame-parchment" style={{ flex: '1 1 0', height: '360px', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '2px', opacity: 0.45, color: TEXT, margin: 0, flexShrink: 0 }}>GROUP DISCUSSION</p>
-          <div ref={chatContainerRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.4rem', background: 'rgba(0,0,0,0.15)' }}>
-            {chat.length === 0 && (
-              <p style={{ fontFamily: FONT, fontSize: '1.05rem', opacity: 0.3, color: TEXT, margin: 'auto', textAlign: 'center' }}>Discuss with your group here.</p>
-            )}
-            {chat.map(msg => (
-              <div key={msg.id}>
-                <span style={{ fontFamily: FONT, fontSize: '0.95rem', fontWeight: 700, color: msg.isTeacher ? '#88aaff' : ACCENT }}>{msg.author} </span>
-                <span style={{ fontFamily: FONT, fontSize: '0.9rem', opacity: 0.45, color: TEXT }}>{msg.time}</span>
-                <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.4 }}>{msg.body}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
-            <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendFromInput()}
-              placeholder="Type a message..."
-              style={{ flex: 1, fontFamily: FONT, fontSize: '0.95rem', padding: '0.35rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.2)', color: 'rgba(255,255,255,0.85)', outline: 'none' }}
-            />
-            <button className="btn-9slice" onClick={sendFromInput} style={{ fontSize: '0.9rem', padding: '4px 10px' }}>SEND</button>
-          </div>
-        </div>
-      </div>
+      {/* Compute discussion checker vectors from chat to gate final compilation */}
+      {(() => {
+        const bodies = chat.map(m => m.body)
+        const dcVectors = {
+          solution: bodies.some(b => b.includes('We need to talk about the solution first')),
+          steps:    bodies.some(b => b.includes('We need to talk about the steps')),
+          audit:    bodies.some(b => b.includes('we will know if this solution is the best')),
+        }
+        const dcVectorsComplete = dcVectors.solution && dcVectors.steps && dcVectors.audit
 
-      {/* ── 2. Scribe draft — full width, scribe only ── */}
-      {finalPhaseActive ? (
+        const chatInputLocked = chatStartState !== 'active' || !!lockedTarget
+        const chatPlaceholder = chatStartState !== 'active'
+          ? 'Chat opens when the Timer starts the session...'
+          : lockedTarget
+            ? `Waiting for ${lockedTarget} to respond...`
+            : 'Type a message...'
+
+        return (
+          <div style={{ display: 'flex', gap: '1rem', width: '100%', alignItems: 'flex-start' }}>
+            <div style={{ flex: '1 1 0' }}>
+              {role === 'leader'        && <LeaderCompact
+                onSend={handleSend}
+                onTargetPrompt={handleTargetLock}
+                memberNames={members3b.filter(m => !m.isUser).map(m => m.name)}
+                chat={chat}
+                onStart={handleUserLeaderStart}
+                lockedTarget={lockedTarget}
+                onTriggerFinal={() => { setScribeDraft(formatScribeNotes(scribeNotes)); setFinalPhaseActive(true) }}
+                finalPhaseActive={finalPhaseActive}
+                dcVectorsComplete={dcVectorsComplete}
+              />}
+              {role === 'timer'         && <TimerCompact onSend={handleSend} onSessionStart={handleUserTimerStart} />}
+              {role === 'scribe'        && <ScribeCompact onSend={handleSend} noteCount={scribeNotes.length} />}
+              {role === 'angle-checker' && <DiscussionCheckerCompact
+                onSend={handleSend}
+                onPromptUsed={key => setDcPromptsUsed(prev => new Set([...prev, key]))}
+                promptsUsed={dcPromptsUsed}
+              />}
+            </div>
+            <div className="frame-parchment" style={{ flex: '1 1 0', height: '360px', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '2px', opacity: 0.45, color: TEXT, margin: 0, flexShrink: 0 }}>GROUP DISCUSSION</p>
+
+              {chatStartState === 'waiting-leader' && (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ fontFamily: FONT, fontSize: '0.8rem', letterSpacing: '3px', color: ACCENT, opacity: 0.4 }}>— — —</div>
+                  <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '2px', color: ACCENT, opacity: 0.45, margin: 0, textAlign: 'center' }}>
+                    AWAITING PARTICIPATION CHECKER TO OPEN THE DISCUSSION
+                  </p>
+                  <div style={{ fontFamily: FONT, fontSize: '0.8rem', letterSpacing: '3px', color: ACCENT, opacity: 0.4 }}>— — —</div>
+                </div>
+              )}
+
+              {chatStartState !== 'waiting-leader' && (
+                <div ref={chatContainerRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.4rem', background: 'rgba(0,0,0,0.15)' }}>
+                  {chatStartState === 'waiting-timer' && (
+                    <div style={{ fontFamily: FONT, fontSize: '0.85rem', letterSpacing: '2.5px', color: 'rgba(255,200,80,0.85)', padding: '0.4rem 0.6rem', border: '1px solid rgba(255,200,80,0.25)', background: 'rgba(255,200,80,0.05)', textAlign: 'center', flexShrink: 0 }}>
+                      ◷ WAITING FOR TIMER TO START
+                    </div>
+                  )}
+                  {chat.map(msg => {
+                    const alreadyCaptured = scribeNotes.some(n => n.body === msg.body && n.author === msg.author)
+                    const isOpen = capturePopup === msg.id
+                    return (
+                      <div key={msg.id}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                          <span style={{ fontFamily: FONT, fontSize: '0.95rem', fontWeight: 700, color: msg.isTeacher ? '#88aaff' : ACCENT }}>{msg.author} </span>
+                          <span style={{ fontFamily: FONT, fontSize: '0.9rem', opacity: 0.45, color: TEXT }}>{msg.time}</span>
+                          {role === 'scribe' && !finalPhaseActive && (
+                            <button onClick={() => setCapturePopup(isOpen ? null : msg.id)} title="Capture to notes" style={{
+                              marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer', padding: '0 3px', lineHeight: 1,
+                              color: alreadyCaptured ? 'rgba(100,220,100,0.75)' : isOpen ? ACCENT : 'rgba(255,215,0,0.3)',
+                              fontSize: '0.9rem', transition: 'color 0.2s',
+                            }}>
+                              {alreadyCaptured ? '✓' : '✎'}
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.4 }}>{msg.body}</div>
+                        {isOpen && (
+                          <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
+                            {NOTE_CATEGORIES.map(({ key, label, icon, color }) => (
+                              <button key={key} onClick={() => {
+                                setScribeNotes(prev => [...prev, { id: Date.now(), category: key, author: msg.author, body: msg.body }])
+                                setCapturePopup(null)
+                              }} style={{
+                                fontFamily: FONT, fontSize: '0.82rem', letterSpacing: '1px', padding: '0.25rem 0.55rem',
+                                background: 'rgba(0,0,0,0.4)', border: `1px solid ${color.replace('0.85', '0.45')}`,
+                                color, cursor: 'pointer',
+                              }}>
+                                {icon} {label}
+                              </button>
+                            ))}
+                            <button onClick={() => setCapturePopup(null)} style={{ fontFamily: FONT, fontSize: '0.82rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '0.25rem 0.5rem' }}>✕</button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !chatInputLocked && sendFromInput()}
+                  disabled={chatInputLocked}
+                  placeholder={chatPlaceholder}
+                  style={{ flex: 1, fontFamily: FONT, fontSize: '0.95rem', padding: '0.35rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,215,0,0.2)', color: chatInputLocked ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.85)', outline: 'none', cursor: chatInputLocked ? 'not-allowed' : 'text' }}
+                />
+                <button className="btn-9slice" onClick={!chatInputLocked ? sendFromInput : undefined} style={{ fontSize: '0.9rem', padding: '4px 10px', opacity: chatInputLocked ? 0.35 : 1, cursor: chatInputLocked ? 'not-allowed' : 'pointer' }}>SEND</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── 2. Group notes — full width, always visible ── */}
+      <ScribeDraftPanel
+        userRole={role}
+        scribeNotes={scribeNotes}
+        onRemoveNote={id => setScribeNotes(prev => prev.filter(n => n.id !== id))}
+        finalPhaseActive={finalPhaseActive}
+      />
+
+      {/* ── Final compilation banner ── */}
+      {finalPhaseActive && (
         <div className="frame-parchment" style={{ padding: '1.5rem', gap: '1rem', maxWidth: 'none' }}>
           <p style={{ fontFamily: FONT, fontSize: '1rem', letterSpacing: '3px', color: ACCENT, margin: 0 }}>
-            ▶ FINAL SOLUTION — ALL MEMBERS REVIEWING
+            ▶ FINAL COMPILATION — ALL MEMBERS REVIEWING
           </p>
           <div style={{ fontFamily: FONT, fontSize: '1.05rem', color: TEXT, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-            {scribeDraft || '[No draft was submitted]'}
+            {scribeDraft || '[No notes were captured]'}
           </div>
           <button className="btn-9slice" onClick={onProceed} style={{ alignSelf: 'center', fontSize: '1.2rem', letterSpacing: '2px', minWidth: '260px' }}>
             PROCEED TO RECALIBRATION →
           </button>
         </div>
-      ) : (
-        <ScribeDraftPanel
-          userRole={role}
-          scribeDraft={scribeDraft} setScribeDraft={setScribeDraft}
-          finalPhaseActive={finalPhaseActive}
-          onTriggerFinal={draft => { setScribeDraft(draft); setFinalPhaseActive(true) }}
-        />
       )}
 
       {/* ── 3. Challenge — full width, scrollable ── */}
@@ -1750,16 +2233,14 @@ const Phase3b: React.FC<{
         </div>
         <div style={{ height: '100px', overflowY: 'auto', paddingRight: '4px' }}>
           <p style={{ fontFamily: FONT, fontSize: '1rem', lineHeight: 1.75, color: TEXT, whiteSpace: 'pre-line', opacity: 0.9, margin: 0 }}>
-            {CHALLENGE_SCENARIO}
+            {rlcText}
           </p>
         </div>
       </div>
 
-      {/* ── 4. Member solutions — full width, all 4 cards ── */}
+      {/* ── 4. Member solutions — full width, display only ── */}
       <div className="frame-parchment" style={{ padding: '1.25rem', gap: '1rem', maxWidth: 'none' }}>
-        <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>
-          MEMBER SOLUTIONS{role === 'scribe' && !finalPhaseActive ? ' · CLICK + ADD TO DRAFT TO INCLUDE A SOLUTION' : ''}
-        </p>
+        <p style={{ fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '3px', color: ACCENT, opacity: 0.55, margin: 0 }}>MEMBER SOLUTIONS</p>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           {members3b.map(member => (
             <div key={member.name} className="frame-parchment" style={{ flex: '1 1 180px', minWidth: '180px', padding: '0.85rem', gap: '0.6rem' }}>
@@ -1778,12 +2259,6 @@ const Phase3b: React.FC<{
                   {member.metacog.audit}
                 </p>
               </div>
-              {role === 'scribe' && !finalPhaseActive && (
-                <button onClick={() => addToDraft(member)} style={{
-                  fontFamily: FONT, fontSize: '0.9rem', letterSpacing: '1px', padding: '0.35rem 0.75rem', marginTop: '0.25rem',
-                  background: 'rgba(255,215,0,0.07)', border: '1px solid rgba(255,215,0,0.4)', color: ACCENT, cursor: 'pointer',
-                }}>+ ADD TO DRAFT</button>
-              )}
             </div>
           ))}
         </div>
@@ -2250,6 +2725,14 @@ export const LearningTaskUI: React.FC = () => {
     return { botTiers: tiers, botAnswers: answers }
   })
 
+  const [rlcText, setRlcText] = useState(CHALLENGE_SCENARIO)
+  useEffect(() => {
+    fetch('/assets/learning-tasks/LearningTask1/RLC/rlc.txt')
+      .then(r => r.text())
+      .then(text => { if (text.trim()) setRlcText(text.trim()) })
+      .catch(() => { /* keep hardcoded fallback */ })
+  }, [])
+
   const [phase, setPhase]           = useState<Phase>(1)
   const [subPhase, setSubPhase]     = useState<'review' | 'cooperative'>('review')
   const { setTaskContext, setRole: setStoreRole, clearTaskContext } = useTaskContextStore()
@@ -2257,12 +2740,14 @@ export const LearningTaskUI: React.FC = () => {
   useEffect(() => () => clearTaskContext(), [])
   const [metacogAnswers, setMetacogAnswers] = useState<MetacogState | null>(null)
 
-  // Stable bot metacog — seeded once, aligned with botTiers
-  const [botMetacog] = useState<Record<BotRole, MetacogState>>(() =>
+  // Stable bot metacog — seeded once, aligned with botTiers; setter allows AI replacement
+  const [botMetacog, setBotMetacog] = useState<Record<BotRole, MetacogState>>(() =>
     Object.fromEntries(
-      BOT_ROLE_ORDER.map(r => [r, BOT_METACOG[r as BotRole][randomTiers()[r as BotRole]]])
+      BOT_ROLE_ORDER.map(r => [r, BOT_METACOG[r as BotRole][botTiers[r as BotRole]]])
     ) as Record<BotRole, MetacogState>
   )
+
+  const { aiBotsEnabled, addTokens } = useDevStore()
 
   const [phase2Answers, setPhase2Answers] = useState<Record<number, number>>({})
   const [role,  setRole]  = useState<Role | null>(null)
@@ -2274,6 +2759,34 @@ export const LearningTaskUI: React.FC = () => {
   const addBotMsg = useCallback((author: string, body: string, isTeacher?: boolean) => {
     setChat(p => [...p, { id: Date.now() + Math.random(), author, body, time: nowTime(), isTeacher }])
   }, [])
+
+  // Fire AI metacog for ALL bot roles as soon as Phase3b mounts — gives maximum lead time before user clicks START
+  useEffect(() => {
+    if (subPhase !== 'cooperative' || !isBotMode || !aiBotsEnabled || !metacogAnswers) return
+    for (const r of BOT_ROLE_ORDER as BotRole[]) {
+      callBotMessage({
+        type: 'metacog',
+        botName: BOT_NAMES[r][botTiers[r]],
+        botRole: r,
+        botTier: botTiers[r],
+        challenge: rlcText,
+        userName: user?.displayName ?? '',
+        userMetacog: metacogAnswers,
+      }).then(result => {
+        if (result.usage) addTokens(result.usage.inputTokens, result.usage.outputTokens)
+        if (result.reply) {
+          try {
+            const jsonMatch = result.reply.match(/\{[\s\S]*\}/)
+            const jsonStr = jsonMatch ? jsonMatch[0] : result.reply
+            const parsed = JSON.parse(jsonStr) as Partial<MetacogState>
+            if (parsed.problem && parsed.criteria && parsed.solution && parsed.audit) {
+              setBotMetacog(prev => ({ ...prev, [r]: parsed as MetacogState }))
+            }
+          } catch { /* keep scripted fallback */ }
+        }
+      }).catch(() => { /* keep scripted fallback */ })
+    }
+  }, [subPhase]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const advancePhase = useCallback((next: Phase) => {
@@ -2331,7 +2844,7 @@ export const LearningTaskUI: React.FC = () => {
         <AnimatePresence mode="wait">
           {phase === 1 && (
             <motion.div key="p1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: '100%' }}>
-              <Phase1 onComplete={(a) => { setMetacogAnswers(a); advancePhase(2) }} />
+              <Phase1 onComplete={(a) => { setMetacogAnswers(a); advancePhase(2) }} rlcText={rlcText} />
             </motion.div>
           )}
 
@@ -2371,6 +2884,7 @@ export const LearningTaskUI: React.FC = () => {
                   scribeDraft={scribeDraft}
                   setScribeDraft={setScribeDraft}
                   onProceed={() => { advancePhase(4); setRole(null); setFinalPhaseActive(false); setSubPhase('review') }}
+                  rlcText={rlcText}
                 />
               )}
             </motion.div>

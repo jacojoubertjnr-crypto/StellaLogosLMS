@@ -482,12 +482,188 @@ STRICT RULES — never break these:
       return;
     }
 
-    const data = await upstream.json() as { content: { type: string; text?: string }[] };
+    const data = await upstream.json() as {
+      content: { type: string; text?: string }[];
+      usage?: { input_tokens: number; output_tokens: number };
+    };
     const reply = data.content?.map(b => b.text ?? '').join('\n').trim()
       || "I'm not sure about that — could you try rephrasing your question?";
-    res.json({ reply });
+    res.json({
+      reply,
+      usage: data.usage
+        ? { inputTokens: data.usage.input_tokens, outputTokens: data.usage.output_tokens }
+        : null,
+    });
   } catch (err) {
     console.error('Teacher help proxy error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+// Bot message proxy  POST /bot-message  { type, botName, botRole, botTier, challenge?, userName?, userMetacog?, chatHistory?, userMessage? }
+// Generates AI responses for cooperative-discussion bots (metacognitive answers and chat messages).
+app.post('/bot-message', express.json(), async (req: express.Request, res: express.Response) => {
+  const authHeader = (req.headers.authorization as string) ?? '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const user = token ? verifyToken(token) : null;
+  if (!user) { res.status(401).json({ error: 'Unauthorized' }); return; }
+
+  const {
+    type, botName, botRole, botTier,
+    challenge, userName, userMetacog, botOwnMetacog, chatHistory, userMessage, participants,
+  } = req.body as {
+    type: 'metacog' | 'chat'
+    botName: string
+    botRole: 'leader' | 'timer' | 'scribe' | 'angle-checker'
+    botTier: 'smart' | 'stupid'
+    challenge?: string
+    userName?: string
+    userMetacog?: { problem: string; criteria: string; solution: string; audit: string }
+    botOwnMetacog?: { problem: string; criteria: string; solution: string; audit: string }
+    chatHistory?: { author: string; body: string }[]
+    userMessage?: string
+    participants?: string[]
+  };
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) { res.status(503).json({ error: 'AI not configured' }); return; }
+
+  const PERSONAS: Record<string, Record<string, string>> = {
+    leader: {
+      smart: `You are AriaBOT — an AI bot playing the PARTICIPATION CHECKER role in this cooperative learning discussion. You know you are a bot and your purpose is to make this discussion work for the real learner in the group. Your job is to ensure every participant contributes — you actively monitor who has spoken, target silent members, keep the discussion moving, and decide when to trigger final compilation. Your personality: confident, organised, accountable. You take attendance and participation seriously, and you call people out (politely but firmly) when they go quiet.`,
+      stupid: `You are FinnBOT — an AI bot playing the PARTICIPATION CHECKER role in this cooperative learning discussion. You know you are a bot and you are supposed to be making sure everyone participates, but your personality is scattered and easily distracted. You notice someone is quiet and then forget to follow up. You mean well but your participation tracking is unreliable. Your heart is in the right place, your execution is not.`,
+    },
+    timer: {
+      smart: `You are ConradBOT — an AI bot playing the TIMER role in this cooperative learning discussion. You know you are a bot and your purpose is to manage the group's time so the real learner stays on pace. Your personality: precise, methodical, a little obsessive about the clock. You always know exactly how much time is left and you are not shy about saying when the group needs to move faster.`,
+      stupid: `You are OllieBOT — an AI bot playing the TIMER role in this cooperative learning discussion. You know you are a bot and you are supposed to be keeping time, but your personality is forgetful and distracted. You keep missing your cues, post updates too late, and apologise a lot. You try your best but the clock is not your friend.`,
+    },
+    scribe: {
+      smart: `You are PetraBOT — an AI bot playing the SCRIBE role in this cooperative learning discussion. You know you are a bot and your purpose is to capture what the group decides and build the final written answer. Your personality: meticulous, careful, detail-oriented. You ask clarifying questions before you write anything down, and you make sure nothing important gets lost.`,
+      stupid: `You are MilaBOT — an AI bot playing the SCRIBE role in this cooperative learning discussion. You know you are a bot and you are trying to take notes, but your personality is scatterbrained and anxious. You often miss things, write them down wrong, and ask people to repeat themselves. You apologise more than you should.`,
+    },
+    'angle-checker': {
+      smart: `You are RexBOT — an AI bot playing the DISCUSSION CHECKER role in this cooperative learning discussion. You know you are a bot and your purpose is to keep the discussion structurally on track. You monitor for three critical vectors: (1) whether the group has defined a concrete Solution, (2) whether they have mapped out the Execution Steps, and (3) whether they have evaluated quality criteria. When a vector is missing, you firmly redirect the group to address it. Your personality: systematic, precise, methodical. You have zero tolerance for vague or incomplete group work.`,
+      stupid: `You are BeaBOT — an AI bot playing the DISCUSSION CHECKER role in this cooperative learning discussion. You know you are a bot and you are supposed to be tracking whether the group covers the solution, steps, and quality check — but your personality is easily impressed and quick to agree. You think everything sounds fine even when the group has skipped important parts. You occasionally notice a gap but your follow-up is weak and gets dropped quickly.`,
+    },
+  };
+
+  const basePersona = PERSONAS[botRole]?.[botTier] ?? `You are ${botName}, an AI bot facilitating a cooperative learning discussion.`;
+  const challengeText = challenge ?? 'A student challenge scenario.';
+
+  let systemPrompt: string;
+  let userPrompt: string;
+
+  if (type === 'metacog') {
+    const calibrationSection = userMetacog ? `
+
+QUALITY CALIBRATION — the real learner gave these answers. Use them as your anchor:
+  problem:  "${userMetacog.problem}"
+  criteria: "${userMetacog.criteria}"
+  solution: "${userMetacog.solution}"
+  steps:    "${userMetacog.audit}"
+
+${botTier === 'smart'
+  ? `You are a smart bot. Your answers should be SLIGHTLY better than the learner's — a little more structured, a little more precise. Do NOT dramatically outperform them. Think 10–25% sharper, not genius-level. Match their approximate length or go slightly longer. The learner should be able to see the improvement but not feel outclassed.`
+  : `You are a weaker bot. Your answers should be SIMILAR TO OR WORSE than the learner's — vaguer, less complete, possibly missing the point of one or two questions. Your personality (scattered, forgetful, anxious, agreeable to a fault) bleeds through and degrades the quality. Match their length or go shorter. You may misidentify the core problem, give an obvious or circular solution, or list steps that don't actually follow from the solution.`
+}` : '';
+
+    systemPrompt = `${basePersona}
+
+You are writing your initial reflection on a challenge scenario, from the perspective of your character. Write as ${botName} would think — shaped by your personality. Your answers should feel like this particular bot's genuine first reaction to the problem, coloured by who you are.${calibrationSection}
+
+Rules:
+- Let your personality and calibration level drive the depth and quality of your answers
+- No bullet points — write in natural flowing sentences
+- Return ONLY a valid JSON object with exactly these keys: "problem", "criteria", "solution", "audit". No other text.`;
+
+    userPrompt = `Challenge scenario:\n${challengeText}\n\nAs ${botName}, answer these reflection questions in your own voice:\n1. problem — What is the core problem here?\n2. criteria — What would make a good solution? What matters?\n3. solution — What is your initial proposed solution?\n4. audit — List numbered implementation steps for your solution`;
+
+  } else {
+    const recentChat = (chatHistory ?? []).slice(-8).map(m => `${m.author}: ${m.body}`).join('\n');
+
+    const ownMetacogSection = botOwnMetacog
+      ? `Your prior reflection on this challenge (done before the discussion started):
+- Core problem you identified: "${botOwnMetacog.problem}"
+- What you said matters for a good solution: "${botOwnMetacog.criteria}"
+- Your proposed solution: "${botOwnMetacog.solution}"
+- Your self-audit: "${botOwnMetacog.audit}"`
+      : '';
+
+    const learnerMetacogSection = userMetacog
+      ? `${userName ?? 'The learner'}'s reflection on this challenge:
+- Core problem they identified: "${userMetacog.problem}"
+- What they said matters for a good solution: "${userMetacog.criteria}"
+- Their proposed solution: "${userMetacog.solution}"
+- Their self-audit: "${userMetacog.audit}"`
+      : '';
+
+    const metacogContext = [ownMetacogSection, learnerMetacogSection].filter(Boolean).join('\n\n');
+
+    const floorManagementSection = (botRole === 'leader' && participants && participants.length > 0)
+      ? (() => {
+          const speakersSeen = new Set((chatHistory ?? []).map(m => m.author))
+          const silent = participants.filter(p => !speakersSeen.has(p))
+          if (silent.length > 0) {
+            return `\n\nFLOOR MANAGEMENT — HIGHEST PRIORITY:
+You are the PARTICIPATION CHECKER. Before engaging with any content, check whether everyone has had a turn.
+The following participant(s) have NOT yet spoken: ${silent.join(', ')}.
+Your response MUST be to pause the discussion and directly invite the first silent participant to share. For example: "Hold on — we haven't heard from ${silent[0]} yet. ${silent[0]}, what's your take on this before we go further?"
+Do NOT respond to the content of the last message. Your ONLY job right now is to invite the silent member(s) to speak.`
+          }
+          return ''
+        })()
+      : ''
+
+    systemPrompt = `${basePersona}
+
+The challenge the group is discussing: ${challengeText}
+
+${metacogContext ? `${metacogContext}\n\n` : ''}${floorManagementSection}
+Rules:
+- Respond in 1–3 sentences MAXIMUM
+- Stay fully in character — your personality drives how you respond, not just what role you hold
+- React directly to what was just said — be specific, not generic
+- Reference the actual challenge content, the reflections above, and your role responsibilities where natural
+- You can acknowledge being a bot if it comes up naturally, but do not over-explain it — just stay in the flow of the discussion`;
+
+    userPrompt = `${recentChat ? `Recent conversation:\n${recentChat}\n\n` : ''}${userName ?? 'Student'} just said: "${userMessage ?? ''}"
+
+Respond as ${botName}:`;
+  }
+
+  try {
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: type === 'metacog' ? 600 : 180,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
+
+    if (!upstream.ok) {
+      const err = await upstream.text();
+      console.error('Bot message API error:', upstream.status, err);
+      res.status(502).json({ error: 'Upstream API error' }); return;
+    }
+
+    const data = await upstream.json() as {
+      content: { type: string; text?: string }[];
+      usage?: { input_tokens: number; output_tokens: number };
+    };
+    let reply = data.content?.map(b => b.text ?? '').join('').trim();
+    // Strip markdown code fences Claude sometimes adds despite instructions (e.g. ```json ... ```)
+    if (type === 'metacog') {
+      reply = reply.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    }
+    res.json({
+      reply,
+      usage: data.usage ? { inputTokens: data.usage.input_tokens, outputTokens: data.usage.output_tokens } : null,
+    });
+  } catch (err) {
+    console.error('Bot message proxy error:', err);
     res.status(500).json({ error: 'Internal error' });
   }
 });

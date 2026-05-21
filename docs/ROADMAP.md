@@ -838,6 +838,121 @@ Iterative improvements to the Phase III cooperative layout in `LearningTaskUI.ts
 
 ---
 
+## Phase 10+: AI-Powered Cooperative Bot Enhancements ✅ COMPLETE
+
+Iterative improvements to the Phase 3b bot system turning scripted responses into fully AI-generated, context-aware behaviour.
+
+### `/bot-message` backend endpoint
+- [x] `POST /bot-message` — JWT-gated Express endpoint in `backend/src/index.ts`; accepts `type: 'metacog' | 'chat'`, `botRole`, `botTier`, `botName`, `challenge`, `userName`, `userMetacog`, `botOwnMetacog`, `chatHistory`, `userMessage`, `participants`
+- [x] `type: 'metacog'` — returns JSON with `{ problem, criteria, solution, audit }` shaped to the bot's persona and tier; code-fence stripping applied before returning
+- [x] `type: 'chat'` — returns a conversational reply (1–3 sentences max) shaped by the bot's persona, the challenge text, both metacog objects, and recent chat history
+- [x] Full persona system: smart/stupid variants per role, each with a named character and distinct voice (AriaBOT, FinnBOT, ConradBOT, OllieBOT, PetraBOT, MilaBOT, RexBOT, BeaBOT)
+
+### Dynamic RLC loading
+- [x] `rlcText` state in `LearningTaskUI.tsx` fetched from `/assets/learning-tasks/LearningTask1/RLC/rlc.txt` on mount; falls back to a hardcoded scenario constant
+- [x] `rlcText` passed to Phase1 (displays the challenge), Phase3b (renders in the RLC reminder panel), and all `callBotMessage` calls — single source of truth for the challenge content
+- [x] `public/assets/learning-tasks/LearningTask1/RLC/rlc.txt` — contains the actual live challenge (drone rescue / Java programming / tsunami scenario)
+- [x] Wire removes: `BOT_CHALLENGE_CONTEXT` and `CHALLENGE_SCENARIO` hardcoded constants replaced by the dynamic fetch
+
+### RLC text entry in Task Creator
+- [x] `TaskDraft.rlcTextContent: string` — new field in the HQL task draft
+- [x] CHALLENGE step in `LearningTaskCreator.tsx` gains a **REAL-LIFE CHALLENGE TEXT** section: textarea for direct typing/pasting + "📁 LOAD FROM .TXT" file picker shortcut (uses `FileReader.readAsText`)
+- [x] On save: textarea content is wrapped in `new File([...], 'rlc.txt')` and uploaded via the existing file-upload endpoint
+- [x] On edit-mode load: existing `rlc.txt` file is fetched via `r.text()` and pre-populated into the textarea
+- [x] Validation: CHALLENGE step is invalid unless `rlcTextContent.trim()` is non-empty; word count shown live
+
+### Bot metacog generation — AI-powered with quality calibration
+- [x] `callBotMessage({ type: 'metacog', ... })` — fires for all 4 bot roles simultaneously as a `useEffect` when `subPhase === 'cooperative'` (Phase3b mount), giving 10–20 s of lead time before the user can start the session
+- [x] Timing fix: moved from `handleLobbyRoleSelected` (fired at role selection, too late) to a `useEffect` on `subPhase` (fires at Phase3b mount for all roles, earliest possible)
+- [x] Quality calibration: user's own metacog answers passed as `userMetacog` anchor; smart bots told to be 10–25% better; stupid bots told to be equal-or-worse with personality degradation; calibration block in system prompt uses the learner's actual text
+- [x] `botOwnMetacog` passed into all chat calls so bots can reference their own prior reflection during discussion
+- [x] `BOT_METACOG` scripted fallbacks updated to reference the drone rescue challenge (removed old school board presentation references)
+- [x] JSON extraction: regex `/\{[\s\S]*\}/` extracts object even when Claude wraps response in markdown code fences
+
+### Leader floor management
+- [x] `participants` array passed from frontend to `/bot-message` on every chat call
+- [x] Backend computes `speakersSeen` from `chatHistory`; if any participant has not spoken, the leader's system prompt gains a **FLOOR MANAGEMENT — HIGHEST PRIORITY** block
+- [x] Floor management block names the silent participant(s) and instructs the leader to pause content and invite them directly; overrides all other response instructions
+- [x] Chat history slice extended from 8 → 20 messages for accurate silence detection
+
+### Cooperative discussion startup ceremony
+- [x] `chatStartState: 'waiting-leader' | 'waiting-timer' | 'active'` state in Phase3b
+- [x] Chat starts blank; placeholder "AWAITING LEADER TO OPEN THE DISCUSSION" shown instead of messages
+- [x] **Leader opens**: user-as-leader clicks "♚ START COOPERATIVE GROUP CHAT" → fires participation ping → bot members ping back (staggered) → state → `'waiting-timer'`; bot-as-leader auto-fires after 2.5 s
+- [x] **Timer starts**: "◷ WAITING FOR TIMER TO START" amber banner shown above messages; user-as-timer clicks "◷ START SESSION" button (optional countdown setup beforehand) → fires start message → state → `'active'`; bot-as-timer auto-fires after 3.5 s from `waiting-timer`
+- [x] Chat input disabled (greyed, `not-allowed` cursor, placeholder "Chat opens when the Timer starts the session...") until `chatStartState === 'active'`
+- [x] `startBotSession` proactive message engine only fires when `chatStartState === 'active'`
+- [x] Mr. Bot welcome ("Session is live...") fires once when `chatStartState` transitions to `'active'`
+- [x] Lobby roster animation no longer pre-populates `chat` array — chat starts clean on every session
+- [x] `TimerCompact` now shows unified "◷ START SESSION" / "◷ START SESSION + TIMER" button; after first click shows PAUSE/RESUME/RESET for the countdown; `sessionStarted` state prevents double-firing
+
+---
+
+## Phase 10++: Cooperative Discussion Redesign ✅ COMPLETE
+
+Structural redesign of Phase III roles, scribe workflow, and bot behaviour. All changes are in `LearningTaskUI.tsx`, `botEngine.ts`, `backend/src/index.ts`, and `teacherHelpApi.ts`.
+
+### Role renames (display only — internal keys unchanged)
+- [x] `leader` displays as **PARTICIPATION CHECKER** (♚) everywhere: role panel header, ROLE_DEFS, bot persona, backend PERSONAS, teacherHelpApi context
+- [x] `angle-checker` displays as **DISCUSSION CHECKER** (◈) everywhere: role panel header, ROLE_DEFS, bot persona, backend PERSONAS, teacherHelpApi context
+- [x] Timer and Scribe names unchanged
+
+### Target Lock Hook (Participation Checker)
+- [x] Clicking a member name button in `LeaderCompact` fires a prompt message into chat and sets `lockedTarget` state
+- [x] While `lockedTarget` is set: chat input for the user is disabled (`chatInputLocked`), placeholder reads "Waiting for [name] to respond…"
+- [x] Bot playing the targeted role fires a reply after 2.2–3.7 s delay; `lockedTarget` clears after reply
+- [x] 45 s auto-timeout: if no reply, a system message is posted and `lockedTarget` is cleared
+- [x] `lockedTargetRef` pattern used inside async timeouts to avoid stale closure bugs
+- [x] `handleTargetLock` wrapped in `useCallback` with `chat` in deps
+
+### Discussion Checker redesign (replaces Angle Checker)
+- [x] `DiscussionCheckerCompact` component replaces `AngleCheckerCompact`
+- [x] 3-vector HUD showing Solution / Steps / Quality Evaluation checkboxes
+- [x] 3 structural prompt buttons send exact hardcoded gate strings into chat:
+  - `💬 Discussion Checker: We need to talk about the solution first.`
+  - `💬 Discussion Checker: We need to talk about the steps.`
+  - `💬 Discussion Checker: We need to talk about how we will know if this solution is the best.`
+- [x] `dcPromptsUsed: Set<string>` tracks which buttons have been clicked
+- [x] Discussion Pulse (30 s) with label "CONFIRM DISCUSSION CHECK"
+- [x] `dcVectorsComplete` computed inline by scanning `chat` for the three gate substrings
+- [x] Phase IIIa (role selection panel) updated to say "◈ DISCUSSION CHECKER · STRUCTURAL TRIAD"
+
+### Final Compilation trigger moved to Participation Checker
+- [x] "▶ TRIGGER FINAL COMPILATION" button added to `LeaderCompact`, gated by `dcVectorsComplete`
+- [x] On trigger: calls `formatScribeNotes(scribeNotes)` to serialise the structured notes, then `setFinalPhaseActive(true)`
+- [x] Scribe no longer has a trigger button
+
+### Scribe workflow redesign
+- [x] `ScribeNote` interface: `{ id, category: 'suggestion' | 'steps' | 'questions', author, body }`
+- [x] `NOTE_CATEGORIES` constant with label, icon, color per category
+- [x] `formatScribeNotes(notes)` serialises notes to formatted string grouped by category
+- [x] Every chat message renders a `✎` icon (scribe-only, not in finalPhaseActive)
+- [x] Clicking `✎` opens an inline category picker (💡 Suggestion / 📋 Steps / ❓ Questions + ✕)
+- [x] Selecting a category appends a `ScribeNote` to `scribeNotes` state; already-captured messages show `✓`
+- [x] `ScribeDraftPanel` redesigned: shows notes in 3 columns (SUGGESTIONS / STEPS / QUESTIONS) with ✕ remove buttons for scribe; read-only for others; "FINAL COMPILATION ACTIVE — NOTES LOCKED" banner when `finalPhaseActive`
+- [x] "ADD TO DRAFT" buttons and member solution cards removed; solutions section is display-only
+- [x] `ScribeCompact` description updated to explain the ✎ capture workflow; shows note count
+
+### Bot pacing — all timings slowed down
+- [x] All intro messages doubled in delay (~30→60 s range)
+- [x] Participation Checker advance interval: 90 s → 150 s (smart), 45 s → 90 s (stupid)
+- [x] All role pulse intervals: 20–30 s → 120 s
+- [x] All pulse messages now just `[ROLE] active` — no extra text
+- [x] Timer time-status: every 30 s → every 120 s; format `[Timer] N min left.`
+- [x] All `say()` fallback strings shortened (under 10–12 words)
+- [x] Discussion Checker vector prompts: 270/630/1080 s → 360/780/1260 s
+
+### Scribe bot real-capture fix
+- [x] `BotSessionConfig.getChat?: () => { id, author, body }[]` — live chat snapshot via `chatRef`
+- [x] `BotSessionConfig.captureNote?: (category, author, body) => void` — writes to `scribeNotes` state
+- [x] Smart scribe (PetraBOT): every 180 s, finds the most recent uncaptured human message, calls `captureNote` cycling `suggestion → steps → questions`, posts `✎ Captured [category] from [author]: "excerpt…"`
+- [x] Stupid scribe (MilaBOT): every 300 s, captures a random uncaptured message as `suggestion`, posts `✎ noted`
+- [x] Both track captured IDs in a local `Set` — no message captured twice
+- [x] Human-message filter: `!author.endsWith('BOT') && author !== 'Mr. Bot' && !body.startsWith('[') && body.length > 15`
+- [x] `getChat` and `captureNote` wired in the `startBotSession` call in `LearningTaskUI.tsx`
+
+---
+
 ## Notes
 
 - All placeholder assets are documented with `.txt` spec files alongside them in the theme folders.

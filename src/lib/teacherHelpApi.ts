@@ -1,5 +1,6 @@
 // All Anthropic API calls go through /teacher-help on our Express backend.
 // The API key lives in backend/.env — never in the browser.
+import { useDevStore } from '@/stores/devStore'
 
 const PAGE_CONTEXTS: Record<string, string> = {
   home: `The student is on the Home screen (HomeCrossroads).
@@ -79,15 +80,19 @@ As Scribe, they are the group's memory and writer. Their workflow:
 — SUBMIT FINAL SOLUTION button: when the draft is ready (minimum 20 characters), this triggers the Final Solution phase — everyone's screen shows the draft for collective review.
 They should not wait too long — the group is depending on them to produce a final answer before time runs out.`,
 
-  learningTask_phase3_anglechecker: `The student is in Phase III (Cooperative Group Discussion) as the ANGLE CHECKER.
-As Angle Checker, their job is constructive skepticism — NOT agreement. Even if they personally agree with the group, they must push back.
+  learningTask_phase3_anglechecker: `The student is in Phase III (Cooperative Group Discussion) as the DISCUSSION CHECKER.
+As Discussion Checker, their job is to keep the discussion structurally on track — ensuring the group covers all three mandatory vectors before compiling the final answer.
 Their tools:
-— ANTI-GROUPTHINK TRIAD: three buttons they MUST use at least once each before the session ends:
-  ◈ ALTERNATIVE PERSPECTIVE — is there a completely different conclusion the evidence supports?
-  ◈ DEVIL'S ADVOCATE — if the group is wrong, what would that look like?
-  ◈ BLIND SPOT CHECK — what is the group assuming without verifying?
-— PERSPECTIVE PULSE: a button they press every 30 seconds to signal they are actively monitoring the group's logic.
-The system tracks whether they used all three triad buttons. Skipping them means their Angle Checker role is incomplete. Even trivial challenges count — the habit of questioning is the goal.`,
+— STRUCTURAL VECTOR HUD: three checkboxes tracking whether the group has addressed:
+  Vector 1 — The Solution: a concrete plan or answer
+  Vector 2 — The Execution Steps: a step-by-step roadmap
+  Vector 3 — Quality Evaluation: criteria for knowing the solution is the best possible one
+— THREE STRUCTURAL PROMPT BUTTONS (must each be used at least once):
+  [Prompt: Define Solution] — redirects the group to commit to a concrete answer
+  [Prompt: Track Steps] — redirects the group to map out the execution roadmap
+  [Prompt: Audit Best Fit] — pushes the group to evaluate solution quality
+— DISCUSSION PULSE: a button they press every 30 seconds to signal active monitoring.
+The group cannot trigger Final Compilation until all three prompts have been deployed. Even one missed vector blocks submission.`,
 
   learningTask_phase3_learner: `The student is in Phase III (Cooperative Group Discussion) as a GENERAL LEARNER.
 As a General Learner, they observe the discussion and make decisions about their own quiz answers:
@@ -98,7 +103,7 @@ As a General Learner, they observe the discussion and make decisions about their
 They should participate in the group chat and share their perspective, even as a General Learner.`,
 
   learningTask_phase3: `The student is in Phase III — the Cooperative Group Discussion.
-They have been assigned one of four roles: Leader, Timer, Scribe, or Angle Checker. Each role has specific tools and responsibilities shown in the left panel.
+They have been assigned one of four roles: Participation Checker, Timer, Scribe, or Discussion Checker. Each role has specific tools and responsibilities shown in the left panel.
 The group chat is in the right panel. The challenge scenario and member solutions are shown below.
 If they need role-specific help, they should tell Mr. Bot which role they have been assigned.`,
 
@@ -153,7 +158,15 @@ export async function callTeacherHelpApi(
     throw new Error(`Proxy error ${response.status}`)
   }
 
-  const data = await response.json() as { reply?: string }
+  const data = await response.json() as {
+    reply?: string
+    usage?: { inputTokens: number; outputTokens: number }
+  }
+
+  if (data.usage?.inputTokens !== undefined && data.usage?.outputTokens !== undefined) {
+    useDevStore.getState().addTokens(data.usage.inputTokens, data.usage.outputTokens)
+  }
+
   return data.reply || "I'm not sure about that — could you try rephrasing your question?"
 }
 
